@@ -4,7 +4,6 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.common.exceptions import TimeoutException, NoSuchElementException, ElementClickInterceptedException, ElementNotInteractableException
-from search_all_files_extract import extract_data_from_table
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -100,9 +99,7 @@ def search_all_files(driver, result_label=None):
         click_element(driver, By.CSS_SELECTOR, "#content-div2 > div.white-content > div > div:nth-child(2) > div > div.col-xl-6.t-1 > div > div > div.hedef-card-footer > div.dx-widget.dx-button.dx-button-mode-contained.dx-button-default.dx-button-has-text.dx-button-has-icon")
 
         logger.info("Search process completed successfully.")
-
-        # ✅ Call extraction function **after search completes**
-        extract_data_from_table(driver)
+        if result_label: result_label.config(text="Search completed. Ready to extract data.")
 
     except Exception as e:
         logger.error(f"Unexpected error during search: {e}")

@@ -14,10 +14,8 @@ def extract_data_from_table(driver):
 
         # Wait for the table to load
         logger.info("Waiting for table to load...")
-        print("Waiting for table to load...")
         wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, "#adaletDataGridContainer > div > div.dx-datagrid-rowsview > div > div > div > div > table")))
         logger.info("Table container found on page.")
-        print("Table container found on page.")
 
         # Scroll down to load all table rows
         logger.info("Scrolling down the page to load all table rows...")
@@ -71,7 +69,7 @@ def extract_data_from_table(driver):
             },
             "Dosya Bilgileri": {},
             "Dosya Hesabı": {},
-            "Taraf Bilgiler": {}
+            "Taraf Bilgileri": {}
         }
 
         extracted_data.append(row_data)
@@ -82,13 +80,11 @@ def extract_data_from_table(driver):
             driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", dosya_goruntule)
             dosya_goruntule.click()
             logger.info(f"Clicked #dosya-goruntule for Row {row_index} using WebDriverWait.")
-            time.sleep(3)
         except ElementClickInterceptedException:
             logger.warning(f"Click intercepted for #dosya-goruntule in Row {row_index}. Trying JavaScript click...")
             dosya_goruntule = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, "#dosya-goruntule")))
             driver.execute_script("arguments[0].click();", dosya_goruntule)
             logger.info(f"JavaScript clicked #dosya-goruntule for Row {row_index}.")
-            time.sleep(3)
         except NoSuchElementException:
             logger.error(f"#dosya-goruntule not found in Row {row_index}. Skipping popup.")
             return extracted_data
@@ -99,9 +95,10 @@ def extract_data_from_table(driver):
             raise Exception("Manual inspection required: #dosya-goruntule not found or not clickable. Check popup and provide correct selector.")
 
         # Wait for the tabs container to be visible
-        wait.until(EC.presence_of_element_located((By.XPATH, "/html/body/div[2]/div/div[2]/div/div/div/div/div[1]/div")))
-        logger.info(f"Tabs container found at /html/body/div[2]/div/div[2]/div/div/div/div/div[1]/div for Row {row_index}.")
-
+        wait.until(EC.presence_of_element_located((By.XPATH, "//div/div[2]/div/div/div/div/div[1]/div")))
+        logger.info(f"Tabs container found for Row {row_index}.")
+        time.sleep(0.5)
+                                                            
         # Helper function to check and click tabs if they exist
         def check_and_click_tab(tab_name):
             try:
@@ -133,7 +130,7 @@ def extract_data_from_table(driver):
             logger.info(f"Dosya Bilgileri extracted for Row {row_index}: {row_data['Dosya Bilgileri']}")
         else:
             logger.warning("Skipping 'Dosya Bilgileri' extraction due to missing tab.")
-
+            
         # Check and extract 'Dosya Hesabı' if tab exists
         if check_and_click_tab("Dosya Hesabı"):
             wait.until(EC.presence_of_element_located((By.XPATH, "/html/body/div[2]/div/div[2]/div/div/div/div/div[2]/div/div/div[2]/div/div[1]/div[1]/div/div/div[2]/div/table/tbody")))
@@ -163,20 +160,22 @@ def extract_data_from_table(driver):
         else:
             logger.warning("Skipping 'Dosya Hesabı' extraction due to missing tab.")
 
-        # Check and extract 'Taraf Bilgiler' if tab exists
-        if check_and_click_tab("Taraf Bilgiler"):
-            wait.until(EC.presence_of_element_located((By.XPATH, "/html/body/div[2]/div/div[2]/div/div/div/div/div[2]/div/div/div[3]/div/div[1]/div[1]/div/div/div[2]/div/div/div[6]/div/div/div/div/table/tbody")))
-            logger.info(f"'Taraf Bilgiler' content loaded for Row {row_index}.")
+        # Check and extract 'Taraf Bilgileri' if tab exists
+        if check_and_click_tab("Taraf Bilgileri"):
+            wait.until(EC.presence_of_element_located((By.XPATH, "//div/div[2]/div/div/div/div/div[2]/div/div//div/div[1]/div[1]/div/div/div[2]/div/div/div[6]/div/div/div/div/table/tbody")))
+            logger.info(f"'Taraf Bilgileri' content loaded for Row {row_index}.")
 
-            # Extract 'Taraf Bilgiler' data dynamically for all Taraf entries
+            # Extract 'Taraf Bilgileri' data dynamically for all Taraf entries
             taraf_data = {}
             taraf_index = 1
             while True:
                 try:
-                    rol_xpath = f"/html/body/div[2]/div/div[2]/div/div/div/div/div[2]/div/div/div[3]/div/div[1]/div[1]/div/div/div[2]/div/div/div[6]/div/div/div/div/table/tbody/tr[{taraf_index}]/td[1]"
-                    tipi_xpath = f"/html/body/div[2]/div/div[2]/div/div/div/div/div[2]/div/div/div[3]/div/div[1]/div[1]/div/div/div[2]/div/div/div[6]/div/div/div/div/table/tbody/tr[{taraf_index}]/td[2]"
-                    adi_xpath = f"/html/body/div[2]/div/div[2]/div/div/div/div/div[2]/div/div/div[3]/div/div[1]/div[1]/div/div/div[2]/div/div/div[6]/div/div/div/div/table/tbody/tr[{taraf_index}]/td[3]"
-                    vekil_xpath = f"/html/body/div[2]/div/div[2]/div/div/div/div/div[2]/div/div/div[3]/div/div[1]/div[1]/div/div/div[2]/div/div/div[6]/div/div/div/div/table/tbody/tr[{taraf_index}]/td[4]"
+                    # Define the base XPath and format it with taraf_index
+                    base_xpath = f"//div/div[2]/div/div/div/div/div[2]/div/div//div/div[1]/div[1]/div/div/div[2]/div/div/div[6]/div/div/div/div/table/tbody/tr[{taraf_index}]"
+                    rol_xpath = f"{base_xpath}/td[1]"
+                    tipi_xpath = f"{base_xpath}/td[2]"
+                    adi_xpath = f"{base_xpath}/td[3]"
+                    vekil_xpath = f"{base_xpath}/td[4]"
 
                     rol = driver.find_element(By.XPATH, rol_xpath).text.strip() if driver.find_elements(By.XPATH, rol_xpath) else ""
                     tipi = driver.find_element(By.XPATH, tipi_xpath).text.strip() if driver.find_elements(By.XPATH, tipi_xpath) else ""
@@ -197,10 +196,10 @@ def extract_data_from_table(driver):
                 except NoSuchElementException:
                     break  # Stop if no more Taraf entries exist
 
-            row_data["Taraf Bilgiler"] = taraf_data
-            logger.info(f"Taraf Bilgiler extracted for Row {row_index}: {row_data['Taraf Bilgiler']}")
+            row_data["Taraf Bilgileri"] = taraf_data
+            logger.info(f"Taraf Bilgileri extracted for Row {row_index}: {row_data['Taraf Bilgileri']}")
         else:
-            logger.warning("Skipping 'Taraf Bilgiler' extraction due to missing tab.")
+            logger.warning("Skipping 'Taraf Bilgileri' extraction due to missing tab.")
 
         # Print extracted data
         print(f"\nRow {row_index}:")
@@ -215,9 +214,9 @@ def extract_data_from_table(driver):
             print("  Dosya Hesabı:")
             for key, value in row_data["Dosya Hesabı"].items():
                 print(f"    {key}: {value}")
-        if row_data["Taraf Bilgiler"]:
-            print("  Taraf Bilgiler:")
-            for taraf, details in row_data["Taraf Bilgiler"].items():
+        if row_data["Taraf Bilgileri"]:
+            print("  Taraf Bilgileri:")
+            for taraf, details in row_data["Taraf Bilgileri"].items():
                 print(f"    {taraf}:")
                 for detail_key, detail_value in details.items():
                     print(f"      {detail_key}: {detail_value}")
