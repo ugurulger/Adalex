@@ -118,33 +118,61 @@ def extract_data_from_table(driver):
 
         # Check and extract 'Dosya Bilgileri' if tab exists
         if check_and_click_tab("Dosya Bilgileri"):
-            wait.until(EC.presence_of_element_located((By.XPATH, "/html/body/div[2]/div/div[2]/div/div/div/div/div[2]/div/div/div[1]/div/div[1]/div[1]/div/div/div[2]/table/tbody")))
+            wait.until(EC.presence_of_element_located((By.XPATH, "//div/div[2]/div/div/div/div/div[2]/div/div/div[1]/div/div[1]/div[1]/div/div/div[2]/table/tbody")))
             logger.info(f"'Dosya Bilgileri' content loaded for Row {row_index}.")
 
-            # Extract 'Dosya Bilgileri' data
-            turi = driver.find_element(By.XPATH, "/html/body/div[2]/div/div[2]/div/div/div/div/div[2]/div/div/div[1]/div/div[1]/div[1]/div/div/div[2]/table/tbody/tr[1]/td[2]").text.strip() if driver.find_elements(By.XPATH, "/html/body/div[2]/div/div[2]/div/div/div/div/div[2]/div/div/div[1]/div/div[1]/div[1]/div/div/div[2]/table/tbody/tr[1]/td[2]") else ""
-            yolu = driver.find_element(By.XPATH, "/html/body/div[2]/div/div[2]/div/div/div/div/div[2]/div/div/div[1]/div/div[1]/div[1]/div/div/div[2]/table/tbody/tr[2]/td[2]").text.strip() if driver.find_elements(By.XPATH, "/html/body/div[2]/div/div[2]/div/div/div/div/div[2]/div/div/div[1]/div/div[1]/div[1]/div/div/div[2]/table/tbody/tr[2]/td[2]") else ""
-            seklí = driver.find_element(By.XPATH, "/html/body/div[2]/div/div[2]/div/div/div/div/div[2]/div/div/div[1]/div/div[1]/div[1]/div/div/div[2]/table/tbody/tr[3]/td[2]").text.strip() if driver.find_elements(By.XPATH, "/html/body/div[2]/div/div[2]/div/div/div/div/div[2]/div/div/div[1]/div/div[1]/div[1]/div/div/div[2]/table/tbody/tr[3]/td[2]") else ""
+            # Extract 'Dosya Bilgileri' data with conditions and flexible paths
+            dosya_bilgileri = {"Türü": "Not found", "Yolu": "Not found", "Şekli": "Not found"}  # Default values
 
-            row_data["Dosya Bilgileri"] = {"Türü": turi, "Yolu": yolu, "Şekli": seklí}
+            # Base XPath for flexibility
+            base_xpath = "//div/div[2]/div/div/div/div/div[2]/div/div/div[1]/div/div[1]/div[1]/div/div/div[2]/table/tbody"
+
+            # Check and extract Türü
+            turi_label_xpath = f"{base_xpath}/tr[1]/td[1]"
+            turi_value_xpath = f"{base_xpath}/tr[1]/td[2]"
+            if driver.find_elements(By.XPATH, turi_label_xpath):
+                turi_label = driver.find_element(By.XPATH, turi_label_xpath).text.strip()
+                if turi_label == "Türü":
+                    dosya_bilgileri["Türü"] = driver.find_element(By.XPATH, turi_value_xpath).text.strip() if driver.find_elements(By.XPATH, turi_value_xpath) else "Not found"
+
+            # Check and extract Yolu
+            yolu_label_xpath = f"{base_xpath}/tr[2]/td[1]"
+            yolu_value_xpath = f"{base_xpath}/tr[2]/td[2]"
+            if driver.find_elements(By.XPATH, yolu_label_xpath):
+                yolu_label = driver.find_element(By.XPATH, yolu_label_xpath).text.strip()
+                if yolu_label == "Yolu":
+                    dosya_bilgileri["Yolu"] = driver.find_element(By.XPATH, yolu_value_xpath).text.strip() if driver.find_elements(By.XPATH, yolu_value_xpath) else "Not found"
+
+            # Check and extract Şekli
+            sekli_label_xpath = f"{base_xpath}/tr[3]/td[1]"
+            sekli_value_xpath = f"{base_xpath}/tr[3]/td[2]"
+            if driver.find_elements(By.XPATH, sekli_label_xpath):
+                sekli_label = driver.find_element(By.XPATH, sekli_label_xpath).text.strip()
+                if sekli_label == "Şekli":
+                    dosya_bilgileri["Şekli"] = driver.find_element(By.XPATH, sekli_value_xpath).text.strip() if driver.find_elements(By.XPATH, sekli_value_xpath) else "Not found"
+
+            row_data["Dosya Bilgileri"] = dosya_bilgileri
             logger.info(f"Dosya Bilgileri extracted for Row {row_index}: {row_data['Dosya Bilgileri']}")
         else:
             logger.warning("Skipping 'Dosya Bilgileri' extraction due to missing tab.")
-            
+
         # Check and extract 'Dosya Hesabı' if tab exists
         if check_and_click_tab("Dosya Hesabı"):
-            wait.until(EC.presence_of_element_located((By.XPATH, "/html/body/div[2]/div/div[2]/div/div/div/div/div[2]/div/div/div[2]/div/div[1]/div[1]/div/div/div[2]/div/table/tbody")))
+            wait.until(EC.presence_of_element_located((By.XPATH, "//div/div[2]/div/div/div/div/div[2]/div/div/div[2]/div/div[1]/div[1]/div/div/div[2]/div/table/tbody")))
             logger.info(f"'Dosya Hesabı' content loaded for Row {row_index}.")
 
+            # Base XPath for flexibility
+            base_xpath = "//div/div[2]/div/div/div/div/div[2]/div/div/div[2]/div/div[1]/div[1]/div/div/div[2]/div/table/tbody"
+
             # Extract 'Dosya Hesabı' data
-            takipte_kesinlesen_miktar = driver.find_element(By.XPATH, "/html/body/div[2]/div/div[2]/div/div/div/div/div[2]/div/div/div[2]/div/div[1]/div[1]/div/div/div[2]/div/table/tbody/tr[1]/td[2]").text.strip() if driver.find_elements(By.XPATH, "/html/body/div[2]/div/div[2]/div/div/div/div/div[2]/div/div/div[2]/div/div[1]/div[1]/div/div/div[2]/div/table/tbody/tr[1]/td[2]") else ""
-            toplam_faiz_miktari = driver.find_element(By.XPATH, "/html/body/div[2]/div/div[2]/div/div/div/div/div[2]/div/div/div[2]/div/div[1]/div[1]/div/div/div[2]/div/table/tbody/tr[2]/td[2]").text.strip() if driver.find_elements(By.XPATH, "/html/body/div[2]/div/div[2]/div/div/div/div/div[2]/div/div/div[2]/div/div[1]/div[1]/div/div/div[2]/div/table/tbody/tr[2]/td[2]") else ""
-            vekalet_ucreti = driver.find_element(By.XPATH, "/html/body/div[2]/div/div[2]/div/div/div/div/div[2]/div/div/div[2]/div/div[1]/div[1]/div/div/div[2]/div/table/tbody/tr[3]/td[2]").text.strip() if driver.find_elements(By.XPATH, "/html/body/div[2]/div/div[2]/div/div/div/div/div[2]/div/div/div[2]/div/div[1]/div[1]/div/div/div[2]/div/table/tbody/tr[3]/td[2]") else ""
-            masraf_miktari = driver.find_element(By.XPATH, "/html/body/div[2]/div/div[2]/div/div/div/div/div[2]/div/div/div[2]/div/div[1]/div[1]/div/div/div[2]/div/table/tbody/tr[4]/td[2]").text.strip() if driver.find_elements(By.XPATH, "/html/body/div[2]/div/div[2]/div/div/div/div/div[2]/div/div/div[2]/div/div[1]/div[1]/div/div/div[2]/div/table/tbody/tr[4]/td[2]") else ""
-            tahsil_harci = driver.find_element(By.XPATH, "/html/body/div[2]/div/div[2]/div/div/div/div/div[2]/div/div/div[2]/div/div[1]/div[1]/div/div/div[2]/div/table/tbody/tr[5]/td[2]").text.strip() if driver.find_elements(By.XPATH, "/html/body/div[2]/div/div[2]/div/div/div/div/div[2]/div/div/div[2]/div/div[1]/div[1]/div/div/div[2]/div/table/tbody/tr[5]/td[2]") else ""
-            toplam_alacak = driver.find_element(By.XPATH, "/html/body/div[2]/div/div[2]/div/div/div/div/div[2]/div/div/div[2]/div/div[1]/div[1]/div/div/div[2]/div/table/tbody/tr[6]/td[2]").text.strip() if driver.find_elements(By.XPATH, "/html/body/div[2]/div/div[2]/div/div/div/div/div[2]/div/div/div[2]/div/div[1]/div[1]/div/div/div[2]/div/table/tbody/tr[6]/td[2]") else ""
-            yatan_para = driver.find_element(By.XPATH, "/html/body/div[2]/div/div[2]/div/div/div/div/div[2]/div/div/div[2]/div/div[1]/div[1]/div/div/div[2]/div/table/tbody/tr[7]/td[2]").text.strip() if driver.find_elements(By.XPATH, "/html/body/div[2]/div/div[2]/div/div/div/div/div[2]/div/div/div[2]/div/div[1]/div[1]/div/div/div[2]/div/table/tbody/tr[7]/td[2]") else ""
-            bakiye_borc_miktari = driver.find_element(By.XPATH, "/html/body/div[2]/div/div[2]/div/div/div/div/div[2]/div/div/div[2]/div/div[1]/div[1]/div/div/div[2]/div/table/tbody/tr[8]/td[2]").text.strip() if driver.find_elements(By.XPATH, "/html/body/div[2]/div/div[2]/div/div/div/div/div[2]/div/div/div[2]/div/div[1]/div[1]/div/div/div[2]/div/table/tbody/tr[8]/td[2]") else ""
+            takipte_kesinlesen_miktar = driver.find_element(By.XPATH, f"{base_xpath}/tr[1]/td[2]").text.strip() if driver.find_elements(By.XPATH, f"{base_xpath}/tr[1]/td[2]") else ""
+            toplam_faiz_miktari = driver.find_element(By.XPATH, f"{base_xpath}/tr[2]/td[2]").text.strip() if driver.find_elements(By.XPATH, f"{base_xpath}/tr[2]/td[2]") else ""
+            vekalet_ucreti = driver.find_element(By.XPATH, f"{base_xpath}/tr[3]/td[2]").text.strip() if driver.find_elements(By.XPATH, f"{base_xpath}/tr[3]/td[2]") else ""
+            masraf_miktari = driver.find_element(By.XPATH, f"{base_xpath}/tr[4]/td[2]").text.strip() if driver.find_elements(By.XPATH, f"{base_xpath}/tr[4]/td[2]") else ""
+            tahsil_harci = driver.find_element(By.XPATH, f"{base_xpath}/tr[5]/td[2]").text.strip() if driver.find_elements(By.XPATH, f"{base_xpath}/tr[5]/td[2]") else ""
+            toplam_alacak = driver.find_element(By.XPATH, f"{base_xpath}/tr[6]/td[2]").text.strip() if driver.find_elements(By.XPATH, f"{base_xpath}/tr[6]/td[2]") else ""
+            yatan_para = driver.find_element(By.XPATH, f"{base_xpath}/tr[7]/td[2]").text.strip() if driver.find_elements(By.XPATH, f"{base_xpath}/tr[7]/td[2]") else ""
+            bakiye_borc_miktari = driver.find_element(By.XPATH, f"{base_xpath}/tr[8]/td[2]").text.strip() if driver.find_elements(By.XPATH, f"{base_xpath}/tr[8]/td[2]") else ""
 
             row_data["Dosya Hesabı"] = {
                 "Takipte Kesinleşen Miktar": takipte_kesinlesen_miktar,
