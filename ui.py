@@ -2,6 +2,10 @@ import tkinter as tk
 from tkinter import messagebox, Menu
 import threading
 import queue
+import json
+import os
+from datetime import datetime
+
 from login_uyap import open_browser_and_login
 from search_all_files import search_all_files
 from search_all_files_extract import extract_data_from_table
@@ -54,6 +58,7 @@ class UYAPApp:
         self.table_frame = tk.Frame(self.table_container, width=700, height=table_height, bg="#333333")
         self.table_frame.pack_propagate(False)  # Prevent resizing
         self.table_frame.pack(pady=0)  # No padding to eliminate gap
+        self.table_frame.bind("<Button-2>", lambda e: self.log_click("Middle", e))  # Middle-click for context menu
 
         # Pre-create headers with consistent alignment, darker grey background, and bold text
         headers = ["Nr", "Dosya No", "Birim", "Dosya Türü", "Dosya Durumu", "Dosya Açılış Tarihi"]
@@ -70,7 +75,7 @@ class UYAPApp:
         for i in range(self.max_rows):
             row_frame = tk.Frame(self.table_frame, bg="#333333")
             row_frame.pack(fill=tk.X)
-            row_frame.bind("<Button-3>", lambda e, r=i: self.show_context_menu(e, r))
+            row_frame.bind("<Button-2>", lambda e, r=i: self.log_click("Middle", e, r))
             labels = [
                 tk.Label(row_frame, text="", borderwidth=1, relief="solid", width=5, padx=1, pady=1, bg="#333333", fg="white", highlightbackground="white", highlightcolor="white", highlightthickness=1),
                 tk.Label(row_frame, text="", borderwidth=1, relief="solid", width=15, padx=1, pady=1, bg="#333333", fg="white", highlightbackground="white", highlightcolor="white", highlightthickness=1),
@@ -82,11 +87,18 @@ class UYAPApp:
             for col, label in enumerate(labels):
                 label.grid(row=0, column=col, sticky="nsew")
                 row_frame.grid_columnconfigure(col, weight=1, uniform="table")
-                label.bind("<Button-3>", lambda e, r=i: self.show_context_menu(e, r))
+                label.bind("<Button-2>", lambda e, r=i: self.log_click("Middle", e, r))
                 label.bind("<Enter>", lambda e, r=i: self.highlight_row(r, True))
                 label.bind("<Leave>", lambda e, r=i: self.highlight_row(r, False))
             self.data_frames.append(labels)
             self.label_rows.append(labels)
+
+        # Add root-level binding for middle-click
+        self.root.bind("<Button-2>", lambda e: self.log_click("Middle", e, root_level=True))
+
+        # Force focus and grab events
+        self.root.focus_set()
+        self.root.grab_set()
 
         # Pagination Frame with visible buttons, no gap
         self.pagination_frame = tk.Frame(root, bg="gray", bd=2, relief="raised")
@@ -109,8 +121,43 @@ class UYAPApp:
         # Detailed data window (initially hidden)
         self.detail_window = None
 
+        # Load local data on startup
+        self.load_local_data()
+
         # Start UI update loop
         self.root.after(100, self.process_queue)
+
+    def log_click(self, button_type, event, row_idx=None, root_level=False):
+        """Handle middle-click to show context menu (no logging)."""
+        # Use Middle-click to trigger context menu
+        if button_type == "Middle" and row_idx is not None and not root_level:
+            self.show_context_menu(event, row_idx)
+
+    def load_local_data(self):
+        """Load data from the local JSON file if it exists for today."""
+        output_dir = "/Users/ugurulger/Desktop/extracted_data"
+        today_date = datetime.now().strftime("%Y%m%d")  # Format: YYYYMMDD (e.g., 20250307)
+        output_file = os.path.join(output_dir, f"extracted_data_{today_date}.json")
+
+        if os.path.exists(output_file):
+            if os.path.getsize(output_file) == 0:
+                return  # Skip empty file without error
+            try:
+                with open(output_file, 'r', encoding='utf-8') as f:
+                    local_data = json.load(f)
+                self.all_data.update(local_data)
+                # Populate table_data with Genel data
+                for row_key, row_data in local_data.items():
+                    if "Genel" in row_data:
+                        row_num = int(row_key.replace("row", ""))
+                        self.table_data.append((row_num, row_data["Genel"]))
+                self.update_table()
+            except json.JSONDecodeError as e:
+                messagebox.showwarning("Warning", f"Invalid JSON data in {output_file}: {e}. Skipping load.")
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to load local data from {output_file}: {e}")
+        else:
+            pass  # No file found, proceed without error
 
     def highlight_row(self, row_idx, highlight):
         """Highlight or unhighlight a row on hover."""
@@ -258,14 +305,10 @@ class UYAPApp:
             self.update_table()
 
     def show_context_menu(self, event, row_idx):
-        """Display context menu on right-click."""
-        print(f"Right-click event triggered on row_idx: {row_idx}, widget: {event.widget}")  # Debug print
+        """Display context menu on middle-click."""
         if 0 <= row_idx < self.max_rows and (self.current_page * self.rows_per_page + row_idx) < len(self.table_data):
             self.current_row = self.current_page * self.rows_per_page + row_idx
-            print(f"Setting current_row to: {self.current_row}, data length: {len(self.all_data)}")  # Debug print
             self.context_menu.post(event.x_root, event.y_root)
-        else:
-            print(f"Invalid row_idx: {row_idx}, max_rows: {self.max_rows}, table_data length: {len(self.table_data)}")
 
     def show_dosya_bilgileri(self):
         self.show_detail_table("Dosya Bilgileri")
@@ -277,21 +320,16 @@ class UYAPApp:
         self.show_detail_table("Taraf Bilgileri")
 
     def show_detail_table(self, section):
-        print(f"Showing detail table for section: {section}, current_row: {self.current_row}")  # Debug print
         if self.current_row is None or self.current_row >= len(self.all_data):
-            print("Current row is None or out of bounds")
             return
 
         row_key = f"row{self.current_row + 1}"
-        print(f"Accessing data for row_key: {row_key}")
         if row_key not in self.all_data:
-            print(f"Row key {row_key} not in all_data")
             messagebox.showwarning("Warning", "Data not fully loaded for this row yet.")
             return
 
         data = self.all_data[row_key].get(section, {})
         if not data:
-            print(f"No data found for section {section}")
             messagebox.showinfo("Info", f"No {section} data available for this row.")
             return
 
@@ -299,12 +337,17 @@ class UYAPApp:
             self.detail_window.destroy()
         self.detail_window = tk.Toplevel(self.root)
         self.detail_window.title(f"{section} for Row {self.current_row + 1}")
-        self.detail_window.geometry("400x300")
+        self.detail_window.geometry("600x400")
 
         table_frame = tk.Frame(self.detail_window)
         table_frame.pack(padx=10, pady=10, fill=tk.BOTH, expand=True)
 
-        if section == "Taraf Bilgileri" and isinstance(list(data.values())[0] if data else {}, dict):
+        if section in ["Dosya Bilgileri", "Dosya Hesabı"]:
+            # Display each key-value pair in a row with two columns, bold headers
+            for row, (key, value) in enumerate(data.items(), start=0):
+                tk.Label(table_frame, text=key, borderwidth=1, relief="solid", width=15, anchor="e", font=("Helvetica", 10, "bold")).grid(row=row, column=0, padx=1, pady=1, sticky="e")
+                tk.Label(table_frame, text=value, borderwidth=1, relief="solid", width=25, anchor="w").grid(row=row, column=1, padx=1, pady=1, sticky="w")
+        elif section == "Taraf Bilgileri" and isinstance(list(data.values())[0] if data else {}, dict):
             headers = ["Taraf"] + list(next(iter(data.values())).keys()) if data else []
             for col, header in enumerate(headers):
                 tk.Label(table_frame, text=header, borderwidth=1, relief="solid", width=15).grid(row=0, column=col, padx=1, pady=1)
@@ -313,10 +356,7 @@ class UYAPApp:
                 for col, value in enumerate(details.values(), start=1):
                     tk.Label(table_frame, text=value, borderwidth=1, relief="solid", width=15).grid(row=row, column=col, padx=1, pady=1)
         else:
-            headers = list(data.keys())
-            for col, header in enumerate(headers):
-                tk.Label(table_frame, text=header, borderwidth=1, relief="solid", width=15).grid(row=0, column=col, padx=1, pady=1)
-            for row, value in enumerate(data.values(), start=1):
+            for row, value in enumerate(data.values(), start=0):
                 tk.Label(table_frame, text=value, borderwidth=1, relief="solid", width=15).grid(row=row, column=0, padx=1, pady=1)
 
 # Create and run GUI

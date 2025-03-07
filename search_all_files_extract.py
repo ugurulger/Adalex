@@ -19,6 +19,12 @@ def extract_data_from_table(driver, ui_callback=None):
         max_pages_to_process = 3  # Limit to first 3 pages
         row_counter = 1  # Global counter for row numbering across all pages
 
+        # Define output directory and daily JSON filename
+        output_dir = "/Users/ugurulger/Desktop/extracted_data"
+        os.makedirs(output_dir, exist_ok=True)
+        today_date = datetime.now().strftime("%Y%m%d")  # Format: YYYYMMDD (e.g., 20250307)
+        output_file = os.path.join(output_dir, f"extracted_data_{today_date}.json")
+
         # Get total pages from the page indicator
         try:
             page_indicator = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, ".dx-datagrid-pager .dx-info")))
@@ -251,19 +257,10 @@ def extract_data_from_table(driver, ui_callback=None):
                     all_data[f"row{row_counter}"] = row_data
                     row_counter += 1
 
-                    # Save to JSON after each row
-                    output_dir = "/Users/ugurulger/Desktop/extracted_data"
-                    os.makedirs(output_dir, exist_ok=True)
-                    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-                    output_file = os.path.join(output_dir, f"extracted_data_{timestamp}.json")
-                    with open(output_file, 'w', encoding='utf-8') as f:
-                        json.dump(all_data, f, ensure_ascii=False, indent=4)
-                    logger.info(f"Saved row data to {output_file}")
-
                     # Update UI with the new row's Genel data
                     if ui_callback:
                         genel_data = row_data["Genel"]
-                        ui_callback(row_counter, genel_data)
+                        ui_callback(row_counter - 1, genel_data)
 
                     # Close the popup
                     wait = WebDriverWait(driver, 10)
@@ -323,6 +320,11 @@ def extract_data_from_table(driver, ui_callback=None):
                     else:
                         logger.warning(f"Could not find Page {next_page_num} after Page {page}. Assuming end of pagination.")
                         break
+
+        # Save all extracted data to JSON (overwrite if exists)
+        with open(output_file, 'w', encoding='utf-8') as f:
+            json.dump(all_data, f, ensure_ascii=False, indent=4)
+        logger.info(f"Saved all data to {output_file} (overwritten if existed)")
 
         # Print all extracted data at the end
         logger.info(f"Finished processing {len(all_data)} rows across {min(page, max_pages)} pages. Printing all data now:")
