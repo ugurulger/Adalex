@@ -11,7 +11,7 @@ from selenium.common.exceptions import TimeoutException, NoSuchElementException,
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-def extract_data_from_table(driver):
+def extract_data_from_table(driver, ui_callback=None):
     try:
         wait, short_wait = WebDriverWait(driver, 15), WebDriverWait(driver, 2)
         all_data = {}  # Dictionary to store row data with keys like 'row1', 'row2', etc.
@@ -251,6 +251,20 @@ def extract_data_from_table(driver):
                     all_data[f"row{row_counter}"] = row_data
                     row_counter += 1
 
+                    # Save to JSON after each row
+                    output_dir = "/Users/ugurulger/Desktop/extracted_data"
+                    os.makedirs(output_dir, exist_ok=True)
+                    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                    output_file = os.path.join(output_dir, f"extracted_data_{timestamp}.json")
+                    with open(output_file, 'w', encoding='utf-8') as f:
+                        json.dump(all_data, f, ensure_ascii=False, indent=4)
+                    logger.info(f"Saved row data to {output_file}")
+
+                    # Update UI with the new row's Genel data
+                    if ui_callback:
+                        genel_data = row_data["Genel"]
+                        ui_callback(row_counter, genel_data)
+
                     # Close the popup
                     wait = WebDriverWait(driver, 10)
                     close_button_selector = "div[aria-label='Kapat'].dx-button-danger"
@@ -331,16 +345,6 @@ def extract_data_from_table(driver):
                     print(f"    {taraf}:")
                     for detail_key, detail_value in details.items():
                         print(f"      {detail_key}: {detail_value}")
-
-        # Save the extracted data to a JSON file
-        output_dir = "/Users/ugurulger/Desktop/extracted_data"  # Adjust this path as needed
-        os.makedirs(output_dir, exist_ok=True)  # Create the directory if it doesn't exist
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        output_file = os.path.join(output_dir, f"extracted_data_{timestamp}.json")
-        
-        with open(output_file, 'w', encoding='utf-8') as f:
-            json.dump(all_data, f, ensure_ascii=False, indent=4)
-        logger.info(f"Saved extracted data to {output_file}")
 
         return all_data
 
