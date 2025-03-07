@@ -9,6 +9,7 @@ from datetime import datetime
 from login_uyap import open_browser_and_login
 from search_all_files import search_all_files
 from search_all_files_extract import extract_data_from_table
+from sorgulama_common import perform_sorgulama  # Import the new function
 
 class UYAPApp:
     def __init__(self, root):
@@ -33,6 +34,7 @@ class UYAPApp:
 
         self.pin_entry = tk.Entry(root)
         self.pin_entry.pack(pady=5)
+        self.pin_entry.insert(0, "9092")  # Default PIN kodu
 
         # Connect/Disconnect Button
         self.connect_button = tk.Button(root, text="Connect", command=self.toggle_connect)
@@ -45,6 +47,44 @@ class UYAPApp:
         # Extract Data Button
         self.extract_button = tk.Button(root, text="Extract Data", command=self.start_extract_data, state="disabled")
         self.extract_button.pack(pady=5)
+
+        # Sorgula Section
+        self.sorgula_frame = tk.Frame(root)
+        self.sorgula_frame.pack(pady=5)
+
+        self.sorgula_label = tk.Label(self.sorgula_frame, text="Sorgulama Verisi:")
+        self.sorgula_label.pack(side=tk.LEFT, padx=5)
+
+        self.sorgula_entry = tk.Entry(self.sorgula_frame, width=30)
+        self.sorgula_entry.pack(side=tk.LEFT, padx=5)
+        self.sorgula_entry.insert(0, "2024/11086")  # Set default value
+
+        self.sorgula_button = tk.Button(self.sorgula_frame, text="Sorgula", command=self.start_sorgula, state="disabled")
+        self.sorgula_button.pack(side=tk.LEFT, padx=5)
+
+        # Radio Buttons (Checkboxes for multiple selection)
+        self.checkboxes_frame = tk.Frame(root)
+        self.checkboxes_frame.pack(pady=5)
+
+        self.check_var_egm = tk.BooleanVar(value=True)  # Set EGM-TNB as default selected
+        self.check_egm = tk.Checkbutton(self.checkboxes_frame, text="EGM-TNB", variable=self.check_var_egm)
+        self.check_egm.pack(side=tk.LEFT, padx=5)
+
+        self.check_var_takbis = tk.BooleanVar()
+        self.check_takbis = tk.Checkbutton(self.checkboxes_frame, text="TAKBİS", variable=self.check_var_takbis)
+        self.check_takbis.pack(side=tk.LEFT, padx=5)
+
+        self.check_var_icra = tk.BooleanVar()
+        self.check_icra = tk.Checkbutton(self.checkboxes_frame, text="İcra Dosyası", variable=self.check_var_icra)
+        self.check_icra.pack(side=tk.LEFT, padx=5)
+
+        self.check_var_sgk = tk.BooleanVar()
+        self.check_sgk = tk.Checkbutton(self.checkboxes_frame, text="SGK", variable=self.check_var_sgk)
+        self.check_sgk.pack(side=tk.LEFT, padx=5)
+
+        self.check_var_banka = tk.BooleanVar()
+        self.check_banka = tk.Checkbutton(self.checkboxes_frame, text="Banka", variable=self.check_var_banka)
+        self.check_banka.pack(side=tk.LEFT, padx=5)
 
         # Fixed-size table container
         self.table_container = tk.Frame(root)
@@ -191,11 +231,12 @@ class UYAPApp:
                 self.root.after(0, lambda: self.connect_button.config(text="Disconnect", state="normal"))
                 self.root.after(0, lambda: self.search_all_button.config(state="normal"))
                 self.root.after(0, lambda: self.extract_button.config(state="normal"))
+                self.root.after(0, lambda: self.sorgula_button.config(state="normal"))
             else:
                 self.root.after(0, lambda: self.connect_button.config(state="normal"))
         except Exception as e:
             self.root.after(0, lambda: self.result_label.config(text=f"Error: {e}"))
-            self.root.after(0, lambda: messagebox.showerror("Error", f"An error occurred: {e}"))
+            self.root.after(0, lambda e=e: messagebox.showerror("Error", f"An error occurred: {e}"))
             self.root.after(0, lambda: self.connect_button.config(state="normal"))
 
     def disconnect(self):
@@ -207,6 +248,7 @@ class UYAPApp:
         self.connect_button.config(text="Connect")
         self.search_all_button.config(state="disabled")
         self.extract_button.config(state="disabled")
+        self.sorgula_button.config(state="disabled")
         self.clear_table()  # Clear table on disconnect
         self.all_data.clear()  # Clear stored data
         self.current_page = 0
@@ -217,10 +259,12 @@ class UYAPApp:
             self.result_label.config(text="Please connect to UYAP first.")
             return
         try:
+            self.result_label.config(text="Searching all files...")
             search_all_files(self.driver, self.result_label)
+            self.result_label.config(text="Search completed. Ready to extract data.")
         except Exception as e:
             self.result_label.config(text=f"Search all files error: {e}")
-            messagebox.showerror("Error", f"Search all files failed: {e}")
+            self.root.after(0, lambda e=e: messagebox.showerror("Error", f"Search all files failed: {e}"))
 
     def start_extract_data(self):
         if not self.is_connected or not self.driver:
@@ -233,7 +277,40 @@ class UYAPApp:
             extract_thread.start()
         except Exception as e:
             self.result_label.config(text=f"Extract data error: {e}")
-            messagebox.showerror("Error", f"Data extraction failed: {e}")
+            self.root.after(0, lambda e=e: messagebox.showerror("Error", f"Data extraction failed: {e}"))
+
+    def start_sorgula(self):
+        if not self.is_connected or not self.driver:
+            self.result_label.config(text="Please connect to UYAP first.")
+            return
+
+        sorgula_input = self.sorgula_entry.get().strip()
+        if not sorgula_input:
+            messagebox.showwarning("Warning", "Please enter a search value.")
+            return
+
+        selected_options = {
+            "EGM-TNB": self.check_var_egm.get(),
+            "TAKBİS": self.check_var_takbis.get(),
+            "İcra Dosyası": self.check_var_icra.get(),
+            "SGK": self.check_var_sgk.get(),
+            "Banka": self.check_var_banka.get()
+        }
+        if not any(selected_options.values()):
+            messagebox.showwarning("Warning", "Please select at least one option.")
+            return
+
+        self.result_label.config(text="Starting sorgula process...")
+        threading.Thread(target=self.sorgula_thread, args=(sorgula_input, selected_options), daemon=True).start()
+
+    def sorgula_thread(self, sorgula_input, selected_options):
+        try:
+            self.root.after(0, lambda: self.result_label.config(text="Performing sorgula..."))
+            perform_sorgulama(self.driver, sorgula_input, selected_options, self.result_label)
+            self.root.after(0, lambda: self.result_label.config(text="Sorgula completed."))
+        except Exception as e:
+            self.root.after(0, lambda: self.result_label.config(text=f"Sorgula error: {e}"))
+            self.root.after(0, lambda err=e: messagebox.showerror("Error", f"Sorgula failed: {err}"))  # Fix: Capture e with default arg
 
     def extract_data_thread(self):
         try:
@@ -241,8 +318,8 @@ class UYAPApp:
             self.root.after(0, lambda: self.result_label.config(text="Data extraction completed."))
             self.root.after(0, self.update_table)  # Update table after extraction
         except Exception as e:
-            self.root.after(0, lambda e=e: self.result_label.config(text=f"Extract data error: {e}"))
-            self.root.after(0, lambda e=e: messagebox.showerror("Error", f"Data extraction failed: {e}"))
+            self.root.after(0, lambda: self.result_label.config(text=f"Extract data error: {e}"))
+            self.root.after(0, lambda err=e: messagebox.showerror("Error", f"Data extraction failed: {err}"))
 
     def queue_update_ui(self, row_num, genel_data):
         """Queue update for UI thread safety."""
