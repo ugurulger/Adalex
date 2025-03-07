@@ -1,5 +1,8 @@
 import logging
 import time
+import json
+import os
+from datetime import datetime
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
@@ -26,8 +29,6 @@ def extract_data_from_table(driver):
         except (NoSuchElementException, ValueError, IndexError) as e:
             logger.warning(f"Could not determine total pages from indicator. Assuming {max_pages_to_process} pages. Error: {e}")
             max_pages = max_pages_to_process
-
-        start_time = time.time()  # Start timing
 
         for page in range(1, max_pages + 1):
             logger.info(f"Processing Page {page} of {max_pages}...")
@@ -104,14 +105,17 @@ def extract_data_from_table(driver):
                         driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", dosya_goruntule)
                         wait.until(EC.element_to_be_clickable((By.ID, "dosya-goruntule")))
                         dosya_goruntule.click()
+                        time.sleep(0.5)
                         logger.info(f"Clicked #dosya-goruntule for Row {row_index + 1} on Page {page} using WebDriverWait.")
                     except NoSuchElementException:
                         logger.warning(f"#dosya-goruntule not found in Row {row_index + 1} on Page {page}. Trying JavaScript click on row...")
                         driver.execute_script("arguments[0].click();", row)
+                        time.sleep(0.5)
                         logger.info(f"JavaScript clicked row for Row {row_index + 1} on Page {page}.")
                     except ElementClickInterceptedException:
                         logger.warning(f"Click intercepted for #dosya-goruntule in Row {row_index + 1} on Page {page}. Trying JavaScript click...")
                         driver.execute_script("arguments[0].click();", dosya_goruntule)
+                        time.sleep(0.5)
                         logger.info(f"JavaScript clicked #dosya-goruntule for Row {row_index + 1} on Page {page}.")
                     except TimeoutException:
                         logger.error(f"Timeout waiting for #dosya-goruntule to be clickable in Row {row_index + 1} on Page {page}. Pausing for manual inspection...")
@@ -133,7 +137,7 @@ def extract_data_from_table(driver):
                                 if tab_name in text:
                                     driver.execute_script("arguments[0].click();", driver.execute_script("return arguments[0].parentElement.parentElement", tab))
                                     logger.info(f"Clicked '{tab_name}' tab for Row {row_index + 1} on Page {page} (text: {text}).")
-                                    time.sleep(0.5)
+                                    time.sleep(1.5)
                                     return True
                             logger.warning(f"'{tab_name}' tab not found for Row {row_index + 1} on Page {page}. Skipping...")
                             return False
@@ -248,18 +252,22 @@ def extract_data_from_table(driver):
                     row_counter += 1
 
                     # Close the popup
+                    wait = WebDriverWait(driver, 10)
+                    close_button_selector = "div[aria-label='Kapat'].dx-button-danger"
+
+                    # Wait for the overlay to disappear
+                    overlay_selector = ".dx-overlay-wrapper.dx-loadpanel-wrapper"
                     try:
-                        close_button_xpath = "//div/div[1]/div[1]/div/div[2]"
-                        close_button = driver.find_element(By.XPATH, close_button_xpath)
-                        driver.execute_script("arguments[0].click();", close_button)
-                        logger.info(f"Closed popup for Row {row_index + 1} on Page {page} using XPath {close_button_xpath}.")
-                        time.sleep(1)  # 1-second delay after closing popup
-                    except NoSuchElementException:
-                        logger.warning(f"Could not find close button at {close_button_xpath} for Row {row_index + 1} on Page {page}. Attempting to proceed.")
-                        driver.save_screenshot(f"close_error_row_{row_index + 1}_page_{page}.png")
-                    except Exception as e:
-                        logger.error(f"Error closing popup for Row {row_index + 1} on Page {page}: {e}")
-                        driver.save_screenshot(f"close_error_row_{row_index + 1}_page_{page}.png")
+                        wait.until(EC.invisibility_of_element_located((By.CSS_SELECTOR, overlay_selector)))
+                        logger.info("Overlay disappeared, proceeding to close popup.")
+                    except TimeoutException:
+                        logger.warning("Overlay did not disappear within 10 seconds, attempting to close anyway.")
+
+                    # Now click the close button
+                    close_button = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, close_button_selector)))
+                    close_button.click()
+                    logger.info(f"Closed popup for Row {row_index + 1} on Page {page}.")
+                    time.sleep(1)  # Small delay to ensure UI updates
 
                 except StaleElementReferenceException:
                     logger.warning(f"Stale element reference detected at Row {row_index + 1} on Page {page}. Re-fetching table...")
@@ -302,10 +310,6 @@ def extract_data_from_table(driver):
                         logger.warning(f"Could not find Page {next_page_num} after Page {page}. Assuming end of pagination.")
                         break
 
-        end_time = time.time()  # End timing
-        elapsed_time = end_time - start_time
-        logger.info(f"Data extraction completed in {elapsed_time:.2f} seconds.")
-
         # Print all extracted data at the end
         logger.info(f"Finished processing {len(all_data)} rows across {min(page, max_pages)} pages. Printing all data now:")
         for row_key, row_data in all_data.items():
@@ -328,6 +332,16 @@ def extract_data_from_table(driver):
                     for detail_key, detail_value in details.items():
                         print(f"      {detail_key}: {detail_value}")
 
+        # Save the extracted data to a JSON file
+        output_dir = "/Users/ugurulger/Desktop/extracted_data"  # Adjust this path as needed
+        os.makedirs(output_dir, exist_ok=True)  # Create the directory if it doesn't exist
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        output_file = os.path.join(output_dir, f"extracted_data_{timestamp}.json")
+        
+        with open(output_file, 'w', encoding='utf-8') as f:
+            json.dump(all_data, f, ensure_ascii=False, indent=4)
+        logger.info(f"Saved extracted data to {output_file}")
+
         return all_data
 
     except TimeoutException:
@@ -339,3 +353,15 @@ def extract_data_from_table(driver):
     except Exception as e:
         logger.error(f"Unexpected error during table extraction: {e}")
         raise
+
+if __name__ == "__main__":
+    from selenium import webdriver
+    from selenium.webdriver.chrome.service import Service
+    from webdriver_manager.chrome import ChromeDriverManager
+    
+    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()))
+    try:
+        driver.get("https://avukatbeta.uyap.gov.tr/")
+        extract_data_from_table(driver)
+    finally:
+        driver.quit()
