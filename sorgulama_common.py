@@ -73,7 +73,8 @@ def perform_sorgulama(driver, sorgula_input, selected_options, result_label=None
     Perform the sorgula process using the provided input and selected options.
     Executes steps to open the menu, navigate to 'Dosya Sorgula', click the radio button,
     fill in the search input field with sorgula_input, click the search button,
-    and lastly open the dosya pop-up from the first search result row.
+    open the dosya pop-up from the first search result row, click the 'Borçlu Bilgileri' tab,
+    click the dropdown menu, and select the first item from the dropdown.
     
     Args:
         driver (webdriver.Chrome): The Selenium WebDriver instance.
@@ -81,12 +82,6 @@ def perform_sorgulama(driver, sorgula_input, selected_options, result_label=None
         selected_options (dict): Dictionary of selected options.
         result_label (tk.Label, optional): GUI label to update with status messages.
     """
-    from selenium.webdriver.common.by import By
-    from selenium.webdriver.support.ui import WebDriverWait
-    from selenium.webdriver.support import expected_conditions as EC
-    from selenium.common.exceptions import TimeoutException
-    import time
-
     try:
         wait = WebDriverWait(driver, 15)
 
@@ -196,6 +191,64 @@ def perform_sorgulama(driver, sorgula_input, selected_options, result_label=None
             if result_label:
                 result_label.config(text=error_msg)
             logger.error(error_msg)
+            return
+
+        # Step 8: Click the dropdown menu in "Borçlu Bilgileri" section
+        if result_label:
+            result_label.config(text="Clicking dropdown menu in 'Borçlu Bilgileri'...")
+        dropdown_selector = ".dx-texteditor-buttons-container .dx-dropdowneditor-button"
+        dropdown_clicked = False
+        last_exception = None
+        for attempt in range(3):
+            try:
+                dropdown_button = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, dropdown_selector)))
+                driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", dropdown_button)
+                dropdown_button.click()
+                logger.info("Clicked dropdown menu in 'Borçlu Bilgileri'.")
+                dropdown_clicked = True
+                break
+            except Exception as e:
+                last_exception = e
+                logger.warning(f"Dropdown click attempt {attempt + 1} failed: {e}")
+                time.sleep(0.5)
+        if not dropdown_clicked:
+            error_msg = f"Failed to click dropdown menu after 3 attempts: {last_exception}"
+            if result_label:
+                result_label.config(text=error_msg)
+            logger.error(error_msg)
+            return
+
+        # Step 9: Click the first item in the dropdown menu
+        if result_label:
+            result_label.config(text="Selecting first dropdown item...")
+        time.sleep(0.5)  # Small delay to ensure dropdown options load
+        dropdown_items_selector = ".dx-dropdowneditor-overlay .dx-list-item"
+        first_item_clicked = False
+        last_exception = None
+        for attempt in range(3):
+            try:
+                # Wait for dropdown items to be present and get the first one
+                dropdown_items = wait.until(EC.presence_of_all_elements_located((By.CSS_SELECTOR, dropdown_items_selector)))
+                if not dropdown_items:
+                    raise NoSuchElementException("No dropdown items found.")
+                
+                first_item = dropdown_items[0]  # Select the first item
+                driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", first_item)
+                wait.until(EC.element_to_be_clickable(first_item))
+                first_item.click()
+                logger.info("Clicked the first item in the dropdown menu.")
+                first_item_clicked = True
+                break
+            except Exception as e:
+                last_exception = e
+                logger.warning(f"First dropdown item click attempt {attempt + 1} failed: {e}")
+                time.sleep(0.5)
+        if not first_item_clicked:
+            error_msg = f"Failed to click the first dropdown item after 3 attempts: {last_exception}"
+            if result_label:
+                result_label.config(text=error_msg)
+            logger.error(error_msg)
+            return
 
     except Exception as e:
         if result_label:
