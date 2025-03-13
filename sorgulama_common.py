@@ -71,15 +71,12 @@ def select_dropdown_option(driver, dropdown_selector, option_text):
 def perform_sorgulama(driver, sorgula_input, selected_options, result_label=None):
     """
     Perform the sorgula process using the provided input and selected options.
-    Executes steps to open the menu, navigate to 'Dosya Sorgula', click the radio button,
-    fill in the search input field with sorgula_input, click the search button,
-    open the dosya pop-up from the first search result row, click the 'Borçlu Bilgileri' tab,
-    click the dropdown menu, and select the first item from the dropdown.
+    Steps 1-8 prepare the page, and Step 9 iterates over dropdown items to perform EGM sorgu if selected.
     
     Args:
         driver (webdriver.Chrome): The Selenium WebDriver instance.
         sorgula_input (str): The user input from the sorgula entry field.
-        selected_options (dict): Dictionary of selected options.
+        selected_options (dict): Dictionary of selected options (e.g., {"EGM-TNB": True}).
         result_label (tk.Label, optional): GUI label to update with status messages.
     """
     try:
@@ -106,7 +103,7 @@ def perform_sorgulama(driver, sorgula_input, selected_options, result_label=None
                 if result_label:
                     result_label.config(text=f"Attempt {attempt + 1}: Radio button click failed. Retrying...")
 
-        # Step 4: Fill search input field with sorgula_input AFTER confirming element exists
+        # Step 4: Fill search input field with sorgula_input
         if result_label:
             result_label.config(text="Filling search input...")
         search_input_xpath = ("//div[contains(@class, 'dx-texteditor-input-container') and "
@@ -123,11 +120,9 @@ def perform_sorgulama(driver, sorgula_input, selected_options, result_label=None
         search_input.clear()
         search_input.send_keys(sorgula_input)
         logger.info(f"Filled search input with: {sorgula_input}")
-
-        # Added delay of 0.5 seconds after filling the search input
         time.sleep(0.5)
 
-        # Step 5: Click the search button using a robust XPath
+        # Step 5: Click the search button
         if result_label:
             result_label.config(text="Clicking search button...")
         search_button_xpath = (
@@ -148,7 +143,6 @@ def perform_sorgulama(driver, sorgula_input, selected_options, result_label=None
         last_exception = None
         for attempt in range(3):
             try:
-                # Locate the first result row in the search results table
                 result_row = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, ".dx-datagrid-rowsview tbody tr")))
                 dosya_goruntule = result_row.find_element(By.CSS_SELECTOR, "#dosya-goruntule")
                 driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", dosya_goruntule)
@@ -168,7 +162,7 @@ def perform_sorgulama(driver, sorgula_input, selected_options, result_label=None
             logger.error(error_msg)
             return
 
-        # Step 7: Click the "Borçlu Bilgileri" tab inside the pop-up
+        # Step 7: Click the "Borçlu Bilgileri" tab
         if result_label:
             result_label.config(text="Clicking 'Borçlu Bilgileri' tab...")
         borclu_tab_xpath = (
@@ -193,7 +187,7 @@ def perform_sorgulama(driver, sorgula_input, selected_options, result_label=None
             logger.error(error_msg)
             return
 
-        # Step 8: Click the dropdown menu in "Borçlu Bilgileri" section
+        # Step 8: Click the dropdown menu in "Borçlu Bilgileri"
         if result_label:
             result_label.config(text="Clicking dropdown menu in 'Borçlu Bilgileri'...")
         dropdown_selector = ".dx-texteditor-buttons-container .dx-dropdowneditor-button"
@@ -218,33 +212,84 @@ def perform_sorgulama(driver, sorgula_input, selected_options, result_label=None
             logger.error(error_msg)
             return
 
-        # Step 9: Click the first item in the dropdown menu
+        # Step 9: Iterate over dropdown items and perform EGM sorgu if selected
         if result_label:
-            result_label.config(text="Selecting first dropdown item...")
-        time.sleep(0.5)  # Small delay to ensure dropdown options load
+            result_label.config(text="Processing dropdown items...")
+        time.sleep(0.5)  # Ensure dropdown options load
         dropdown_items_selector = ".dx-dropdowneditor-overlay .dx-list-item"
-        first_item_clicked = False
-        last_exception = None
-        for attempt in range(3):
-            try:
-                # Wait for dropdown items to be present and get the first one
+        try:
+            dropdown_items = wait.until(EC.presence_of_all_elements_located((By.CSS_SELECTOR, dropdown_items_selector)))
+            if not dropdown_items:
+                raise NoSuchElementException("No dropdown items found.")
+            
+            for index, item in enumerate(dropdown_items):
+                # Re-fetch items to avoid stale references after each click
                 dropdown_items = wait.until(EC.presence_of_all_elements_located((By.CSS_SELECTOR, dropdown_items_selector)))
-                if not dropdown_items:
-                    raise NoSuchElementException("No dropdown items found.")
+                current_item = dropdown_items[index]
                 
-                first_item = dropdown_items[0]  # Select the first item
-                driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", first_item)
-                wait.until(EC.element_to_be_clickable(first_item))
-                first_item.click()
-                logger.info("Clicked the first item in the dropdown menu.")
-                first_item_clicked = True
-                break
-            except Exception as e:
-                last_exception = e
-                logger.warning(f"First dropdown item click attempt {attempt + 1} failed: {e}")
-                time.sleep(0.5)
-        if not first_item_clicked:
-            error_msg = f"Failed to click the first dropdown item after 3 attempts: {last_exception}"
+                # Get item text for logging (optional)
+                item_text = current_item.text.strip() if current_item.text.strip() else f"Item {index + 1}"
+                if result_label:
+                    result_label.config(text=f"Processing dropdown item: {item_text}...")
+                logger.info(f"Processing dropdown item: {item_text}")
+
+                # Click the current item
+                item_clicked = False
+                last_exception = None
+                for attempt in range(3):
+                    try:
+                        driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", current_item)
+                        wait.until(EC.element_to_be_clickable(current_item))
+                        current_item.click()
+                        logger.info(f"Clicked dropdown item: {item_text}")
+                        item_clicked = True
+                        break
+                    except Exception as e:
+                        last_exception = e
+                        logger.warning(f"Dropdown item {item_text} click attempt {attempt + 1} failed: {e}")
+                        time.sleep(0.5)
+                if not item_clicked:
+                    error_msg = f"Failed to click dropdown item {item_text} after 3 attempts: {last_exception}"
+                    if result_label:
+                        result_label.config(text=error_msg)
+                    logger.error(error_msg)
+                    continue  # Move to next item on failure
+
+                # Perform EGM sorgu if selected
+                if selected_options.get("EGM-TNB", False):
+                    try:
+                        from egm_sorgu import perform_egm_sorgu
+                        if not perform_egm_sorgu(driver, item_text, result_label):
+                            logger.error(f"EGM sorgu failed for {item_text}")
+                    except ImportError as e:
+                        error_msg = f"Failed to import perform_egm_sorgu: {e}"
+                        if result_label:
+                            result_label.config(text=error_msg)
+                        logger.error(error_msg)
+
+                # Add 10-second delay between iterations (except after the last item)
+                if index < len(dropdown_items) - 1:
+                    if result_label:
+                        result_label.config(text=f"Waiting 10 seconds before next item...")
+                    logger.info(f"Waiting 10 seconds before processing next dropdown item...")
+                    time.sleep(10)
+
+                # Re-open dropdown for next iteration (if not the last item)
+                if index < len(dropdown_items) - 1:
+                    if result_label:
+                        result_label.config(text="Re-opening dropdown for next item...")
+                    if not click_element(driver, By.CSS_SELECTOR, dropdown_selector):
+                        error_msg = "Failed to re-open dropdown menu for next item."
+                        if result_label:
+                            result_label.config(text=error_msg)
+                        logger.error(error_msg)
+                        break
+
+            if result_label:
+                result_label.config(text="Dropdown items processing completed.")
+
+        except Exception as e:
+            error_msg = f"Error processing dropdown items: {e}"
             if result_label:
                 result_label.config(text=error_msg)
             logger.error(error_msg)
@@ -253,18 +298,10 @@ def perform_sorgulama(driver, sorgula_input, selected_options, result_label=None
     except Exception as e:
         if result_label:
             result_label.config(text=f"Sorgula error: {e}")
-        raise  # Re-raise the exception to be handled by higher-level code
+        raise
 
-# Optionally, you may keep this standalone function for reuse elsewhere:
 def open_dosya_popup(driver, row, result_label=None):
-    """
-    Clicks the 'dosya-goruntule' button within a given row to open a pop-up.
-
-    Args:
-        driver (webdriver.Chrome): The Selenium WebDriver instance.
-        row (WebElement): The row element containing the dosya button.
-        result_label (tk.Label, optional): GUI label for displaying status messages.
-    """
+    """Clicks the 'dosya-goruntule' button within a given row to open a pop-up."""
     wait = WebDriverWait(driver, 15)
     try:
         if result_label:
