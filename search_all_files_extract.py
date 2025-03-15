@@ -75,17 +75,10 @@ def extract_data_from_table(driver, ui_callback=None):
 
                     # Extract 'Genel' data
                     cells = row.find_elements(By.TAG_NAME, "td")
-                    if len(cells) < 5:
-                        logger.warning(f"Row {row_index + 1} on Page {page} has fewer than 5 columns: {len(cells)}. Skipping.")
-                        continue
 
                     dosya_no = cells[1].text.strip()
                     if not dosya_no or "/" not in dosya_no:
                         logger.debug(f"Row {row_index + 1} on Page {page} skipped: No valid 'Dosya No' found ({dosya_no}).")
-                        continue
-
-                    if dosya_no in processed_dosya_nos:
-                        logger.info(f"Row {row_index + 1} on Page {page} with Dosya No {dosya_no} already processed. Skipping.")
                         continue
 
                     processed_dosya_nos.add(dosya_no)
