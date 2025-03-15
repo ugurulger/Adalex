@@ -137,16 +137,37 @@ def extract_data_from_table(driver, ui_callback=None):
                     # Helper function to check and click tabs if they exist
                     def check_and_click_tab(tab_name):
                         try:
-                            tabs = driver.execute_script("return document.querySelectorAll('div.dx-item-content.dx-tab-content span.dx-tab-text')")
+                            # Use a more reliable query selector for tab elements
+                            tabs = driver.execute_script(
+                                "return document.querySelectorAll('.dx-tabpanel-tabs .dx-tab')"
+                            )
+                            
+                            if not tabs:
+                                logger.warning("No tabs found with the selector. Check the page structure.")
+                                return False
+
                             for tab in tabs:
-                                text = driver.execute_script("return arguments[0].textContent || arguments[0].innerText", tab)
-                                if tab_name in text:
-                                    driver.execute_script("arguments[0].click();", driver.execute_script("return arguments[0].parentElement.parentElement", tab))
-                                    logger.info(f"Clicked '{tab_name}' tab for Row {row_index + 1} on Page {page} (text: {text}).")
-                                    time.sleep(1.5)
+                                # Get the text content of the tab
+                                text = driver.execute_script(
+                                    "return arguments[0].textContent || arguments[0].innerText || ''", tab
+                                ).strip()
+                                
+                                if tab_name.lower() in text.lower():  # Case-insensitive match
+                                    # Ensure the tab is visible and clickable
+                                    driver.execute_script(
+                                        "arguments[0].scrollIntoView({block: 'center'});", tab
+                                    )
+                                    # Add a small delay to ensure the element is ready
+                                    time.sleep(0.5)
+                                    # Attempt to click the tab
+                                    driver.execute_script("arguments[0].click();", tab)
+                                    logger.info(f"Clicked '{tab_name}' tab for Row {row_index + 1} on Page {page}")
+                                    time.sleep(1.5)  # Wait for any post-click actions to complete
                                     return True
+                            
                             logger.warning(f"'{tab_name}' tab not found for Row {row_index + 1} on Page {page}. Skipping...")
                             return False
+
                         except Exception as e:
                             logger.error(f"Error checking/clicking '{tab_name}' tab: {e}")
                             return False
@@ -214,44 +235,65 @@ def extract_data_from_table(driver, ui_callback=None):
                     else:
                         logger.warning(f"Skipping 'Dosya Hesabı' extraction due to missing tab on Page {page}.")
 
+
+
+
+
                     # Check and extract 'Taraf Bilgileri' if tab exists
                     if check_and_click_tab("Taraf Bilgileri"):
-                        wait.until(EC.presence_of_element_located((By.XPATH, "//div/div[2]/div/div/div/div/div[2]/div/div//div/div[1]/div[1]/div/div/div[2]/div/div/div[6]/div/div/div/div/table/tbody")))
-                        logger.info(f"'Taraf Bilgileri' content loaded for Row {row_index + 1} on Page {page}.")
+                        try:
+                            #time.sleep(2)  # Wait for tab content to load
+                            wait = WebDriverWait(driver, 15)
+                            target_table = wait.until(
+                                lambda driver: driver.execute_script(
+                                    "const tables = document.querySelectorAll('table');"
+                                    "for (const t of tables) {"
+                                    "  const rect = t.getBoundingClientRect();"
+                                    "  if (rect.top >= 0 && rect.left >= 0 && rect.bottom <= window.innerHeight && rect.right <= window.innerWidth) {"
+                                    "    const tbody = t.querySelector('tbody');"
+                                    "    if (tbody) {"
+                                    "      const firstRow = tbody.querySelector('tr');"
+                                    "      if (firstRow) {"
+                                    "        const cells = Array.from(firstRow.querySelectorAll('td')).map(td => td.textContent || td.innerText || '').slice(0, 4);"
+                                    "        if (cells.length >= 4 && !cells.join(' ').includes('Dosya') && !['Rol', 'Tipi', 'Adı', 'Vekil'].every(h => cells.includes(h))) {"
+                                    "          return t;"
+                                    "        }"
+                                    "      }"
+                                    "    }"
+                                    "  }"
+                                    "}"
+                                    "return null;"
+                                )
+                            )
+                            if not target_table:
+                                raise Exception("No suitable 'Taraf Bilgileri' table found")
 
-                        taraf_data = {}
-                        taraf_index = 1
-                        while True:
-                            try:
-                                base_xpath = f"//div/div[2]/div/div/div/div/div[2]/div/div//div/div[1]/div[1]/div/div/div[2]/div/div/div[6]/div/div/div/div/table/tbody/tr[{taraf_index}]"
-                                rol_xpath = f"{base_xpath}/td[1]"
-                                tipi_xpath = f"{base_xpath}/td[2]"
-                                adi_xpath = f"{base_xpath}/td[3]"
-                                vekil_xpath = f"{base_xpath}/td[4]"
+                            logger.info(f"Found 'Taraf Bilgileri' table for Row {row_index + 1} on Page {page}")
 
-                                rol = driver.find_element(By.XPATH, rol_xpath).text.strip() if driver.find_elements(By.XPATH, rol_xpath) else ""
-                                tipi = driver.find_element(By.XPATH, tipi_xpath).text.strip() if driver.find_elements(By.XPATH, tipi_xpath) else ""
-                                adi = driver.find_element(By.XPATH, adi_xpath).text.strip() if driver.find_elements(By.XPATH, adi_xpath) else ""
-                                vekil = driver.find_element(By.XPATH, vekil_xpath).text.strip() if driver.find_elements(By.XPATH, vekil_xpath) else ""
-
-                                if not rol and not tipi and not adi and not vekil:
-                                    break
-
-                                taraf_data[f"Taraf{taraf_index}"] = {
-                                    "Rol": rol,
-                                    "Tipi": tipi,
-                                    "Adi": adi,
-                                    "Vekil": vekil
+                            rows = driver.execute_script("return arguments[0].querySelector('tbody').querySelectorAll('tr');", target_table)
+                            taraf_data = {
+                                f"Taraf{i}": {
+                                    "Rol": driver.execute_script("return arguments[0].textContent || arguments[0].innerText || ''", c[0]).strip(),
+                                    "Tipi": driver.execute_script("return arguments[0].textContent || arguments[0].innerText || ''", c[1]).strip(),
+                                    "Adi": driver.execute_script("return arguments[0].textContent || arguments[0].innerText || ''", c[2]).strip(),
+                                    "Vekil": driver.execute_script("return arguments[0].textContent || arguments[0].innerText || ''", c[3]).strip()
                                 }
-                                logger.debug(f"Extracted Taraf{taraf_index}: {taraf_data[f'Taraf{taraf_index}']}")
-                                taraf_index += 1
-                            except NoSuchElementException:
-                                break
+                                for i, r in enumerate(rows, 1)
+                                if len(c := driver.execute_script("return arguments[0].querySelectorAll('td')", r)) >= 4
+                                and any(driver.execute_script("return arguments[0].textContent || arguments[0].innerText || ''", cell).strip() for cell in c[:4])
+                            }
 
-                        row_data["Taraf Bilgileri"] = taraf_data
-                        logger.info(f"Taraf Bilgileri extracted for Row {row_index + 1} on Page {page}: {row_data['Taraf Bilgileri']}")
+                            if not taraf_data:
+                                logger.warning(f"No rows found in 'Taraf Bilgileri' table for Row {row_index + 1} on Page {page}")
+
+                            row_data["Taraf Bilgileri"] = taraf_data
+                            logger.info(f"Taraf Bilgileri extracted for Row {row_index + 1} on Page {page}: {row_data['Taraf Bilgileri']}")
+
+                        except Exception as e:
+                            logger.error(f"Error extracting 'Taraf Bilgileri' for Row {row_index + 1} on Page {page}: {e}")
                     else:
-                        logger.warning(f"Skipping 'Taraf Bilgileri' extraction due to missing tab on Page {page}.")
+                        logger.warning(f"Skipping 'Taraf Bilgileri' extraction for Row {row_index + 1} on Page {page}")
+
 
                     # Store the row data in all_data with rowN key
                     all_data[f"row{row_counter}"] = row_data
