@@ -3,188 +3,116 @@ import time
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.common.action_chains import ActionChains
-from selenium.webdriver.common.keys import Keys
-from selenium.common.exceptions import (
-    TimeoutException,
-    NoSuchElementException,
-    ElementClickInterceptedException,
-    ElementNotInteractableException,
-    StaleElementReferenceException
+from selenium.common.exceptions import TimeoutException, NoSuchElementException
+
+# Constants
+TIMEOUT = 15
+RETRY_ATTEMPTS = 3
+SLEEP_INTERVAL = 0.5
+EGM_BUTTON_CSS = (
+    "button.query-button .hedef-card.hedef-card--bordered "
+    ".hedef-card-body .hedef-card-content .info-card--main-title[title='EGM-TNB']"
+)
+SORGULA_BUTTON_CSS = ".dx-button.dx-button-mode-contained.dx-button-default[aria-label='Sorgula']"
+DATA_XPATH = (
+    "/html/body/div[2]/div/div[2]/div/div/div/div/div[2]/div/div/div[9]/div/div[1]/div[1]/div/div/div[2]/"
+    "div/div[2]/div/div[2]/div/div/div[1]/div/div[1]/div[2]/div[3]/div[2]/div/div/div/div/div/div[2]"
 )
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-def click_element(driver, by, value, timeout=15):
-    """Waits for an element to be visible, scrolls it into view, and clicks it.
-    Retries if a stale element reference is encountered."""
-    wait = WebDriverWait(driver, timeout)
-    
-    for attempt in range(3):
+def click_with_retry(driver, wait, css_selector, action_name, item_text, result_label=None, retries=RETRY_ATTEMPTS):
+    """
+    Click an element with retry logic, using both standard click and JavaScript fallback.
+    """
+    for attempt in range(retries):
         try:
-            element = wait.until(EC.presence_of_element_located((by, value)))
-            element = wait.until(EC.visibility_of_element_located((by, value)))
-            element = wait.until(EC.element_to_be_clickable((by, value)))
-
-            # Scroll into view before clicking
+            element = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, css_selector)))
             driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", element)
-
-            try:
-                element.click()
-                logger.info(f"Clicked element: {value}")
-                return True
-            except Exception as e:
-                logger.warning(f"Normal click failed for {value}. Trying JavaScript click. Error: {e}")
-                driver.execute_script("arguments[0].click();", element)
-                logger.info(f"Clicked element via JavaScript: {value}")
-                return True
-
-        except StaleElementReferenceException as e:
-            logger.warning(f"Stale element reference encountered for {value}, retrying... (attempt {attempt + 1})")
-        except TimeoutException:
-            logger.error(f"Timeout: Element not clickable ({value})")
-            break
-        except NoSuchElementException:
-            logger.error(f"Element not found: {value}")
-            break
+            time.sleep(SLEEP_INTERVAL)
+            element.click()
+            logger.info(f"Clicked {action_name} for {item_text} (attempt {attempt + 1})")
+            return True
         except Exception as e:
-            logger.error(f"Unexpected error clicking element ({value}): {e}")
-            break
-
+            logger.warning(f"{action_name} click attempt {attempt + 1} failed for {item_text}: {e}")
+            try:
+                element = driver.find_element(By.CSS_SELECTOR, css_selector)
+                driver.execute_script("arguments[0].click();", element)
+                logger.info(f"Clicked {action_name} via JavaScript for {item_text} (attempt {attempt + 1})")
+                return True
+            except Exception as e2:
+                logger.warning(f"JavaScript click also failed: {e2}")
+            time.sleep(1)
+    error_msg = f"Failed to click {action_name} for {item_text} after {retries} attempts"
+    if result_label:
+        result_label.config(text=error_msg)
+    logger.error(error_msg)
     return False
 
 def perform_egm_sorgu(driver, item_text, result_label=None):
     """
-    Perform the EGM-TNB sorgu for a specific dropdown item.
-    Step 1: Clicks the EGM-TNB card element.
-    Step 2: Clicks the 'Sorgula' button.
-    Step 3: Scrolls the pop-up by sending Page Down keys and extracts data from the result div, printing it to the console.
-
-    Args:
-        driver (webdriver.Chrome): The Selenium WebDriver instance.
-        item_text (str): The text of the dropdown item being processed (for logging).
-        result_label (tk.Label, optional): GUI label to update with status messages.
+    Perform the EGM-TNB sorgu for a specific dropdown item and extract data.
+    Steps:
+        1. Click the EGM-TNB button.
+        2. Click the "Sorgula" button.
+        3. Extract data from the specified XPath (scrolling handled by centering data_element).
+    Returns:
+        Tuple (success: bool, data: str) - Success status and extracted data (or empty string if failed).
     """
-    try:
-        wait = WebDriverWait(driver, 15)
+    wait = WebDriverWait(driver, TIMEOUT)
+    extracted_data = ""
 
-        # Step 1: Click the EGM-TNB card element
+    try:
+        # Step 1: Click the EGM-TNB button
         if result_label:
-            result_label.config(text=f"Performing EGM sorgu for {item_text} - Clicking EGM-TNB card...")
-        
-        egm_card_xpath = (
-            "//div[contains(@class, 'hedef-card') and contains(@class, 'hedef-card--bordered')]"
-            "//div[contains(@class, 'hedef-card-body')]"
-            "//div[contains(@class, 'hedef-card-content')]"
-            "//div[contains(@class, 'info-card--main-title') and @title='EGM-TNB' and text()='EGM-TNB']"
-        )
-        
-        egm_clicked = False
-        last_exception = None
-        for attempt in range(3):
-            try:
-                egm_card = wait.until(EC.element_to_be_clickable((By.XPATH, egm_card_xpath)))
-                driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", egm_card)
-                egm_card.click()
-                logger.info(f"Clicked EGM-TNB card for {item_text}")
-                egm_clicked = True
-                break
-            except Exception as e:
-                last_exception = e
-                logger.warning(f"EGM-TNB card click attempt {attempt + 1} failed for {item_text}: {e}")
-                time.sleep(0.5)
-        
-        if not egm_clicked:
-            error_msg = f"Failed to click EGM-TNB card for {item_text} after 3 attempts: {last_exception}"
-            if result_label:
-                result_label.config(text=error_msg)
-            logger.error(error_msg)
-            return False
+            result_label.config(text=f"Performing EGM sorgu for {item_text} - Clicking EGM-TNB button...")
+        if not click_with_retry(driver, wait, EGM_BUTTON_CSS, "EGM-TNB button", item_text, result_label):
+            return False, extracted_data
 
         # Step 2: Click the "Sorgula" button
         if result_label:
             result_label.config(text=f"Performing EGM sorgu for {item_text} - Clicking Sorgula button...")
-        
-        sorgula_button_css = ".dx-button.dx-button-mode-contained.dx-button-default[aria-label='Sorgula']"
-        
-        sorgula_clicked = False
-        last_exception = None
-        for attempt in range(3):
-            try:
-                sorgula_button = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, sorgula_button_css)))
-                driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", sorgula_button)
-                sorgula_button.click()
-                logger.info(f"Clicked Sorgula button for {item_text}")
-                sorgula_clicked = True
-                break
-            except Exception as e:
-                last_exception = e
-                logger.warning(f"Sorgula button click attempt {attempt + 1} failed for {item_text}: {e}")
-                time.sleep(0.5)
-        
-        if not sorgula_clicked:
-            error_msg = f"Failed to click Sorgula button for {item_text} after 3 attempts: {last_exception}"
-            if result_label:
-                result_label.config(text=error_msg)
-            logger.error(error_msg)
-            return False
+        if not click_with_retry(driver, wait, SORGULA_BUTTON_CSS, "Sorgula button", item_text, result_label):
+            return False, extracted_data
+        time.sleep(2)  # Wait for the pop-up to load
 
-        # Step 3: Scroll the pop-up by sending Page Down keys and extract data from the result div
+        # Step 3: Extract data from the specified XPath
         if result_label:
-            result_label.config(text=f"Performing EGM sorgu for {item_text} - Scrolling and extracting data...")
-        
-        # Locate the scrollable container and scroll with Page Down keys
-        scroll_container_css = ".dx-scrollable-container"
+            result_label.config(text=f"Performing EGM sorgu for {item_text} - Extracting data...")
         try:
-            scroll_container = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, scroll_container_css)))
-            actions = ActionChains(driver)
-            for _ in range(5):  # Adjust the number of scrolls as needed
-                actions.move_to_element(scroll_container).click().send_keys(Keys.PAGE_DOWN).perform()
-                time.sleep(0.5)  # Small delay between scrolls to allow content to load
-            logger.info(f"Scrolled pop-up container with Page Down keys for {item_text}")
+            data_element = wait.until(EC.presence_of_element_located((By.XPATH, DATA_XPATH)))
+            # Scroll down by centering the data_element
+            driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", data_element)
+            time.sleep(1)  # Small delay to ensure the scroll completes (optional, adjust as needed)
+            extracted_data = data_element.text.strip()
+            if not extracted_data:
+                logger.warning(f"Extracted data is empty for {item_text}")
+            else:
+                logger.info(f"Successfully extracted data for {item_text}: {extracted_data}")
+        except TimeoutException as e:
+            error_msg = f"Failed to locate data element for {item_text}: {e}"
+            if result_label:
+                result_label.config(text=error_msg)
+            logger.error(error_msg)
+            return False, extracted_data
         except Exception as e:
-            error_msg = f"Failed to scroll pop-up container for {item_text}: {e}"
+            error_msg = f"Error extracting data for {item_text}: {e}"
             if result_label:
                 result_label.config(text=error_msg)
             logger.error(error_msg)
-            return False
-        
-        time.sleep(1.5)  # Increased delay (1 + 0.5 seconds) to ensure content fully loads after scrolling
-        
-        # Flexible XPath based on the provided path, targeting the result div
-        result_div_xpath = "//div[contains(@class, 'dx-scrollable-container')]//div[contains(@class, 'dx-scrollview-content')]//div[contains(@class, 'row')]//div[contains(@class, 'col-md')]/div"
-        
-        data_extracted = False
-        last_exception = None
-        for attempt in range(3):
-            try:
-                result_div = wait.until(EC.presence_of_element_located((By.XPATH, result_div_xpath)))
-                result_text = result_div.text.strip()
-                logger.info(f"Extracted data for {item_text}: {result_text}")
-                print(f"EGM Sorgu Result for {item_text}: {result_text}")  # Print to console
-                data_extracted = True
-                break
-            except Exception as e:
-                last_exception = e
-                logger.warning(f"Data extraction attempt {attempt + 1} failed for {item_text}: {e}")
-                time.sleep(0.5)
-        
-        if not data_extracted:
-            error_msg = f"Failed to extract data for {item_text} after 3 attempts: {last_exception}"
-            if result_label:
-                result_label.config(text=error_msg)
-            logger.error(error_msg)
-            return False
-        
+            return False, extracted_data
+
         if result_label:
             result_label.config(text=f"EGM sorgu completed for {item_text}")
-        return True
+        logger.info(f"Waiting 10 seconds after processing {item_text}")
+        time.sleep(10)
+        return True, extracted_data
 
     except Exception as e:
         error_msg = f"EGM sorgu error for {item_text}: {e}"
         if result_label:
             result_label.config(text=error_msg)
         logger.error(error_msg)
-        return False
+        return False, extracted_data
