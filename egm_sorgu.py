@@ -269,28 +269,38 @@ def perform_egm_sorgu(driver, item_text, result_label=None):
                                             "Mahrumiyet": []  # Mahrumiyet kayıtlarını liste olarak tutacağız
                                         }
                                         # "Sorgula" butonuna tıkla (Mahrumiyet için)
-                                        sorgula_button_css = "td [aria-label='Sorgula']"
-                                        logger.info(f"Clicking Sorgula button for vehicle {arac['No']} - {arac['Plaka']}")
-                                        if not click_with_retry(driver, wait, sorgula_button_css, "Sorgula button in row", f"{item_text} - Vehicle {arac['No']}", result_label):
-                                            logger.warning(f"Failed to click Sorgula button for vehicle {arac['No']} - {arac['Plaka']}")
+                                        try:
+                                            sorgula_button = row.find_element(By.CSS_SELECTOR, "[aria-label='Sorgula']")
+                                            logger.info(f"Clicking Sorgula button for vehicle {arac['No']} - {arac['Plaka']}")
+                                            driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", sorgula_button)
+                                            for attempt in range(RETRY_ATTEMPTS):
+                                                try:
+                                                    sorgula_button.click()
+                                                    logger.info(f"Clicked Sorgula button in row for {item_text} - Vehicle {arac['No']} (attempt {attempt + 1})")
+                                                    break
+                                                except (StaleElementReferenceException, ElementNotInteractableException) as e:
+                                                    logger.warning(f"Sorgula button click attempt {attempt + 1} failed for {item_text} - Vehicle {arac['No']}: {e}")
+                                                    if attempt == RETRY_ATTEMPTS - 1:
+                                                        logger.warning(f"Failed to click Sorgula button for vehicle {arac['No']} - {arac['Plaka']} after retries")
+                                                        continue
+                                                    time.sleep(1)
+                                                except Exception as e:
+                                                    logger.warning(f"Unexpected error clicking Sorgula button for vehicle {arac['No']} - {arac['Plaka']}: {e}")
+                                                    continue
+                                        except Exception as e:
+                                            logger.warning(f"Could not locate Sorgula button in row for vehicle {arac['No']} - {arac['Plaka']}: {e}")
                                             continue
 
                                         # Pop-up'ın açılmasını bekle ve tabloyu oku
                                         try:
-                                            # Önce mevcut frame’e geri dön (eğer bir iframe içindeysek)
                                             driver.switch_to.default_content()
-                                            # Tüm sayfaları oku
                                             extract_mahrumiyet_data(driver, wait, arac, item_text)
-
-                                            # Pop-up’ı kapat
                                             close_mahrumiyet_popup(driver, wait, item_text, arac, result_label)
-
                                         except TimeoutException as e:
                                             logger.warning(f"Failed to locate Mahrumiyet table for vehicle {arac['No']} - {arac['Plaka']}: {e}")
                                             arac["Mahrumiyet"] = []
                                         except StaleElementReferenceException as e:
                                             logger.warning(f"Stale element error for Mahrumiyet table for vehicle {arac['No']} - {arac['Plaka']}: {e}")
-                                            # Tekrar bulmayı dene
                                             try:
                                                 mahrumiyet_table = driver.find_element(By.XPATH, MAHRUMIYET_POPUP_TABLE_XPATH)
                                                 logger.info(f"Mahrumiyet table content (retry) for vehicle {arac['No']} - {arac['Plaka']}: {mahrumiyet_table.text}")
