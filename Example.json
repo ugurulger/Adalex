@@ -1,0 +1,501 @@
+{'Dosya no': '', 'EGM': {'CELAL ÇETİN - 37339687916': {'Sonuc': 'bulundu', 'Araclar': [{'No': '1', 'Plaka': '35***38', 'Marka': 'FORD', 'Model': '2004', 'Tipi': 'K210S', 'Renk': 'MAVİ (Metropolis)', 'Cins': 'KAMYONET', 'Mahrumiyet': [{'Takyidat Sirasi': '1', 'Ekleyen Birim': 'T.İŞ BANKASI KEMALPAŞA (GA2307)', 'Ekleme Tarihi': '05.10.2006', 'Serh Turu': 'REHİNLİ (R)', 'Kurum Adi': 'EGM'}, {'Takyidat Sirasi': '2', 'Ekleyen Birim': 'K.PAŞA VERGİ DAİ.MÜD (13251)', 'Ekleme Tarihi': '08.11.2010', 'Serh Turu': 'HACİZLİ(H)', 'Kurum Adi': 'Maliye Bakanlığı GIB'}, {'Takyidat Sirasi': '3', 'Ekleyen Birim': 'Kemalpaşa İcra Dairesi (2010-1908 İcra)', 'Ekleme Tarihi': '10.07.2012', 'Serh Turu': 'HACİZLİ(H)', 'Kurum Adi': 'Adalet Bakanlığı'}, {'Takyidat Sirasi': '4', 'Ekleyen Birim': 'Kemalpaşa İcra Dairesi (2010-1946 İcra)', 'Ekleme Tarihi': '10.07.2012', 'Serh Turu': 'HACİZLİ(H)', 'Kurum Adi': 'Adalet Bakanlığı'}, {'Takyidat Sirasi': '5', 'Ekleyen Birim': 'Kemalpaşa İcra Dairesi (2012-1656 İcra)', 'Ekleme Tarihi': '12.09.2012', 'Serh Turu': 'HACİZLİ(H)', 'Kurum Adi': 'Adalet Bakanlığı'}]}, {'No': '2', 'Plaka': '35***33', 'Marka': 'FORD', 'Model': '2008', 'Tipi': 'FOCUS C MAX', 'Renk': 'GRİ (Aytozu)', 'Cins': 'OTOMOBİL', 'Mahrumiyet': [{'Takyidat Sirasi': '1', 'Ekleyen Birim': 'T.İŞ BANKASI KEMALPAŞA (GA2307)', 'Ekleme Tarihi': '05.10.2006', 'Serh Turu': 'REHİNLİ (R)', 'Kurum Adi': 'EGM'}, {'Takyidat Sirasi': '2', 'Ekleyen Birim': 'K.PAŞA VERGİ DAİ.MÜD (13251)', 'Ekleme Tarihi': '08.11.2010', 'Serh Turu': 'HACİZLİ(H)', 'Kurum Adi': 'Maliye Bakanlığı GIB'}, {'Takyidat Sirasi': '3', 'Ekleyen Birim': 'Kemalpaşa İcra Dairesi (2010-1908 İcra)', 'Ekleme Tarihi': '10.07.2012', 'Serh Turu': 'HACİZLİ(H)', 'Kurum Adi': 'Adalet Bakanlığı'}, {'Takyidat Sirasi': '4', 'Ekleyen Birim': 'Kemalpaşa İcra Dairesi (2010-1946 İcra)', 'Ekleme Tarihi': '10.07.2012', 'Serh Turu': 'HACİZLİ(H)', 'Kurum Adi': 'Adalet Bakanlığı'}, {'Takyidat Sirasi': '5', 'Ekleyen Birim': 'Kemalpaşa İcra Dairesi (2012-1656 İcra)', 'Ekleme Tarihi': '12.09.2012', 'Serh Turu': 'HACİZLİ(H)', 'Kurum Adi': 'Adalet Bakanlığı'}]}, {'No': '3', 'Plaka': '35***88', 'Marka': 'OTOYOL', 'Model': '2003', 'Tipi': '50 NM 23', 'Renk': 'BEYAZ KIRMIZI', 'Cins': 'OTOBÜS', 'Mahrumiyet': [{'Takyidat Sirasi': '1', 'Ekleyen Birim': 'T.İŞ BANKASI KEMALPAŞA (GA2307)', 'Ekleme Tarihi': '05.10.2006', 'Serh Turu': 'REHİNLİ (R)', 'Kurum Adi': 'EGM'}, {'Takyidat Sirasi': '2', 'Ekleyen Birim': 'K.PAŞA VERGİ DAİ.MÜD (13251)', 'Ekleme Tarihi': '08.11.2010', 'Serh Turu': 'HACİZLİ(H)', 'Kurum Adi': 'Maliye Bakanlığı GIB'}, {'Takyidat Sirasi': '3', 'Ekleyen Birim': 'Kemalpaşa İcra Dairesi (2010-1908 İcra)', 'Ekleme Tarihi': '10.07.2012', 'Serh Turu': 'HACİZLİ(H)', 'Kurum Adi': 'Adalet Bakanlığı'}, {'Takyidat Sirasi': '4', 'Ekleyen Birim': 'Kemalpaşa İcra Dairesi (2010-1946 İcra)', 'Ekleme Tarihi': '10.07.2012', 'Serh Turu': 'HACİZLİ(H)', 'Kurum Adi': 'Adalet Bakanlığı'}, {'Takyidat Sirasi': '5', 'Ekleyen Birim': 'Kemalpaşa İcra Dairesi (2012-1656 İcra)', 'Ekleme Tarihi': '12.09.2012', 'Serh Turu': 'HACİZLİ(H)', 'Kurum Adi': 'Adalet Bakanlığı'}]}, {'No': '4', 'Plaka': '35***35', 'Marka': 'VOLKSWAGEN', 'Model': '2007', 'Tipi': 'CRAFTER 2.5 TDI LWB HR MAN', 'Renk': 'BEYAZ (Kirli)', 'Cins': 'OTOBÜS', 'Mahrumiyet': [{'Takyidat Sirasi': '1', 'Ekleyen Birim': 'T.İŞ BANKASI KEMALPAŞA (GA2307)', 'Ekleme Tarihi': '05.10.2006', 'Serh Turu': 'REHİNLİ (R)', 'Kurum Adi': 'EGM'}, {'Takyidat Sirasi': '2', 'Ekleyen Birim': 'K.PAŞA VERGİ DAİ.MÜD (13251)', 'Ekleme Tarihi': '08.11.2010', 'Serh Turu': 'HACİZLİ(H)', 'Kurum Adi': 'Maliye Bakanlığı GIB'}, {'Takyidat Sirasi': '3', 'Ekleyen Birim': 'Kemalpaşa İcra Dairesi (2010-1908 İcra)', 'Ekleme Tarihi': '10.07.2012', 'Serh Turu': 'HACİZLİ(H)', 'Kurum Adi': 'Adalet Bakanlığı'}, {'Takyidat Sirasi': '4', 'Ekleyen Birim': 'Kemalpaşa İcra Dairesi (2010-1946 İcra)', 'Ekleme Tarihi': '10.07.2012', 'Serh Turu': 'HACİZLİ(H)', 'Kurum Adi': 'Adalet Bakanlığı'}, {'Takyidat Sirasi': '5', 'Ekleyen Birim': 'Kemalpaşa İcra Dairesi (2012-1656 İcra)', 'Ekleme Tarihi': '12.09.2012', 'Serh Turu': 'HACİZLİ(H)', 'Kurum Adi': 'Adalet Bakanlığı'}]}, {'No': '5', 'Plaka': '35***35', 'Marka': 'OTOKAR', 'Model': '2004', 'Tipi': 'A125 S-25', 'Renk': 'BEYAZ', 'Cins': 'OTOBÜS', 'Mahrumiyet': [{'Takyidat Sirasi': '1', 'Ekleyen Birim': 'T.İŞ BANKASI KEMALPAŞA (GA2307)', 'Ekleme Tarihi': '05.10.2006', 'Serh Turu': 'REHİNLİ (R)', 'Kurum Adi': 'EGM'}, {'Takyidat Sirasi': '2', 'Ekleyen Birim': 'K.PAŞA VERGİ DAİ.MÜD (13251)', 'Ekleme Tarihi': '08.11.2010', 'Serh Turu': 'HACİZLİ(H)', 'Kurum Adi': 'Maliye Bakanlığı GIB'}, {'Takyidat Sirasi': '3', 'Ekleyen Birim': 'Kemalpaşa İcra Dairesi (2010-1908 İcra)', 'Ekleme Tarihi': '10.07.2012', 'Serh Turu': 'HACİZLİ(H)', 'Kurum Adi': 'Adalet Bakanlığı'}, {'Takyidat Sirasi': '4', 'Ekleyen Birim': 'Kemalpaşa İcra Dairesi (2010-1946 İcra)', 'Ekleme Tarihi': '10.07.2012', 'Serh Turu': 'HACİZLİ(H)', 'Kurum Adi': 'Adalet Bakanlığı'}, {'Takyidat Sirasi': '5', 'Ekleyen Birim': 'Kemalpaşa İcra Dairesi (2012-1656 İcra)', 'Ekleme Tarihi': '12.09.2012', 'Serh Turu': 'HACİZLİ(H)', 'Kurum Adi': 'Adalet Bakanlığı'}]}]}}}
+
+{'Dosya no': '', 'EGM': {'SEZGİN ŞAHİN - 39376620062': {'Sonuc': 'bulundu', 'Araclar': [{'No': '1', 'Plaka': '35***18', 'Marka': 'LİFAN', 'Model': '2013', 'Tipi': 'TAY100', 'Renk': 'SİYAH', 'Cins': 'MOTOSİKLET', 'Mahrumiyet': [{'Takyidat Sirasi': '1', 'Ekleyen Birim': 'KEMALPAŞA VERGİ DAİRESİ MÜDÜRLÜĞÜ (19165)', 'Ekleme Tarihi': '03.12.2014', 'Serh Turu': 'HACİZLİ(H)', 'Kurum Adi': 'Maliye Bakanlığı GIB'}, {'Takyidat Sirasi': '2', 'Ekleyen Birim': '035207 KEMALPAŞA Vergi Dairesi (20160407645070000455)', 'Ekleme Tarihi': '07.04.2016', 'Serh Turu': 'HACİZLİ(H)', 'Kurum Adi': 'Maliye Bakanlığı Gelir İdaresi Başkanlığı'}, {'Takyidat Sirasi': '3', 'Ekleyen Birim': '035207 KEMALPAŞA Vergi Dairesi (2019122564K650001187)', 'Ekleme Tarihi': '25.12.2019', 'Serh Turu': 'HACİZLİ(H)', 'Kurum Adi': 'Maliye Bakanlığı Gelir İdaresi Başkanlığı'}, {'Takyidat Sirasi': '4', 'Ekleyen Birim': 'KEMALPAŞA VERGİ DAİRESİ MÜD. (2021112264K650000535)', 'Ekleme Tarihi': '22.11.2021', 'Serh Turu': 'HACİZLİ(H)', 'Kurum Adi': 'Maliye Bakanlığı Gelir İdaresi Başkanlığı'}, {'Takyidat Sirasi': '5', 'Ekleyen Birim': 'KEMALPAŞA VERGİ DAİRESİ MÜD. (2022032964K650000046)', 'Ekleme Tarihi': '29.03.2022', 'Serh Turu': 'HACİZLİ(H)', 'Kurum Adi': 'Maliye Bakanlığı Gelir İdaresi Başkanlığı'}]}, {'No': '2', 'Plaka': '35***49', 'Marka': 'FORD', 'Model': '1997', 'Tipi': 'CARGO 2520', 'Renk': 'BEYAZ', 'Cins': 'KAMYON', 'Mahrumiyet': [{'Takyidat Sirasi': '1', 'Ekleyen Birim': 'KEMALPAŞA VERGİ DAİRESİ MÜDÜRLÜĞÜ (19165)', 'Ekleme Tarihi': '03.12.2014', 'Serh Turu': 'HACİZLİ(H)', 'Kurum Adi': 'Maliye Bakanlığı GIB'}, {'Takyidat Sirasi': '2', 'Ekleyen Birim': '035207 KEMALPAŞA Vergi Dairesi (20160407645070000455)', 'Ekleme Tarihi': '07.04.2016', 'Serh Turu': 'HACİZLİ(H)', 'Kurum Adi': 'Maliye Bakanlığı Gelir İdaresi Başkanlığı'}, {'Takyidat Sirasi': '3', 'Ekleyen Birim': '035207 KEMALPAŞA Vergi Dairesi (2019122564K650001187)', 'Ekleme Tarihi': '25.12.2019', 'Serh Turu': 'HACİZLİ(H)', 'Kurum Adi': 'Maliye Bakanlığı Gelir İdaresi Başkanlığı'}, {'Takyidat Sirasi': '4', 'Ekleyen Birim': 'KEMALPAŞA VERGİ DAİRESİ MÜD. (2021112264K650000535)', 'Ekleme Tarihi': '22.11.2021', 'Serh Turu': 'HACİZLİ(H)', 'Kurum Adi': 'Maliye Bakanlığı Gelir İdaresi Başkanlığı'}, {'Takyidat Sirasi': '5', 'Ekleyen Birim': 'KEMALPAŞA VERGİ DAİRESİ MÜD. (2022032964K650000046)', 'Ekleme Tarihi': '29.03.2022', 'Serh Turu': 'HACİZLİ(H)', 'Kurum Adi': 'Maliye Bakanlığı Gelir İdaresi Başkanlığı'}]}, {'No': '3', 'Plaka': '35***88', 'Marka': 'MITSUBISHI', 'Model': '1997', 'Tipi': 'L 300 LWB', 'Renk': 'BEYAZ', 'Cins': 'KAMYONET', 'Mahrumiyet': [{'Takyidat Sirasi': '1', 'Ekleyen Birim': 'KEMALPAŞA VERGİ DAİRESİ MÜDÜRLÜĞÜ (19165)', 'Ekleme Tarihi': '03.12.2014', 'Serh Turu': 'HACİZLİ(H)', 'Kurum Adi': 'Maliye Bakanlığı GIB'}, {'Takyidat Sirasi': '2', 'Ekleyen Birim': '035207 KEMALPAŞA Vergi Dairesi (20160407645070000455)', 'Ekleme Tarihi': '07.04.2016', 'Serh Turu': 'HACİZLİ(H)', 'Kurum Adi': 'Maliye Bakanlığı Gelir İdaresi Başkanlığı'}, {'Takyidat Sirasi': '3', 'Ekleyen Birim': '035207 KEMALPAŞA Vergi Dairesi (2019122564K650001187)', 'Ekleme Tarihi': '25.12.2019', 'Serh Turu': 'HACİZLİ(H)', 'Kurum Adi': 'Maliye Bakanlığı Gelir İdaresi Başkanlığı'}, {'Takyidat Sirasi': '4', 'Ekleyen Birim': 'KEMALPAŞA VERGİ DAİRESİ MÜD. (2021112264K650000535)', 'Ekleme Tarihi': '22.11.2021', 'Serh Turu': 'HACİZLİ(H)', 'Kurum Adi': 'Maliye Bakanlığı Gelir İdaresi Başkanlığı'}, {'Takyidat Sirasi': '5', 'Ekleyen Birim': 'KEMALPAŞA VERGİ DAİRESİ MÜD. (2022032964K650000046)', 'Ekleme Tarihi': '29.03.2022', 'Serh Turu': 'HACİZLİ(H)', 'Kurum Adi': 'Maliye Bakanlığı Gelir İdaresi Başkanlığı'}]}]}}}
+
+{'Dosya no': '', 'EGM': {'HÜSAMETTİN ÇETİN - 37324688416': {'Sonuc': 'bulundu', 'Araclar': [{'No': '1', 'Plaka': '35****34', 'Marka': 'ISUZU', 'Model': '2003', 'Tipi': 'MD 27 AS ROYAL.', 'Renk': 'BEYAZ', 'Cins': 'OTOBÜS', 'Mahrumiyet': [{'Takyidat Sirasi': '1', 'Ekleyen Birim': 'Türkiye İş Bankası- 3471 (3471287681550)', 'Ekleme Tarihi': '30.11.2015', 'Serh Turu': 'REHİNLİ (R)', 'Kurum Adi': 'Türkiye İş Bankası A.Ş.'}, {'Takyidat Sirasi': '2', 'Ekleyen Birim': 'İzmir 20. İcra Dairesi (2017-7745 İcra)', 'Ekleme Tarihi': '12.06.2017', 'Serh Turu': 'REHİNİN PARAYA ÇEVRİLMESİ', 'Kurum Adi': 'Adalet Bakanlığı'}, {'Takyidat Sirasi': '3', 'Ekleyen Birim': 'İzmir 1. İcra Dairesi (2017-11275 İcra)', 'Ekleme Tarihi': '20.10.2017', 'Serh Turu': 'HACİZLİ(H)', 'Kurum Adi': 'Adalet Bakanlığı'}, {'Takyidat Sirasi': '4', 'Ekleyen Birim': 'İzmir 1. İcra Dairesi (2017-13721 İcra)', 'Ekleme Tarihi': '22.11.2017', 'Serh Turu': 'HACİZLİ(H)', 'Kurum Adi': 'Adalet Bakanlığı'}, {'Takyidat Sirasi': '5', 'Ekleyen Birim': 'Turgutlu İcra Dairesi (2017-3583 İcra)', 'Ekleme Tarihi': '04.12.2017', 'Serh Turu': 'HACİZLİ(H)', 'Kurum Adi': 'Adalet Bakanlığı'}]}, {'No': '2', 'Plaka': '35***35', 'Marka': 'ISUZU', 'Model': '2004', 'Tipi': 'TURKUAZ 27 KLİMALI', 'Renk': 'BEYAZ', 'Cins': 'OTOBÜS', 'Mahrumiyet': [{'Takyidat Sirasi': '1', 'Ekleyen Birim': 'Türkiye İş Bankası- 3471 (3471287681550)', 'Ekleme Tarihi': '30.11.2015', 'Serh Turu': 'REHİNLİ (R)', 'Kurum Adi': 'Türkiye İş Bankası A.Ş.'}, {'Takyidat Sirasi': '2', 'Ekleyen Birim': 'İzmir 20. İcra Dairesi (2017-7745 İcra)', 'Ekleme Tarihi': '12.06.2017', 'Serh Turu': 'REHİNİN PARAYA ÇEVRİLMESİ', 'Kurum Adi': 'Adalet Bakanlığı'}, {'Takyidat Sirasi': '3', 'Ekleyen Birim': 'İzmir 1. İcra Dairesi (2017-11275 İcra)', 'Ekleme Tarihi': '20.10.2017', 'Serh Turu': 'HACİZLİ(H)', 'Kurum Adi': 'Adalet Bakanlığı'}, {'Takyidat Sirasi': '4', 'Ekleyen Birim': 'İzmir 1. İcra Dairesi (2017-13721 İcra)', 'Ekleme Tarihi': '22.11.2017', 'Serh Turu': 'HACİZLİ(H)', 'Kurum Adi': 'Adalet Bakanlığı'}, {'Takyidat Sirasi': '5', 'Ekleyen Birim': 'Turgutlu İcra Dairesi (2017-3583 İcra)', 'Ekleme Tarihi': '04.12.2017', 'Serh Turu': 'HACİZLİ(H)', 'Kurum Adi': 'Adalet Bakanlığı'}]}]}}}
+
+
+
+[
+    {
+      "Dosya no": "",
+      "EGM": {
+        "CELAL ÇETİN - 37339687916": {
+          "Sonuc": "bulundu",
+          "Araclar": [
+            {
+              "No": "1",
+              "Plaka": "35***38",
+              "Marka": "FORD",
+              "Model": "2004",
+              "Tipi": "K210S",
+              "Renk": "MAVİ (Metropolis)",
+              "Cins": "KAMYONET",
+              "Mahrumiyet": [
+                {
+                  "Takyidat Sirasi": "1",
+                  "Ekleyen Birim": "T.İŞ BANKASI KEMALPAŞA (GA2307)",
+                  "Ekleme Tarihi": "05.10.2006",
+                  "Serh Turu": "REHİNLİ (R)",
+                  "Kurum Adi": "EGM"
+                },
+                {
+                  "Takyidat Sirasi": "2",
+                  "Ekleyen Birim": "K.PAŞA VERGİ DAİ.MÜD (13251)",
+                  "Ekleme Tarihi": "08.11.2010",
+                  "Serh Turu": "HACİZLİ(H)",
+                  "Kurum Adi": "Maliye Bakanlığı GIB"
+                },
+                {
+                  "Takyidat Sirasi": "3",
+                  "Ekleyen Birim": "Kemalpaşa İcra Dairesi (2010-1908 İcra)",
+                  "Ekleme Tarihi": "10.07.2012",
+                  "Serh Turu": "HACİZLİ(H)",
+                  "Kurum Adi": "Adalet Bakanlığı"
+                },
+                {
+                  "Takyidat Sirasi": "4",
+                  "Ekleyen Birim": "Kemalpaşa İcra Dairesi (2010-1946 İcra)",
+                  "Ekleme Tarihi": "10.07.2012",
+                  "Serh Turu": "HACİZLİ(H)",
+                  "Kurum Adi": "Adalet Bakanlığı"
+                },
+                {
+                  "Takyidat Sirasi": "5",
+                  "Ekleyen Birim": "Kemalpaşa İcra Dairesi (2012-1656 İcra)",
+                  "Ekleme Tarihi": "12.09.2012",
+                  "Serh Turu": "HACİZLİ(H)",
+                  "Kurum Adi": "Adalet Bakanlığı"
+                }
+              ]
+            },
+            {
+              "No": "2",
+              "Plaka": "35***33",
+              "Marka": "FORD",
+              "Model": "2008",
+              "Tipi": "FOCUS C MAX",
+              "Renk": "GRİ (Aytozu)",
+              "Cins": "OTOMOBİL",
+              "Mahrumiyet": [
+                {
+                  "Takyidat Sirasi": "1",
+                  "Ekleyen Birim": "T.İŞ BANKASI KEMALPAŞA (GA2307)",
+                  "Ekleme Tarihi": "05.10.2006",
+                  "Serh Turu": "REHİNLİ (R)",
+                  "Kurum Adi": "EGM"
+                },
+                {
+                  "Takyidat Sirasi": "2",
+                  "Ekleyen Birim": "K.PAŞA VERGİ DAİ.MÜD (13251)",
+                  "Ekleme Tarihi": "08.11.2010",
+                  "Serh Turu": "HACİZLİ(H)",
+                  "Kurum Adi": "Maliye Bakanlığı GIB"
+                },
+                {
+                  "Takyidat Sirasi": "3",
+                  "Ekleyen Birim": "Kemalpaşa İcra Dairesi (2010-1908 İcra)",
+                  "Ekleme Tarihi": "10.07.2012",
+                  "Serh Turu": "HACİZLİ(H)",
+                  "Kurum Adi": "Adalet Bakanlığı"
+                },
+                {
+                  "Takyidat Sirasi": "4",
+                  "Ekleyen Birim": "Kemalpaşa İcra Dairesi (2010-1946 İcra)",
+                  "Ekleme Tarihi": "10.07.2012",
+                  "Serh Turu": "HACİZLİ(H)",
+                  "Kurum Adi": "Adalet Bakanlığı"
+                },
+                {
+                  "Takyidat Sirasi": "5",
+                  "Ekleyen Birim": "Kemalpaşa İcra Dairesi (2012-1656 İcra)",
+                  "Ekleme Tarihi": "12.09.2012",
+                  "Serh Turu": "HACİZLİ(H)",
+                  "Kurum Adi": "Adalet Bakanlığı"
+                }
+              ]
+            },
+            {
+              "No": "3",
+              "Plaka": "35***88",
+              "Marka": "OTOYOL",
+              "Model": "2003",
+              "Tipi": "50 NM 23",
+              "Renk": "BEYAZ KIRMIZI",
+              "Cins": "OTOBÜS",
+              "Mahrumiyet": [
+                {
+                  "Takyidat Sirasi": "1",
+                  "Ekleyen Birim": "T.İŞ BANKASI KEMALPAŞA (GA2307)",
+                  "Ekleme Tarihi": "05.10.2006",
+                  "Serh Turu": "REHİNLİ (R)",
+                  "Kurum Adi": "EGM"
+                },
+                {
+                  "Takyidat Sirasi": "2",
+                  "Ekleyen Birim": "K.PAŞA VERGİ DAİ.MÜD (13251)",
+                  "Ekleme Tarihi": "08.11.2010",
+                  "Serh Turu": "HACİZLİ(H)",
+                  "Kurum Adi": "Maliye Bakanlığı GIB"
+                },
+                {
+                  "Takyidat Sirasi": "3",
+                  "Ekleyen Birim": "Kemalpaşa İcra Dairesi (2010-1908 İcra)",
+                  "Ekleme Tarihi": "10.07.2012",
+                  "Serh Turu": "HACİZLİ(H)",
+                  "Kurum Adi": "Adalet Bakanlığı"
+                },
+                {
+                  "Takyidat Sirasi": "4",
+                  "Ekleyen Birim": "Kemalpaşa İcra Dairesi (2010-1946 İcra)",
+                  "Ekleme Tarihi": "10.07.2012",
+                  "Serh Turu": "HACİZLİ(H)",
+                  "Kurum Adi": "Adalet Bakanlığı"
+                },
+                {
+                  "Takyidat Sirasi": "5",
+                  "Ekleyen Birim": "Kemalpaşa İcra Dairesi (2012-1656 İcra)",
+                  "Ekleme Tarihi": "12.09.2012",
+                  "Serh Turu": "HACİZLİ(H)",
+                  "Kurum Adi": "Adalet Bakanlığı"
+                }
+              ]
+            },
+            {
+              "No": "4",
+              "Plaka": "35***35",
+              "Marka": "VOLKSWAGEN",
+              "Model": "2007",
+              "Tipi": "CRAFTER 2.5 TDI LWB HR MAN",
+              "Renk": "BEYAZ (Kirli)",
+              "Cins": "OTOBÜS",
+              "Mahrumiyet": [
+                {
+                  "Takyidat Sirasi": "1",
+                  "Ekleyen Birim": "T.İŞ BANKASI KEMALPAŞA (GA2307)",
+                  "Ekleme Tarihi": "05.10.2006",
+                  "Serh Turu": "REHİNLİ (R)",
+                  "Kurum Adi": "EGM"
+                },
+                {
+                  "Takyidat Sirasi": "2",
+                  "Ekleyen Birim": "K.PAŞA VERGİ DAİ.MÜD (13251)",
+                  "Ekleme Tarihi": "08.11.2010",
+                  "Serh Turu": "HACİZLİ(H)",
+                  "Kurum Adi": "Maliye Bakanlığı GIB"
+                },
+                {
+                  "Takyidat Sirasi": "3",
+                  "Ekleyen Birim": "Kemalpaşa İcra Dairesi (2010-1908 İcra)",
+                  "Ekleme Tarihi": "10.07.2012",
+                  "Serh Turu": "HACİZLİ(H)",
+                  "Kurum Adi": "Adalet Bakanlığı"
+                },
+                {
+                  "Takyidat Sirasi": "4",
+                  "Ekleyen Birim": "Kemalpaşa İcra Dairesi (2010-1946 İcra)",
+                  "Ekleme Tarihi": "10.07.2012",
+                  "Serh Turu": "HACİZLİ(H)",
+                  "Kurum Adi": "Adalet Bakanlığı"
+                },
+                {
+                  "Takyidat Sirasi": "5",
+                  "Ekleyen Birim": "Kemalpaşa İcra Dairesi (2012-1656 İcra)",
+                  "Ekleme Tarihi": "12.09.2012",
+                  "Serh Turu": "HACİZLİ(H)",
+                  "Kurum Adi": "Adalet Bakanlığı"
+                }
+              ]
+            },
+            {
+              "No": "5",
+              "Plaka": "35***35",
+              "Marka": "OTOKAR",
+              "Model": "2004",
+              "Tipi": "A125 S-25",
+              "Renk": "BEYAZ",
+              "Cins": "OTOBÜS",
+              "Mahrumiyet": [
+                {
+                  "Takyidat Sirasi": "1",
+                  "Ekleyen Birim": "T.İŞ BANKASI KEMALPAŞA (GA2307)",
+                  "Ekleme Tarihi": "05.10.2006",
+                  "Serh Turu": "REHİNLİ (R)",
+                  "Kurum Adi": "EGM"
+                },
+                {
+                  "Takyidat Sirasi": "2",
+                  "Ekleyen Birim": "K.PAŞA VERGİ DAİ.MÜD (13251)",
+                  "Ekleme Tarihi": "08.11.2010",
+                  "Serh Turu": "HACİZLİ(H)",
+                  "Kurum Adi": "Maliye Bakanlığı GIB"
+                },
+                {
+                  "Takyidat Sirasi": "3",
+                  "Ekleyen Birim": "Kemalpaşa İcra Dairesi (2010-1908 İcra)",
+                  "Ekleme Tarihi": "10.07.2012",
+                  "Serh Turu": "HACİZLİ(H)",
+                  "Kurum Adi": "Adalet Bakanlığı"
+                },
+                {
+                  "Takyidat Sirasi": "4",
+                  "Ekleyen Birim": "Kemalpaşa İcra Dairesi (2010-1946 İcra)",
+                  "Ekleme Tarihi": "10.07.2012",
+                  "Serh Turu": "HACİZLİ(H)",
+                  "Kurum Adi": "Adalet Bakanlığı"
+                },
+                {
+                  "Takyidat Sirasi": "5",
+                  "Ekleyen Birim": "Kemalpaşa İcra Dairesi (2012-1656 İcra)",
+                  "Ekleme Tarihi": "12.09.2012",
+                  "Serh Turu": "HACİZLİ(H)",
+                  "Kurum Adi": "Adalet Bakanlığı"
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "Dosya no": "",
+      "EGM": {
+        "SEZGİN ŞAHİN - 39376620062": {
+          "Sonuc": "bulundu",
+          "Araclar": [
+            {
+              "No": "1",
+              "Plaka": "35***18",
+              "Marka": "LİFAN",
+              "Model": "2013",
+              "Tipi": "TAY100",
+              "Renk": "SİYAH",
+              "Cins": "MOTOSİKLET",
+              "Mahrumiyet": [
+                {
+                  "Takyidat Sirasi": "1",
+                  "Ekleyen Birim": "KEMALPAŞA VERGİ DAİRESİ MÜDÜRLÜĞÜ (19165)",
+                  "Ekleme Tarihi": "03.12.2014",
+                  "Serh Turu": "HACİZLİ(H)",
+                  "Kurum Adi": "Maliye Bakanlığı GIB"
+                },
+                {
+                  "Takyidat Sirasi": "2",
+                  "Ekleyen Birim": "035207 KEMALPAŞA Vergi Dairesi (20160407645070000455)",
+                  "Ekleme Tarihi": "07.04.2016",
+                  "Serh Turu": "HACİZLİ(H)",
+                  "Kurum Adi": "Maliye Bakanlığı Gelir İdaresi Başkanlığı"
+                },
+                {
+                  "Takyidat Sirasi": "3",
+                  "Ekleyen Birim": "035207 KEMALPAŞA Vergi Dairesi (2019122564K650001187)",
+                  "Ekleme Tarihi": "25.12.2019",
+                  "Serh Turu": "HACİZLİ(H)",
+                  "Kurum Adi": "Maliye Bakanlığı Gelir İdaresi Başkanlığı"
+                },
+                {
+                  "Takyidat Sirasi": "4",
+                  "Ekleyen Birim": "KEMALPAŞA VERGİ DAİRESİ MÜD. (2021112264K650000535)",
+                  "Ekleme Tarihi": "22.11.2021",
+                  "Serh Turu": "HACİZLİ(H)",
+                  "Kurum Adi": "Maliye Bakanlığı Gelir İdaresi Başkanlığı"
+                },
+                {
+                  "Takyidat Sirasi": "5",
+                  "Ekleyen Birim": "KEMALPAŞA VERGİ DAİRESİ MÜD. (2022032964K650000046)",
+                  "Ekleme Tarihi": "29.03.2022",
+                  "Serh Turu": "HACİZLİ(H)",
+                  "Kurum Adi": "Maliye Bakanlığı Gelir İdaresi Başkanlığı"
+                }
+              ]
+            },
+            {
+              "No": "2",
+              "Plaka": "35***49",
+              "Marka": "FORD",
+              "Model": "1997",
+              "Tipi": "CARGO 2520",
+              "Renk": "BEYAZ",
+              "Cins": "KAMYON",
+              "Mahrumiyet": [
+                {
+                  "Takyidat Sirasi": "1",
+                  "Ekleyen Birim": "KEMALPAŞA VERGİ DAİRESİ MÜDÜRLÜĞÜ (19165)",
+                  "Ekleme Tarihi": "03.12.2014",
+                  "Serh Turu": "HACİZLİ(H)",
+                  "Kurum Adi": "Maliye Bakanlığı GIB"
+                },
+                {
+                  "Takyidat Sirasi": "2",
+                  "Ekleyen Birim": "035207 KEMALPAŞA Vergi Dairesgebras
+  i (20160407645070000455)",
+                  "Ekleme Tarihi": "07.04.2016",
+                  "Serh Turu": "HACİZLİ(H)",
+                  "Kurum Adi": "Maliye Bakanlığı Gelir İdaresi Başkanlığı"
+                },
+                {
+                  "Takyidat Sirasi": "3",
+                  "Ekleyen Birim": "035207 KEMALPAŞA Vergi Dairesi (2019122564K650001187)",
+                  "Ekleme Tarihi": "25.12.2019",
+                  "Serh Turu": "HACİZLİ(H)",
+                  "Kurum Adi": "Maliye Bakanlığı Gelir İdaresi Başkanlığı"
+                },
+                {
+                  "Takyidat Sirasi": "4",
+                  "Ekleyen Birim": "KEMALPAŞA VERGİ DAİRESİ MÜD. (2021112264K650000535)",
+                  "Ekleme Tarihi": "22.11.2021",
+                  "Serh Turu": "HACİZLİ(H)",
+                  "Kurum Adi": "Maliye Bakanlığı Gelir İdaresi Başkanlığı"
+                },
+                {
+                  "Takyidat Sirasi": "5",
+                  "Ekleyen Birim": "KEMALPAŞA VERGİ DAİRESİ MÜD. (2022032964K650000046)",
+                  "Ekleme Tarihi": "29.03.2022",
+                  "Serh Turu": "HACİZLİ(H)",
+                  "Kurum Adi": "Maliye Bakanlığı Gelir İdaresi Başkanlığı"
+                }
+              ]
+            },
+            {
+              "No": "3",
+              "Plaka": "35***88",
+              "Marka": "MITSUBISHI",
+              "Model": "1997",
+              "Tipi": "L 300 LWB",
+              "Renk": "BEYAZ",
+              "Cins": "KAMYONET",
+              "Mahrumiyet": [
+                {
+                  "Takyidat Sirasi": "1",
+                  "Ekleyen Birim": "KEMALPAŞA VERGİ DAİRESİ MÜDÜRLÜĞÜ (19165)",
+                  "Ekleme Tarihi": "03.12.2014",
+                  "Serh Turu": "HACİZLİ(H)",
+                  "Kurum Adi": "Maliye Bakanlığı GIB"
+                },
+                {
+                  "Takyidat Sirasi": "2",
+                  "Ekleyen Birim": "035207 KEMALPAŞA Vergi Dairesi (20160407645070000455)",
+                  "Ekleme Tarihi": "07.04.2016",
+                  "Serh Turu": "HACİZLİ(H)",
+                  "Kurum Adi": "Maliye Bakanlığı Gelir İdaresi Başkanlığı"
+                },
+                {
+                  "Takyidat Sirasi": "3",
+                  "Ekleyen Birim": "035207 KEMALPAŞA Vergi Dairesi (2019122564K650001187)",
+                  "Ekleme Tarihi": "25.12.2019",
+                  "Serh Turu": "HACİZLİ(H)",
+                  "Kurum Adi": "Maliye Bakanlığı Gelir İdaresi Başkanlığı"
+                },
+                {
+                  "Takyidat Sirasi": "4",
+                  "Ekleyen Birim": "KEMALPAŞA VERGİ DAİRESİ MÜD. (2021112264K650000535)",
+                  "Ekleme Tarihi": "22.11.2021",
+                  "Serh Turu": "HACİZLİ(H)",
+                  "Kurum Adi": "Maliye Bakanlığı Gelir İdaresi Başkanlığı"
+                },
+                {
+                  "Takyidat Sirasi": "5",
+                  "Ekleyen Birim": "KEMALPAŞA VERGİ DAİRESİ MÜD. (2022032964K650000046)",
+                  "Ekleme Tarihi": "29.03.2022",
+                  "Serh Turu": "HACİZLİ(H)",
+                  "Kurum Adi": "Maliye Bakanlığı Gelir İdaresi Başkanlığı"
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "Dosya no": "",
+      "EGM": {
+        "HÜSAMETTİN ÇETİN - 37324688416": {
+          "Sonuc": "bulundu",
+          "Araclar": [
+            {
+              "No": "1",
+              "Plaka": "35****34",
+              "Marka": "ISUZU",
+              "Model": "2003",
+              "Tipi": "MD 27 AS ROYAL.",
+              "Renk": "BEYAZ",
+              "Cins": "OTOBÜS",
+              "Mahrumiyet": [
+                {
+                  "Takyidat Sirasi": "1",
+                  "Ekleyen Birim": "Türkiye İş Bankası- 3471 (3471287681550)",
+                  "Ekleme Tarihi": "30.11.2015",
+                  "Serh Turu": "REHİNLİ (R)",
+                  "Kurum Adi": "Türkiye İş Bankası A.Ş."
+                },
+                {
+                  "Takyidat Sirasi": "2",
+                  "Ekleyen Birim": "İzmir 20. İcra Dairesi (2017-7745 İcra)",
+                  "Ekleme Tarihi": "12.06.2017",
+                  "Serh Turu": "REHİNİN PARAYA ÇEVRİLMESİ",
+                  "Kurum Adi": "Adalet Bakanlığı"
+                },
+                {
+                  "Takyidat Sirasi": "3",
+                  "Ekleyen Birim": "İzmir 1. İcra Dairesi (2017-11275 İcra)",
+                  "Ekleme Tarihi": "20.10.2017",
+                  "Serh Turu": "HACİZLİ(H)",
+                  "Kurum Adi": "Adalet Bakanlığı"
+                },
+                {
+                  "Takyidat Sirasi": "4",
+                  "Ekleyen Birim": "İzmir 1. İcra Dairesi (2017-13721 İcra)",
+                  "Ekleme Tarihi": "22.11.2017",
+                  "Serh Turu": "HACİZLİ(H)",
+                  "Kurum Adi": "Adalet Bakanlığı"
+                },
+                {
+                  "Takyidat Sirasi": "5",
+                  "Ekleyen Birim": "Turgutlu İcra Dairesi (2017-3583 İcra)",
+                  "Ekleme Tarihi": "04.12.2017",
+                  "Serh Turu": "HACİZLİ(H)",
+                  "Kurum Adi": "Adalet Bakanlığı"
+                }
+              ]
+            },
+            {
+              "No": "2",
+              "Plaka": "35***35",
+              "Marka": "ISUZU",
+              "Model": "2004",
+              "Tipi": "TURKUAZ 27 KLİMALI",
+              "Renk": "BEYAZ",
+              "Cins": "OTOBÜS",
+              "Mahrumiyet": [
+                {
+                  "Takyidat Sirasi": "1",
+                  "Ekleyen Birim": "Türkiye İş Bankası- 3471 (3471287681550)",
+                  "Ekleme Tarihi": "30.11.2015",
+                  "Serh Turu": "REHİNLİ (R)",
+                  "Kurum Adi": "Türkiye İş Bankası A.Ş."
+                },
+                {
+                  "Takyidat Sirasi": "2",
+                  "Ekleyen Birim": "İzmir 20. İcra Dairesi (2017-7745 İcra)",
+                  "Ekleme Tarihi": "12.06.2017",
+                  "Serh Turu": "REHİNİN PARAYA ÇEVRİLMESİ",
+                  "Kurum Adi": "Adalet Bakanlığı"
+                },
+                {
+                  "Takyidat Sirasi": "3",
+                  "Ekleyen Birim": "İzmir 1. İcra Dairesi (2017-11275 İcra)",
+                  "Ekleme Tarihi": "20.10.2017",
+                  "Serh Turu": "HACİZLİ(H)",
+                  "Kurum Adi": "Adalet Bakanlığı"
+                },
+                {
+                  "Takyidat Sirasi": "4",
+                  "Ekleyen Birim": "İzmir 1. İcra Dairesi (2017-13721 İcra)",
+                  "Ekleme Tarihi": "22.11.2017",
+                  "Serh Turu": "HACİZLİ(H)",
+                  "Kurum Adi": "Adalet Bakanlığı"
+                },
+                {
+                  "Takyidat Sirasi": "5",
+                  "Ekleyen Birim": "Turgutlu İcra Dairesi (2017-3583 İcra)",
+                  "Ekleme Tarihi": "04.12.2017",
+                  "Serh Turu": "HACİZLİ(H)",
+                  "Kurum Adi": "Adalet Bakanlığı"
+                }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  ]
