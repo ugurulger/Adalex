@@ -134,6 +134,7 @@ def perform_sorgulama(driver, sorgula_input, selected_options, result_label=None
             if result_label:
                 result_label.config(text=error_msg)
             logger.error(error_msg)
+            time.sleep(0.5)
             return
 
         # Step 6: Open the dosya pop-up from the first search result row
@@ -145,9 +146,11 @@ def perform_sorgulama(driver, sorgula_input, selected_options, result_label=None
             try:
                 result_row = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, ".dx-datagrid-rowsview tbody tr")))
                 dosya_goruntule = result_row.find_element(By.CSS_SELECTOR, "#dosya-goruntule")
-                driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", dosya_goruntule)
-                wait.until(EC.element_to_be_clickable((By.ID, "dosya-goruntule")))
-                dosya_goruntule.click()
+                if not click_element(driver, By.ID, "dosya-goruntule"):
+                    logger.error("Failed to click 'dosya-goruntule' button.")
+                    if result_label:
+                        result_label.config(text="Failed to click 'dosya-goruntule' button.")
+                    return
                 logger.info("Clicked 'dosya-goruntule' to open pop-up.")
                 dosya_clicked = True
                 break
@@ -215,7 +218,7 @@ def perform_sorgulama(driver, sorgula_input, selected_options, result_label=None
         # Step 9: Iterate over dropdown items and perform EGM sorgu if selected
         if result_label:
             result_label.config(text="Processing dropdown items...")
-        time.sleep(0.5)  # Ensure dropdown options load
+        time.sleep(1)  # Ensure dropdown options load
         dropdown_items_selector = ".dx-dropdowneditor-overlay .dx-list-item"
         try:
             dropdown_items = wait.until(EC.presence_of_all_elements_located((By.CSS_SELECTOR, dropdown_items_selector)))
@@ -238,12 +241,10 @@ def perform_sorgulama(driver, sorgula_input, selected_options, result_label=None
                 last_exception = None
                 for attempt in range(3):
                     try:
-                        driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", current_item)
-                        wait.until(EC.element_to_be_clickable(current_item))
-                        current_item.click()
-                        logger.info(f"Clicked dropdown item: {item_text}")
-                        item_clicked = True
-                        break
+                        if click_element(driver, By.XPATH, f"//*[text()='{item_text}']"):
+                            logger.info(f"Clicked dropdown item: {item_text}")
+                            item_clicked = True
+                            break
                     except Exception as e:
                         last_exception = e
                         logger.warning(f"Dropdown item {item_text} click attempt {attempt + 1} failed: {e}")

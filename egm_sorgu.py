@@ -24,27 +24,26 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 def click_with_retry(driver, wait, css_selector, action_name, item_text, result_label=None, retries=RETRY_ATTEMPTS):
-    """
-    Click an element with retry logic, using both standard click and JavaScript fallback.
-    """
     for attempt in range(retries):
         try:
             element = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, css_selector)))
             driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", element)
-            time.sleep(SLEEP_INTERVAL)
+            time.sleep(SLEEP_INTERVAL)  # Allow time for rendering
             element.click()
             logger.info(f"Clicked {action_name} for {item_text} (attempt {attempt + 1})")
             return True
         except (TimeoutException, StaleElementReferenceException, ElementNotInteractableException) as e:
             logger.warning(f"{action_name} click attempt {attempt + 1} failed for {item_text}: {e}")
             try:
+                # Retry with a fresh reference to the element
+                time.sleep(SLEEP_INTERVAL)
                 element = driver.find_element(By.CSS_SELECTOR, css_selector)
                 driver.execute_script("arguments[0].click();", element)
                 logger.info(f"Clicked {action_name} via JavaScript for {item_text} (attempt {attempt + 1})")
                 return True
             except Exception as e2:
                 logger.warning(f"JavaScript click also failed: {e2}")
-            time.sleep(1)
+            time.sleep(SLEEP_INTERVAL)
     error_msg = f"Failed to click {action_name} for {item_text} after {retries} attempts"
     if result_label:
         result_label.config(text=error_msg)
@@ -83,7 +82,11 @@ def extract_mahrumiyet_data(driver, wait, arac, item_text):
                 "Serh Turu": mahrumiyet_columns[3].text.strip() if len(mahrumiyet_columns) > 3 else "",
                 "Kurum Adi": mahrumiyet_columns[4].text.strip() if len(mahrumiyet_columns) > 4 else ""
             }
-            all_mahrumiyet_data.append(mahrumiyet_kaydi)
+            # Boş satırları filtrele: Eğer 'Takyidat Sirasi' boşsa, bu kaydı ekleme
+            if mahrumiyet_kaydi["Takyidat Sirasi"]:
+                all_mahrumiyet_data.append(mahrumiyet_kaydi)
+            else:
+                logger.debug(f"Skipped empty Mahrumiyet row on {page_description} for vehicle {arac['No']} - {arac['Plaka']}")
 
     
     try:
