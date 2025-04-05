@@ -215,7 +215,7 @@ def perform_sorgulama(driver, dosya_no, selected_options, result_label=None):
             logger.error(error_msg)
             return
 
-        # Step 9: Iterate over dropdown items and perform EGM sorgu if selected
+        # Step 9: Iterate over dropdown items and perform EGM and Banka sorgu if selected
         if result_label:
             result_label.config(text="Processing dropdown items...")
         time.sleep(1)  # Ensure dropdown options load
@@ -268,10 +268,22 @@ def perform_sorgulama(driver, dosya_no, selected_options, result_label=None):
                             result_label.config(text=error_msg)
                         logger.error(error_msg)
 
-                # Add 10-second delay between iterations (except after the last item)
+                # Perform Banka sorgu if selected
+                if selected_options.get("Banka", False):
+                    try:
+                        from banka_sorgu import perform_banka_sorgu
+                        if not perform_banka_sorgu(driver, item_text, dosya_no, result_label):
+                            logger.error(f"Banka sorgu failed for {item_text}")
+                    except ImportError as e:
+                        error_msg = f"Failed to import perform_banka_sorgu: {e}"
+                        if result_label:
+                            result_label.config(text=error_msg)
+                        logger.error(error_msg)
+
+                # Add 3-second delay between iterations (except after the last item)
                 if index < len(dropdown_items) - 1:
                     if result_label:
-                        result_label.config(text=f"Waiting 10 seconds before next item...")
+                        result_label.config(text=f"Waiting 3 seconds before next item...")
                     logger.info(f"Waiting 3 seconds before processing next dropdown item...")
                     time.sleep(3)
 
