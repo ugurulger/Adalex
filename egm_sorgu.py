@@ -1,5 +1,7 @@
 import logging
 import time
+import os
+import json
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
@@ -22,6 +24,45 @@ MAHRUMIYET_PAGES_XPATH = "/html/body/div/div/div/div/div/div/div/div/div[2]/div[
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+# Desktop path for JSON file
+DESKTOP_PATH = os.path.join(os.path.expanduser("~"), "Desktop", "extracted_data")
+JSON_FILE = os.path.join(DESKTOP_PATH, "egm_sorgu.json")
+
+def save_to_json(extracted_data):
+    """
+    Save or update extracted_data to egm_sorgu.json on the desktop.
+    - If file doesn't exist, create it.
+    - If file exists, update it by merging new data, replacing entries with same dosya_no and item_text.
+    """
+    # Ensure the directory exists
+    os.makedirs(DESKTOP_PATH, exist_ok=True)
+
+    # If file exists, load existing data
+    if os.path.exists(JSON_FILE):
+        try:
+            with open(JSON_FILE, 'r', encoding='utf-8') as f:
+                existing_data = json.load(f)
+        except (json.JSONDecodeError, IOError) as e:
+            logger.warning(f"Error reading existing JSON file, starting fresh: {e}")
+            existing_data = {}
+    else:
+        existing_data = {}
+
+    # Extract dosya_no and item_text from extracted_data
+    for dosya_no, items in extracted_data.items():
+        if dosya_no not in existing_data:
+            existing_data[dosya_no] = {}
+        # Update only the specific item_text under this dosya_no
+        existing_data[dosya_no].update(items)
+
+    # Save back to JSON file
+    try:
+        with open(JSON_FILE, 'w', encoding='utf-8') as f:
+            json.dump(existing_data, f, ensure_ascii=False, indent=4)
+        logger.info(f"Data saved/updated in {JSON_FILE}")
+    except IOError as e:
+        logger.error(f"Error writing to JSON file: {e}")
 
 def click_with_retry(driver, wait, css_selector, action_name, item_text, result_label=None, retries=RETRY_ATTEMPTS):
     for attempt in range(retries):
@@ -49,7 +90,6 @@ def click_with_retry(driver, wait, css_selector, action_name, item_text, result_
         result_label.config(text=error_msg)
     logger.error(error_msg)
     return False
-
 
 def extract_mahrumiyet_data(driver, wait, arac, item_text):
     """
@@ -88,7 +128,6 @@ def extract_mahrumiyet_data(driver, wait, arac, item_text):
             else:
                 logger.debug(f"Skipped empty Mahrumiyet row on {page_description} for vehicle {arac['No']} - {arac['Plaka']}")
 
-    
     try:
         target_dx_pages = wait.until(
             EC.visibility_of_element_located((By.XPATH, MAHRUMIYET_PAGES_XPATH))
@@ -134,7 +173,6 @@ def extract_mahrumiyet_data(driver, wait, arac, item_text):
     arac["Mahrumiyet"] = all_mahrumiyet_data
     logger.info(f"Extracted {len(all_mahrumiyet_data)} Mahrumiyet records for vehicle {arac['No']} - {arac['Plaka']}")
 
-
 def close_mahrumiyet_popup(driver, wait, item_text, arac, result_label=None):
     """
     Close the Mahrumiyet pop-up using a simple CSS selector and verify closure.
@@ -162,7 +200,7 @@ def close_mahrumiyet_popup(driver, wait, item_text, arac, result_label=None):
     except Exception as e:
         logger.warning(f"Failed to close Mahrumiyet pop-up for vehicle {arac['No']} - {arac['Plaka']}: {e}")
 
-def perform_egm_sorgu(driver, item_text, result_label=None):
+def perform_egm_sorgu(driver, item_text, dosya_no, result_label=None):
     """
     Perform the EGM-TNB sorgu for a specific dropdown item and extract data.
     Steps:
@@ -173,12 +211,14 @@ def perform_egm_sorgu(driver, item_text, result_label=None):
         Tuple (success: bool, data: dict) - Success status and extracted data as a structured dictionary.
     """
     wait = WebDriverWait(driver, TIMEOUT)
+    # Yeni extracted_data yapısı
     extracted_data = {
-        "Dosya no": "",  # Arama yapılan dosya numarası (şimdilik boş, gerekirse ekleriz)
-        "EGM": {
+        dosya_no: {   # Dosya no from elsewhere (e.g., "2024/11232")
             item_text: {
-                "Sonuc": "",
-                "Araclar": []
+                "EGM": {
+                    "Sonuc": "",
+                    "Araclar": []
+                }
             }
         }
     }
@@ -188,48 +228,44 @@ def perform_egm_sorgu(driver, item_text, result_label=None):
         if result_label:
             result_label.config(text=f"Performing EGM sorgu for {item_text} - Clicking EGM-TNB button...")
         if not click_with_retry(driver, wait, EGM_BUTTON_CSS, "EGM-TNB button", item_text, result_label):
+            save_to_json(extracted_data)  # Hata olsa bile veriyi kaydet
             return False, extracted_data
 
         # Step 2: Click the "Sorgula" button
         if result_label:
             result_label.config(text=f"Performing EGM sorgu for {item_text} - Clicking Sorgula button...")
         if not click_with_retry(driver, wait, SORGULA_BUTTON_CSS, "Sorgula button", item_text, result_label):
+            save_to_json(extracted_data)  # Hata olsa bile veriyi kaydet
             return False, extracted_data
-        # Pop-up'ın yüklenmesini dinamik olarak bekle
+        # Wait dynamically for the pop-up/table to load
         wait.until(EC.presence_of_element_located((By.XPATH, DATA_XPATH)))
 
         # Step 3: Extract data from the specified XPath
         if result_label:
             result_label.config(text=f"Performing EGM sorgu for {item_text} - Extracting data...")
         try:
-            # Tabloyu içeren ana elementi bul
+            # Find the main element containing the table
             data_element = wait.until(EC.presence_of_element_located((By.XPATH, DATA_XPATH)))
             driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", data_element)
-
-            # data_element'in içeriğini logla
             logger.info(f"data_element content for {item_text}: {data_element.text}")
 
-            # Tabloyu kontrol et
             raw_data = data_element.text.strip()
             if not raw_data:
                 logger.warning(f"Extracted data is empty for {item_text}")
-                extracted_data["EGM"][item_text]["Sonuc"] = "Kayıt bulunamadı"
+                extracted_data[dosya_no][item_text]["EGM"]["Sonuc"] = "Kayıt bulunamadı"
             elif "Kayıt bulunamadı" in raw_data:
-                extracted_data["EGM"][item_text]["Sonuc"] = raw_data
+                extracted_data[dosya_no][item_text]["EGM"]["Sonuc"] = raw_data
             else:
-                extracted_data["EGM"][item_text]["Sonuc"] = "bulundu"
-                # Tabloyu bul (zaten DATA_XPATH ile tabloyu hedefledik)
-                tables = [data_element]  # DATA_XPATH zaten tabloyu hedefliyor
+                extracted_data[dosya_no][item_text]["EGM"]["Sonuc"] = "bulundu"
+                # DATA_XPATH already targets the table, so use it to extract table(s)
+                tables = [data_element]
                 logger.info(f"Found {len(tables)} tables for {item_text}")
 
-                if tables:
-                    # Her tabloyu kontrol et, veri içeren tabloyu bul
+                if tables:  # Her tabloyu kontrol et, veri içeren tabloyu bul
                     for idx, table in enumerate(tables):
                         logger.info(f"Table {idx} content for {item_text}: {table.text}")
-                        # Tablo satırlarını bul (tbody içindeki tr etiketleri)
                         rows = table.find_elements(By.XPATH, ".//tbody//tr[contains(@class, 'dx-row dx-data-row')]")
                         if not rows:
-                            # Daha genel bir XPath ile satırları bulmayı dene
                             rows = table.find_elements(By.XPATH, ".//tbody//tr")
                             if not rows:
                                 logger.warning(f"No rows found in table {idx} for {item_text}")
@@ -239,15 +275,13 @@ def perform_egm_sorgu(driver, item_text, result_label=None):
                         else:
                             logger.info(f"Found {len(rows)} rows in table {idx} with class 'dx-row dx-data-row' for {item_text}")
 
-                        # rows listesinin metinlerini sakla (stale element hatasını önlemek için)
                         rows_texts = [row.text for row in rows]
                         logger.info(f"All rows in table {idx} for {item_text}: {rows_texts}")
 
                         if rows_texts:
-                            # Header satırını atla ve tüm veri satırlarını işle
                             for row_idx in range(len(rows_texts)):
-                                # Tabloyu yeniden yükle (DOM değişmiş olabilir)
                                 try:
+                                    # Re-fetch the table to handle possible DOM changes
                                     table = driver.find_element(By.XPATH, DATA_XPATH)
                                     rows = table.find_elements(By.XPATH, ".//tbody//tr[contains(@class, 'dx-row dx-data-row')]") or table.find_elements(By.XPATH, ".//tbody//tr")
                                     if row_idx >= len(rows):
@@ -256,11 +290,10 @@ def perform_egm_sorgu(driver, item_text, result_label=None):
                                     row = rows[row_idx]
                                     columns = row.find_elements(By.TAG_NAME, "td")
                                     logger.info(f"Row {row_idx} in table {idx} has {len(columns)} columns: {[col.text for col in columns]}")
-                                    # Header satırını atlamak için bir kontrol: Sınıf veya içerik kontrolü
                                     if "dx-header-row" in row.get_attribute("class") or (columns and columns[0].text.strip() == "No"):
                                         logger.info(f"Row {row_idx} in table {idx} is likely a header row, skipping")
                                         continue
-                                    if len(columns) >= 1:  # En az 1 sütun olmalı, diğerleri opsiyonel
+                                    if len(columns) >= 1:
                                         arac = {
                                             "No": columns[0].text.strip() if len(columns) > 0 else "",
                                             "Plaka": columns[1].text.strip() if len(columns) > 1 else "",
@@ -269,9 +302,9 @@ def perform_egm_sorgu(driver, item_text, result_label=None):
                                             "Tipi": columns[4].text.strip() if len(columns) > 4 else "",
                                             "Renk": columns[5].text.strip() if len(columns) > 5 else "",
                                             "Cins": columns[6].text.strip() if len(columns) > 6 else "",
-                                            "Mahrumiyet": []  # Mahrumiyet kayıtlarını liste olarak tutacağız
+                                            "Mahrumiyet": []
                                         }
-                                        # "Sorgula" butonuna tıkla (Mahrumiyet için)
+                                        # Click the "Sorgula" button for Mahrumiyet for this vehicle
                                         try:
                                             sorgula_button = row.find_element(By.CSS_SELECTOR, "[aria-label='Sorgula']")
                                             logger.info(f"Clicking Sorgula button for vehicle {arac['No']} - {arac['Plaka']}")
@@ -294,7 +327,6 @@ def perform_egm_sorgu(driver, item_text, result_label=None):
                                             logger.warning(f"Could not locate Sorgula button in row for vehicle {arac['No']} - {arac['Plaka']}: {e}")
                                             continue
 
-                                        # Pop-up'ın açılmasını bekle ve tabloyu oku
                                         try:
                                             driver.switch_to.default_content()
                                             extract_mahrumiyet_data(driver, wait, arac, item_text)
@@ -316,14 +348,14 @@ def perform_egm_sorgu(driver, item_text, result_label=None):
                                             logger.warning(f"Error reading Mahrumiyet table for vehicle {arac['No']} - {arac['Plaka']}: {e}")
                                             arac["Mahrumiyet"] = []
 
-                                        extracted_data["EGM"][item_text]["Araclar"].append(arac)
+                                        extracted_data[dosya_no][item_text]["EGM"]["Araclar"].append(arac)
                                 except Exception as e:
                                     logger.warning(f"Error processing row {row_idx} for {item_text}: {e}")
                                     continue
 
-                if not extracted_data["EGM"][item_text]["Araclar"]:
+                if not extracted_data[dosya_no][item_text]["EGM"]["Araclar"]:
                     logger.warning(f"No valid data rows found in any table for {item_text}")
-                    extracted_data["EGM"][item_text]["Sonuc"] = "Tablo satırları bulunamadı"
+                    extracted_data[dosya_no][item_text]["EGM"]["Sonuc"] = "Tablo satırları bulunamadı"
 
                 logger.info(f"Successfully extracted data for {item_text}: {extracted_data}")
 
@@ -332,18 +364,23 @@ def perform_egm_sorgu(driver, item_text, result_label=None):
             if result_label:
                 result_label.config(text=error_msg)
             logger.error(error_msg)
+            save_to_json(extracted_data)  # Hata olsa bile veriyi kaydet
             return False, extracted_data
         except Exception as e:
             error_msg = f"Error extracting data for {item_text}: {e}"
             if result_label:
                 result_label.config(text=error_msg)
             logger.error(error_msg)
+            save_to_json(extracted_data)  # Hata olsa bile veriyi kaydet
             return False, extracted_data
 
         if result_label:
             result_label.config(text=f"EGM sorgu completed for {item_text}")
         logger.info(f"Waiting 3 seconds after processing {item_text}")
         time.sleep(3)  # Bu beklemeyi de dinamik hale getirebiliriz, ama şimdilik bıraktım
+        
+        # Veriyi JSON dosyasına kaydet
+        save_to_json(extracted_data)
         return True, extracted_data
 
     except Exception as e:
@@ -351,4 +388,5 @@ def perform_egm_sorgu(driver, item_text, result_label=None):
         if result_label:
             result_label.config(text=error_msg)
         logger.error(error_msg)
+        save_to_json(extracted_data)  # Hata olsa bile veriyi kaydet
         return False, extracted_data

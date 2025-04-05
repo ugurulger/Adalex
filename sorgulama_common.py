@@ -68,14 +68,14 @@ def select_dropdown_option(driver, dropdown_selector, option_text):
         logger.error(f"Failed to select option '{option_text}': {e}")
         return False
 
-def perform_sorgulama(driver, sorgula_input, selected_options, result_label=None):
+def perform_sorgulama(driver, dosya_no, selected_options, result_label=None):
     """
     Perform the sorgula process using the provided input and selected options.
     Steps 1-8 prepare the page, and Step 9 iterates over dropdown items to perform EGM sorgu if selected.
     
     Args:
         driver (webdriver.Chrome): The Selenium WebDriver instance.
-        sorgula_input (str): The user input from the sorgula entry field.
+        dosya_no (str): The dosya number from the sorgula entry field.
         selected_options (dict): Dictionary of selected options (e.g., {"EGM-TNB": True}).
         result_label (tk.Label, optional): GUI label to update with status messages.
     """
@@ -103,7 +103,7 @@ def perform_sorgulama(driver, sorgula_input, selected_options, result_label=None
                 if result_label:
                     result_label.config(text=f"Attempt {attempt + 1}: Radio button click failed. Retrying...")
 
-        # Step 4: Fill search input field with sorgula_input
+        # Step 4: Fill search input field with dosya_no
         if result_label:
             result_label.config(text="Filling search input...")
         search_input_xpath = ("//div[contains(@class, 'dx-texteditor-input-container') and "
@@ -118,8 +118,8 @@ def perform_sorgulama(driver, sorgula_input, selected_options, result_label=None
             return
 
         search_input.clear()
-        search_input.send_keys(sorgula_input)
-        logger.info(f"Filled search input with: {sorgula_input}")
+        search_input.send_keys(dosya_no)
+        logger.info(f"Filled search input with: {dosya_no}")
         time.sleep(0.5)
 
         # Step 5: Click the search button
@@ -260,7 +260,7 @@ def perform_sorgulama(driver, sorgula_input, selected_options, result_label=None
                 if selected_options.get("EGM-TNB", False):
                     try:
                         from egm_sorgu import perform_egm_sorgu
-                        if not perform_egm_sorgu(driver, item_text, result_label):
+                        if not perform_egm_sorgu(driver, item_text, dosya_no, result_label):
                             logger.error(f"EGM sorgu failed for {item_text}")
                     except ImportError as e:
                         error_msg = f"Failed to import perform_egm_sorgu: {e}"
