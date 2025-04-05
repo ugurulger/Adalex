@@ -342,8 +342,8 @@ def perform_egm_sorgu(driver, item_text, result_label=None):
 
         if result_label:
             result_label.config(text=f"EGM sorgu completed for {item_text}")
-        logger.info(f"Waiting 10 seconds after processing {item_text}")
-        time.sleep(10)  # Bu beklemeyi de dinamik hale getirebiliriz, ama şimdilik bıraktım
+        logger.info(f"Waiting 3 seconds after processing {item_text}")
+        time.sleep(3)  # Bu beklemeyi de dinamik hale getirebiliriz, ama şimdilik bıraktım
         return True, extracted_data
 
     except Exception as e:

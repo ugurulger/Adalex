@@ -272,8 +272,8 @@ def perform_sorgulama(driver, sorgula_input, selected_options, result_label=None
                 if index < len(dropdown_items) - 1:
                     if result_label:
                         result_label.config(text=f"Waiting 10 seconds before next item...")
-                    logger.info(f"Waiting 10 seconds before processing next dropdown item...")
-                    time.sleep(10)
+                    logger.info(f"Waiting 3 seconds before processing next dropdown item...")
+                    time.sleep(3)
 
                 # Re-open dropdown for next iteration (if not the last item)
                 if index < len(dropdown_items) - 1:
