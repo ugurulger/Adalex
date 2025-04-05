@@ -215,7 +215,7 @@ def perform_sorgulama(driver, dosya_no, selected_options, result_label=None):
             logger.error(error_msg)
             return
 
-        # Step 9: Iterate over dropdown items and perform EGM and Banka sorgu if selected
+        # Step 9: Iterate over dropdown items and perform EGM, Banka, and TAKBIS sorgu if selected
         if result_label:
             result_label.config(text="Processing dropdown items...")
         time.sleep(1)  # Ensure dropdown options load
@@ -230,31 +230,17 @@ def perform_sorgulama(driver, dosya_no, selected_options, result_label=None):
                 dropdown_items = wait.until(EC.presence_of_all_elements_located((By.CSS_SELECTOR, dropdown_items_selector)))
                 current_item = dropdown_items[index]
                 
-                # Get item text for logging (optional)
                 item_text = current_item.text.strip() if current_item.text.strip() else f"Item {index + 1}"
                 if result_label:
                     result_label.config(text=f"Processing dropdown item: {item_text}...")
                 logger.info(f"Processing dropdown item: {item_text}")
 
-                # Click the current item
-                item_clicked = False
-                last_exception = None
-                for attempt in range(3):
-                    try:
-                        if click_element(driver, By.XPATH, f"//*[text()='{item_text}']"):
-                            logger.info(f"Clicked dropdown item: {item_text}")
-                            item_clicked = True
-                            break
-                    except Exception as e:
-                        last_exception = e
-                        logger.warning(f"Dropdown item {item_text} click attempt {attempt + 1} failed: {e}")
-                        time.sleep(0.5)
-                if not item_clicked:
-                    error_msg = f"Failed to click dropdown item {item_text} after 3 attempts: {last_exception}"
+                if not click_element(driver, By.XPATH, f"//*[text()='{item_text}']"):
+                    error_msg = f"Failed to click dropdown item {item_text} after 3 attempts"
                     if result_label:
                         result_label.config(text=error_msg)
                     logger.error(error_msg)
-                    continue  # Move to next item on failure
+                    continue
 
                 # Perform EGM sorgu if selected
                 if selected_options.get("EGM-TNB", False):
@@ -263,10 +249,7 @@ def perform_sorgulama(driver, dosya_no, selected_options, result_label=None):
                         if not perform_egm_sorgu(driver, item_text, dosya_no, result_label):
                             logger.error(f"EGM sorgu failed for {item_text}")
                     except ImportError as e:
-                        error_msg = f"Failed to import perform_egm_sorgu: {e}"
-                        if result_label:
-                            result_label.config(text=error_msg)
-                        logger.error(error_msg)
+                        logger.error(f"Failed to import perform_egm_sorgu: {e}")
 
                 # Perform Banka sorgu if selected
                 if selected_options.get("Banka", False):
@@ -275,22 +258,23 @@ def perform_sorgulama(driver, dosya_no, selected_options, result_label=None):
                         if not perform_banka_sorgu(driver, item_text, dosya_no, result_label):
                             logger.error(f"Banka sorgu failed for {item_text}")
                     except ImportError as e:
-                        error_msg = f"Failed to import perform_banka_sorgu: {e}"
-                        if result_label:
-                            result_label.config(text=error_msg)
-                        logger.error(error_msg)
+                        logger.error(f"Failed to import perform_banka_sorgu: {e}")
 
-                # Add 3-second delay between iterations (except after the last item)
+                # Perform TAKBIS sorgu if selected
+                if selected_options.get("TAKBIS", False):
+                    try:
+                        from takbis_sorgu import perform_takbis_sorgu
+                        if not perform_takbis_sorgu(driver, item_text, dosya_no, result_label):
+                            logger.error(f"TAKBIS sorgu failed for {item_text}")
+                    except ImportError as e:
+                        logger.error(f"Failed to import perform_takbis_sorgu: {e}")
+
                 if index < len(dropdown_items) - 1:
                     if result_label:
                         result_label.config(text=f"Waiting 3 seconds before next item...")
                     logger.info(f"Waiting 3 seconds before processing next dropdown item...")
                     time.sleep(3)
 
-                # Re-open dropdown for next iteration (if not the last item)
-                if index < len(dropdown_items) - 1:
-                    if result_label:
-                        result_label.config(text="Re-opening dropdown for next item...")
                     if not click_element(driver, By.CSS_SELECTOR, dropdown_selector):
                         error_msg = "Failed to re-open dropdown menu for next item."
                         if result_label:
@@ -312,19 +296,3 @@ def perform_sorgulama(driver, dosya_no, selected_options, result_label=None):
         if result_label:
             result_label.config(text=f"Sorgula error: {e}")
         raise
-
-def open_dosya_popup(driver, row, result_label=None):
-    """Clicks the 'dosya-goruntule' button within a given row to open a pop-up."""
-    wait = WebDriverWait(driver, 15)
-    try:
-        if result_label:
-            result_label.config(text="Opening dosya pop-up...")
-        dosya_goruntule = row.find_element(By.CSS_SELECTOR, "#dosya-goruntule")
-        driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", dosya_goruntule)
-        wait.until(EC.element_to_be_clickable((By.ID, "dosya-goruntule")))
-        dosya_goruntule.click()
-        logger.info("Clicked 'dosya-goruntule' to open pop-up.")
-    except Exception as e:
-        logger.error(f"Failed to open dosya pop-up: {e}")
-        if result_label:
-            result_label.config(text=f"Dosya pop-up error: {e}")
