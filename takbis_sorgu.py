@@ -23,6 +23,8 @@ TASINMAZLAR_TABLE_XPATH = (
 )
 HISSE_POPUP_TABLE_XPATH = "/html/body/div[*]/div/div[*]/div/div/div/div[*]/div/div/div/div/table"
 TAKDIYAT_POPUP_TABLE_XPATH = "/html/body/div[*]/div/div[*]/div/div/div[*]/div/div/div[*]/div/div/div[*]/div/div/div/div/table"
+GENISLET_HISSE_BUTTON_XPATH = "/html/body/div[*]/div/div[*]/div/div/div/div[11]/div[1]/div[4]"
+GENISLET_TAKDIYAT_BUTTON_XPATH = "/html/body/div[*]/div/div[*]/div/div/div[*]/div/div/div[*]/div/div/div[11]/div[1]/div[4]"
 CLOSE_BUTTON_CSS = "[aria-label='Kapat']"
 
 # Desktop path for JSON file
@@ -253,7 +255,14 @@ def perform_takbis_sorgu(driver, item_text, dosya_no, result_label=None):
                     "hisse_tipi": 2,
                     "durum": 3
                 }
-                # Extract hisse_bilgisi initially
+                
+                # Hisse tablosunu her popup açıldığında genişlet
+                if click_with_retry(driver, wait, By.XPATH, GENISLET_HISSE_BUTTON_XPATH, "Hisse table extend button", item_text, result_label):
+                    logger.info(f"Extended hisse_bilgisi table for {item_text}, row {idx}")
+                else:
+                    logger.warning(f"Failed to extend hisse_bilgisi table for {item_text}, row {idx}")
+                
+                # Extract hisse_bilgisi
                 hisse_bilgisi = extract_table_data(driver, wait, HISSE_POPUP_TABLE_XPATH, hisse_mappings, item_text)
                 
                 # Create a copy to store updated hisse_bilgisi
@@ -270,6 +279,14 @@ def perform_takbis_sorgu(driver, item_text, dosya_no, result_label=None):
                             "tipi": 1,
                             "aciklama": 2
                         }
+                        
+                        # Takdiyat tablosunu her popup açıldığında genişlet
+                        if click_with_retry(driver, wait, By.XPATH, GENISLET_TAKDIYAT_BUTTON_XPATH, "Takdiyat table extend button", item_text, result_label):
+                            logger.info(f"Extended takdiyat_bilgisi table for {item_text}, row {idx}, hisse {h_idx + 1}")
+                        else:
+                            logger.warning(f"Failed to extend takdiyat_bilgisi table for {item_text}, row {idx}, hisse {h_idx + 1}")
+                        
+                        # Extract takdiyat_bilgisi
                         takdiyat_bilgisi = extract_table_data(driver, wait, TAKDIYAT_POPUP_TABLE_XPATH, takdiyat_mappings, item_text)
                         updated_hisse_bilgisi[h_idx]["takdiyat_bilgisi"] = takdiyat_bilgisi
 
