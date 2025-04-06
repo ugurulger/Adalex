@@ -261,7 +261,7 @@ def perform_sorgulama(driver, dosya_no, selected_options, result_label=None):
                         logger.error(f"Failed to import perform_banka_sorgu: {e}")
 
                 # Perform TAKBIS sorgu if selected
-                if selected_options.get("TAKBIS", False):
+                if selected_options.get("TAKBİS", False):
                     try:
                         from takbis_sorgu import perform_takbis_sorgu
                         if not perform_takbis_sorgu(driver, item_text, dosya_no, result_label):
