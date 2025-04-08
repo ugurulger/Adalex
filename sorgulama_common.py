@@ -10,24 +10,32 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 def click_element(driver, by, value, timeout=15):
-    """Waits for an element to be clickable and performs a click with fallback."""
+    """Waits for an element to be clickable, handles overlay, and performs a click with fallback."""
     wait = WebDriverWait(driver, timeout)
+    overlay_selector = ".dx-loadpanel-indicator dx-loadindicator dx-widget"  # Overlay class’ları
     for attempt in range(3):
         try:
+            # Overlay’in kaybolmasını bekle (her zaman önce kontrol et)
+            wait.until_not(EC.presence_of_element_located((By.CSS_SELECTOR, overlay_selector)), message="Overlay persists")
+            logger.info(f"Overlay kayboldu, tıklama deneniyor: {value}")
+
+            # Elementin tıklanabilir olmasını bekle ve tıkla
             element = wait.until(EC.element_to_be_clickable((by, value)))
             driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", element)
+            time.sleep(0.5)  # Kısa bir gecikme
             element.click()
             logger.info(f"Clicked element: {value}")
             return True
         except Exception as e:
             logger.warning(f"Click attempt {attempt + 1} failed for {value}: {e}")
             if isinstance(e, TimeoutException):
-                logger.error(f"Timeout: Element not clickable ({value})")
+                logger.error(f"Timeout: Element not clickable or overlay persists ({value})")
                 break
             elif isinstance(e, NoSuchElementException):
                 logger.error(f"Element not found: {value}")
                 break
             time.sleep(0.5)  # Brief pause before retry
+    logger.error(f"Failed to click {value} after 3 attempts")
     return False
 
 def select_dropdown_option(driver, dropdown_selector, option_text):
@@ -149,6 +157,9 @@ def perform_sorgulama(driver, dosya_no, selected_options, result_label=None):
                     elif option == "TAKBİS":
                         from takbis_sorgu import perform_takbis_sorgu
                         perform_takbis_sorgu(driver, item_text, dosya_no, result_label)
+                    elif option == "SGK":
+                        from sgk_sorgu import perform_sgk_sorgu
+                        perform_sgk_sorgu(driver, item_text, dosya_no, result_label)
                 except (ImportError, Exception) as e:
                     logger.error(f"Failed to process {option} for {item_text}: {e}")
 
