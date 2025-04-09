@@ -5,12 +5,19 @@ import json
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.common.exceptions import TimeoutException, StaleElementReferenceException, ElementNotInteractableException
+from selenium.common.exceptions import (
+    TimeoutException,
+    StaleElementReferenceException,
+    ElementNotInteractableException,
+    ElementClickInterceptedException
+)
 
-# Constants
+# Global Sabitler
 TIMEOUT = 15
 RETRY_ATTEMPTS = 3
 SLEEP_INTERVAL = 0.5
+OVERLAY_SELECTOR = ".dx-loadpanel-indicator dx-loadindicator dx-widget"
+
 BANKA_BUTTON_CSS = "button.query-button [title='Banka']"
 SORGULA_BUTTON_CSS = "[aria-label='Sorgula']"
 SONUC_XPATH = (
@@ -37,13 +44,11 @@ logger = logging.getLogger(__name__)
 def save_to_json(extracted_data):
     """
     Save or update extracted_data to banka_sorgu.json on the desktop.
-    - If file doesn't exist, create it.
-    - If file exists, update it by merging new data, replacing entries with same dosya_no and item_text.
+    - Eğer dosya yoksa oluşturur.
+    - Dosya varsa aynı dosya_no ve item_text'e sahip verileri güncelleyerek, yeni verileri ekler.
     """
-    # Ensure the directory exists
     os.makedirs(DESKTOP_PATH, exist_ok=True)
 
-    # If file exists, load existing data
     if os.path.exists(JSON_FILE):
         try:
             with open(JSON_FILE, 'r', encoding='utf-8') as f:
@@ -54,14 +59,11 @@ def save_to_json(extracted_data):
     else:
         existing_data = {}
 
-    # Extract dosya_no and item_text from extracted_data
     for dosya_no, items in extracted_data.items():
         if dosya_no not in existing_data:
             existing_data[dosya_no] = {}
-        # Update only the specific item_text under this dosya_no
         existing_data[dosya_no].update(items)
 
-    # Save back to JSON file
     try:
         with open(JSON_FILE, 'w', encoding='utf-8') as f:
             json.dump(existing_data, f, ensure_ascii=False, indent=4)
@@ -69,43 +71,63 @@ def save_to_json(extracted_data):
     except IOError as e:
         logger.error(f"Error writing to JSON file: {e}")
 
-def click_with_retry(driver, wait, locator, locator_value, action_name, item_text, result_label=None, retries=RETRY_ATTEMPTS):
-    for attempt in range(retries):
+def click_element_merged(driver, by, value, action_name="", item_text="", result_label=None, use_js_first=False):
+    """
+    Verilen locator (by, value) ile tanımlanan elementin tıklanabilir hale gelmesini bekler,
+    sayfada ortalar ve tıklama işlemini gerçekleştirir. Normal click başarısız olursa JS fallback uygular.
+    Overlay kontrolü de global OVERLAY_SELECTOR ile yapılır.
+    """
+    wait = WebDriverWait(driver, TIMEOUT)
+    target = item_text if item_text else value
+    for attempt in range(RETRY_ATTEMPTS):
         try:
-            element = wait.until(EC.element_to_be_clickable((locator, locator_value)))
-            driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", element)
-            time.sleep(SLEEP_INTERVAL)  # Allow time for rendering
-            element.click()
-            logger.info(f"Clicked {action_name} for {item_text} (attempt {attempt + 1})")
+            element = wait.until(EC.element_to_be_clickable((by, value)))
+            driver.execute_script("arguments[0].scrollIntoView({block:'center'});", element)
+            time.sleep(SLEEP_INTERVAL)
+            if use_js_first:
+                driver.execute_script("arguments[0].click();", element)
+                logger.info(f"Clicked {action_name} via JS for {target} (attempt {attempt+1})")
+            else:
+                element.click()
+                logger.info(f"Clicked {action_name} for {target} (attempt {attempt+1})")
+            if OVERLAY_SELECTOR:
+                wait.until_not(EC.presence_of_element_located((By.CSS_SELECTOR, OVERLAY_SELECTOR)),
+                             message="Overlay persists")
+                logger.info("Overlay gone.")
             return True
-        except (TimeoutException, StaleElementReferenceException, ElementNotInteractableException) as e:
-            logger.warning(f"{action_name} click attempt {attempt + 1} failed for {item_text}: {e}")
+        except (TimeoutException, StaleElementReferenceException, ElementNotInteractableException, ElementClickInterceptedException) as e:
+            logger.warning(f"{action_name} click attempt {attempt+1} failed for {target}: {e}")
             try:
                 time.sleep(SLEEP_INTERVAL)
-                element = driver.find_element(locator, locator_value)
+                element = driver.find_element(by, value)
                 driver.execute_script("arguments[0].click();", element)
-                logger.info(f"Clicked {action_name} via JavaScript for {item_text} (attempt {attempt + 1})")
+                logger.info(f"Clicked {action_name} via JS fallback for {target} (attempt {attempt+1})")
+                if OVERLAY_SELECTOR:
+                    wait.until_not(EC.presence_of_element_located((By.CSS_SELECTOR, OVERLAY_SELECTOR)),
+                                 message="Overlay persists")
+                    logger.info("Overlay gone (fallback).")
                 return True
-            except Exception as e2:
-                logger.warning(f"JavaScript click also failed: {e2}")
+            except Exception as js_e:
+                logger.warning(f"JS fallback failed for {target}: {js_e}")
             time.sleep(SLEEP_INTERVAL)
-    error_msg = f"Failed to click {action_name} for {item_text} after {retries} attempts"
+    err = f"Failed to click {action_name} for {target} after {RETRY_ATTEMPTS} attempts"
     if result_label:
-        result_label.config(text=error_msg)
-    logger.error(error_msg)
+        result_label.config(text=err)
+    logger.error(err)
     return False
 
 def perform_banka_sorgu(driver, item_text, dosya_no, result_label=None):
     """
-    Perform the Banka sorgu for a specific dropdown item and extract data.
-    Steps:
-        1. Click the Banka button.
-        2. Click the "Sorgula" button.
-        3. Extract data from the specified XPath for 'sonuc' and 'bankalar'.
-           - Before extracting 'bankalar', click the expand button to widen the table.
-           - Save the extracted data to banka_sorgu.json.
+    Belirli bir dropdown öğesi için Banka sorgusunu gerçekleştirir ve verileri çıkarır.
+    Adımlar:
+      1. Banka butonuna tıklar.
+      2. "Sorgula" butonuna tıklar.
+      3. 'sonuc' ve 'bankalar' XPath’lerinden verileri çıkarır.
+         - 'bankalar' için önce expand butonuna tıklanır.
+         - Çıkarılan veriler banka_sorgu.json dosyasına kaydedilir.
+    
     Returns:
-        Tuple (success: bool, data: dict) - Success status and extracted data as a structured dictionary.
+      Tuple (success: bool, data: dict) - İşlem durumu ve çıkarılan veriler.
     """
     wait = WebDriverWait(driver, TIMEOUT)
     extracted_data = {
@@ -120,28 +142,28 @@ def perform_banka_sorgu(driver, item_text, dosya_no, result_label=None):
     }
 
     try:
-        # Step 1: Click the Banka button
+        # Adım 1: Banka butonuna tıkla
         if result_label:
             result_label.config(text=f"Performing Banka sorgu for {item_text} - Clicking Banka button...")
-        if not click_with_retry(driver, wait, By.CSS_SELECTOR, BANKA_BUTTON_CSS, "Banka button", item_text, result_label):
-            save_to_json(extracted_data)  # Hata olsa bile veriyi kaydet
+        if not click_element_merged(driver, By.CSS_SELECTOR, BANKA_BUTTON_CSS,
+                                    action_name="Banka button", item_text=item_text, result_label=result_label):
+            save_to_json(extracted_data)
             return False, extracted_data
 
-        # Step 2: Click the "Sorgula" button
+        # Adım 2: "Sorgula" butonuna tıkla
         if result_label:
             result_label.config(text=f"Performing Banka sorgu for {item_text} - Clicking Sorgula button...")
-        if not click_with_retry(driver, wait, By.CSS_SELECTOR, SORGULA_BUTTON_CSS, "Sorgula button", item_text, result_label):
-            save_to_json(extracted_data)  # Hata olsa bile veriyi kaydet
+        if not click_element_merged(driver, By.CSS_SELECTOR, SORGULA_BUTTON_CSS,
+                                    action_name="Sorgula button", item_text=item_text, result_label=result_label):
+            save_to_json(extracted_data)
             return False, extracted_data
 
-        # Wait dynamically for the data to load
         wait.until(EC.presence_of_element_located((By.XPATH, SONUC_XPATH)))
 
-        # Step 3: Extract data
+        # Adım 3: Veri çıkarma işlemi
         if result_label:
             result_label.config(text=f"Performing Banka sorgu for {item_text} - Extracting data...")
 
-        # Extract 'sonuc' (raw text only)
         try:
             sonuc_element = wait.until(EC.presence_of_element_located((By.XPATH, SONUC_XPATH)))
             driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", sonuc_element)
@@ -153,19 +175,18 @@ def perform_banka_sorgu(driver, item_text, dosya_no, result_label=None):
             if result_label:
                 result_label.config(text=error_msg)
             logger.error(error_msg)
-            extracted_data[dosya_no][item_text]["Banka"]["sonuc"] = ""  # Hata durumunda boş bırak
-            save_to_json(extracted_data)  # Hata olsa bile veriyi kaydet
+            extracted_data[dosya_no][item_text]["Banka"]["sonuc"] = ""
+            save_to_json(extracted_data)
             return False, extracted_data
 
-        # Extract 'bankalar' from the table
         try:
-            # Click the expand button before extracting the table
             if result_label:
                 result_label.config(text=f"Expanding bankalar table for {item_text}...")
-            if not click_with_retry(driver, wait, By.XPATH, GENISLET_BUTTON_XPATH, "Expand button", item_text, result_label):
+            if not click_element_merged(driver, By.XPATH, GENISLET_BUTTON_XPATH,
+                                        action_name="Expand button", item_text=item_text, result_label=result_label):
                 logger.warning(f"Failed to expand table for {item_text}, proceeding without expansion")
             else:
-                time.sleep(1)  # Give time for the table to expand
+                time.sleep(1)
 
             bankalar_table = wait.until(EC.presence_of_element_located((By.XPATH, BANKALAR_TABLE_XPATH)))
             driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", bankalar_table)
@@ -175,17 +196,16 @@ def perform_banka_sorgu(driver, item_text, dosya_no, result_label=None):
             else:
                 for row in rows:
                     columns = row.find_elements(By.TAG_NAME, "td")
-                    if len(columns) >= 2:  # En az 2 sütun olmalı (no ve kurum)
+                    if len(columns) >= 2:
                         banka = {
                             "no": columns[0].text.strip(),
                             "kurum": columns[1].text.strip()
                         }
-                        # Boş satırları filtrele
                         if banka["no"] and banka["kurum"]:
                             extracted_data[dosya_no][item_text]["Banka"]["bankalar"].append(banka)
                             logger.info(f"Extracted banka: {banka} for {item_text}")
                     else:
-                        logger.warning(f"Row with insufficient columns found in 'bankalar' table for {item_text}: {row.text}")
+                        logger.warning(f"Row with insufficient columns in 'bankalar' table for {item_text}: {row.text}")
 
                 if not extracted_data[dosya_no][item_text]["Banka"]["bankalar"]:
                     logger.info(f"No valid banka data extracted for {item_text}")
@@ -197,9 +217,8 @@ def perform_banka_sorgu(driver, item_text, dosya_no, result_label=None):
         if result_label:
             result_label.config(text=f"Banka sorgu completed for {item_text}")
         logger.info(f"Successfully extracted data for {item_text}: {extracted_data}")
-        time.sleep(3)  # EGM'deki gibi 3 saniye bekleme
+        time.sleep(3)
 
-        # Save to JSON file
         save_to_json(extracted_data)
         return True, extracted_data
 
@@ -208,5 +227,5 @@ def perform_banka_sorgu(driver, item_text, dosya_no, result_label=None):
         if result_label:
             result_label.config(text=error_msg)
         logger.error(error_msg)
-        save_to_json(extracted_data)  # Hata olsa bile veriyi kaydet
+        save_to_json(extracted_data)
         return False, extracted_data

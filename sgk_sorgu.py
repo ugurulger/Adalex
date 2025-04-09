@@ -1,173 +1,161 @@
-import logging
-import time
-import os
-import json
+import logging, time, os, json
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.common.exceptions import TimeoutException
+from selenium.common.exceptions import (
+    TimeoutException, StaleElementReferenceException,
+    ElementNotInteractableException, ElementClickInterceptedException
+)
 
-# Constants
-TIMEOUT = 15
-SLEEP_INTERVAL = 0.5
-SGK_BUTTON_CSS = "button.query-button[title='SGK']"  # SGK butonu
-SGK_DROPDOWN_CSS = "div.row div.dx-dropdowneditor-input-wrapper.dx-selectbox-container div.dx-texteditor-buttons-container div.dx-dropdowneditor-button"
-SORGULA_BUTTON_CSS = "[aria-label='Sorgula']"
+# Global Constants
+TIMEOUT = 15                # Seconds to wait for elements
+RETRY_ATTEMPTS = 3          # Maximum click attempts
+SLEEP_INTERVAL = 0.5        # Seconds between attempts
+OVERLAY_SELECTOR = ".dx-loadpanel-indicator.dx-loadindicator.dx-widget"
+
+# SGK button selector
+SGK_BUTTON_CSS = "button.query-button [title='SGK']"
+
+# Updated SGK dropdown selector (using attribute selector to avoid a fixed dynamic ID)
+SGK_DROPDOWN_SELECTOR = (
+    "div[id^='dx-'] > div > div:nth-child(1) > div:nth-child(3) > "
+    "div:nth-child(1) > div > div > "
+    "div.dx-dropdowneditor-input-wrapper.dx-selectbox-container > "
+    "div > div.dx-texteditor-buttons-container > "
+    "div.dx-widget.dx-button-normal.dx-dropdowneditor-button"
+)
+
+# New: Active subpanel selector – clicking somewhere in this container appears to focus the correct panel.
+ACTIVE_SUBPANEL_SELECTOR = "div.dx-multiview-item.dx-item-selected"
+
+# Desktop path for JSON file
 DESKTOP_PATH = os.path.join(os.path.expanduser("~"), "Desktop", "extracted_data")
 JSON_FILE = os.path.join(DESKTOP_PATH, "sgk_sorgu.json")
 
-# Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 def save_to_json(extracted_data):
-    """Extracted data’yı JSON dosyasına kaydeder veya günceller."""
+    """
+    Saves or updates extracted_data to a JSON file on the desktop.
+    """
     os.makedirs(DESKTOP_PATH, exist_ok=True)
     if os.path.exists(JSON_FILE):
         try:
             with open(JSON_FILE, 'r', encoding='utf-8') as f:
                 existing_data = json.load(f)
         except (json.JSONDecodeError, IOError) as e:
-            logger.warning(f"JSON dosyası okunamadı, sıfırdan başlıyor: {e}")
+            logger.warning(f"Error reading existing JSON file, starting fresh: {e}")
             existing_data = {}
     else:
         existing_data = {}
-
     for dosya_no, items in extracted_data.items():
         if dosya_no not in existing_data:
             existing_data[dosya_no] = {}
         existing_data[dosya_no].update(items)
-
     try:
         with open(JSON_FILE, 'w', encoding='utf-8') as f:
             json.dump(existing_data, f, ensure_ascii=False, indent=4)
-        logger.info(f"Veri {JSON_FILE} dosyasına kaydedildi/güncellendi")
+        logger.info(f"Data saved/updated in {JSON_FILE}")
     except IOError as e:
-        logger.error(f"JSON dosyasına yazma hatası: {e}")
+        logger.error(f"Error writing to JSON file: {e}")
+
+def click_element_merged(driver, by, value, action_name="", item_text="", result_label=None, use_js_first=False):
+    """
+    Waits for an element (by, value) to be clickable, scrolls it into view,
+    and attempts a click; if normal clicking fails, uses a JavaScript fallback.
+    Also waits for any overlay to vanish.
+    """
+    wait = WebDriverWait(driver, TIMEOUT)
+    target = item_text if item_text else value
+    for attempt in range(RETRY_ATTEMPTS):
+        try:
+            element = wait.until(EC.element_to_be_clickable((by, value)))
+            driver.execute_script("arguments[0].scrollIntoView({block:'center'});", element)
+            time.sleep(SLEEP_INTERVAL)
+            if use_js_first:
+                driver.execute_script("arguments[0].click();", element)
+                logger.info(f"Clicked {action_name} via JS for {target} (attempt {attempt+1})")
+            else:
+                element.click()
+                logger.info(f"Clicked {action_name} for {target} (attempt {attempt+1})")
+            if OVERLAY_SELECTOR:
+                wait.until_not(EC.presence_of_element_located((By.CSS_SELECTOR, OVERLAY_SELECTOR)), "Overlay persists")
+                logger.info("Overlay gone.")
+            return True
+        except (TimeoutException, StaleElementReferenceException, ElementNotInteractableException, ElementClickInterceptedException) as e:
+            logger.warning(f"{action_name} click attempt {attempt+1} failed for {target}: {e}")
+            try:
+                time.sleep(SLEEP_INTERVAL)
+                element = driver.find_element(by, value)
+                driver.execute_script("arguments[0].click();", element)
+                logger.info(f"Clicked {action_name} via JS fallback for {target} (attempt {attempt+1})")
+                if OVERLAY_SELECTOR:
+                    wait.until_not(EC.presence_of_element_located((By.CSS_SELECTOR, OVERLAY_SELECTOR)), "Overlay persists")
+                    logger.info("Overlay gone (fallback).")
+                return True
+            except Exception as js_e:
+                logger.warning(f"JS fallback failed for {target}: {js_e}")
+            time.sleep(SLEEP_INTERVAL)
+    err = f"Failed to click {action_name} for {target} after {RETRY_ATTEMPTS} attempts"
+    if result_label:
+        result_label.config(text=err)
+    logger.error(err)
+    return False
 
 def perform_sgk_sorgu(driver, item_text, dosya_no, result_label=None):
     """
-    SGK sorgu işlemini gerçekleştirir (Veri işleme hariç).
-    Steps:
-        1. SGK butonuna tıkla.
-        2. Dropdown’u aç ve tüm itemlere sırayla tıkla.
-        3. Her item için Sorgula butonuna tıkla.
+    Performs SGK query steps:
+      1. Click the SGK button.
+      2. Click an empty area in the active subpanel to focus the correct panel.
+      3. Click the SGK dropdown within that active panel.
+      
+    Returns:
+      Tuple (success: bool, data: dict) - the status and extracted data.
     """
     wait = WebDriverWait(driver, TIMEOUT)
     extracted_data = {
         dosya_no: {
             item_text: {
-                "SGK": {
-                    "sonuc": "Veri işleme implemente edilmedi"
-                }
+                "SGK": {}
             }
         }
     }
-
     try:
-        # # Step 1: SGK butonuna tıkla
-        # if result_label:
-        #     result_label.config(text=f"SGK sorgu için {item_text} - SGK butonuna tıklanıyor...")
-        from sorgulama_common import click_element
-        # logger.info(f"SGK buton selector deneniyor: {SGK_BUTTON_CSS}")
-        
-        # SGK butonunun varlığını ve tıklanabilirliğini doğrula
-        # try:
-        #     sgk_button = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, SGK_BUTTON_CSS)))
-        #     driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", sgk_button)
-        #     if not click_element(driver, By.CSS_SELECTOR, SGK_BUTTON_CSS):
-        #         error_msg = f"SGK butonu tıklanamadı: {item_text}"
-        #         if result_label:
-        #             result_label.config(text=error_msg)
-        #         logger.error(error_msg)
-        #         save_to_json(extracted_data)
-        #         return False, extracted_data
-        # except TimeoutException as e:
-        #     error_msg = f"SGK butonu bulunamadı veya yüklenmedi: {item_text}: {e}"
-        #     if result_label:
-        #         result_label.config(text=error_msg)
-        #     logger.error(error_msg)
-        #     save_to_json(extracted_data)
-        #     return False, extracted_data
-
-        # SGK butonuna tıkladıktan sonra dropdown’un yüklenmesi için ek bekleme
-        time.sleep(5)
-        logger.info(f"SGK butonuna tıkladıktan sonra 2 saniye beklendi: {item_text}")
-
-        # Step 2: Dropdown’u aç ve tüm itemlere sırayla tıkla
+        # Step 1: Click SGK button
         if result_label:
-            result_label.config(text=f"SGK sorgu için {item_text} - Dropdown açılıyor...")
-        logger.info(f"SGK dropdown selector deneniyor: {SGK_DROPDOWN_CSS}")
-
-        # Dropdown’u aç
-        if not click_element(driver, By.CSS_SELECTOR, SGK_DROPDOWN_CSS):
-            error_msg = f"SGK dropdown açılamadı: {item_text}"
-            if result_label:
-                result_label.config(text=error_msg)
-            logger.error(error_msg)
+            result_label.config(text=f"Performing SGK query for {item_text} - Clicking SGK button...")
+        if not click_element_merged(driver, By.CSS_SELECTOR, SGK_BUTTON_CSS,
+                                    action_name="SGK button", item_text=item_text, result_label=result_label):
             save_to_json(extracted_data)
             return False, extracted_data
 
-        # Dropdown itemlerini bul
-        dropdown_items_selector = ".dx-dropdowneditor-overlay .dx-list-item"
-        try:
-            items = wait.until(EC.presence_of_all_elements_located((By.CSS_SELECTOR, dropdown_items_selector)))
-            logger.info(f"Bulunan dropdown item sayısı: {len(items)}")
-            for index, item in enumerate(items):
-                item_name = item.text.strip() or f"Item {index + 1}"
-                logger.info(f"Dropdown item {index + 1}: {item_name}")
-        except TimeoutException as e:
-            error_msg = f"Dropdown itemleri yüklenemedi: {item_text}: {e}"
-            if result_label:
-                result_label.config(text=error_msg)
-            logger.error(error_msg)
+        # Step 2: Click an empty area in the active subpanel
+        if result_label:
+            result_label.config(text=f"Focusing active subpanel for {item_text}...")
+        # This step is to force the active panel to be the one we need.
+        if not click_element_merged(driver, By.CSS_SELECTOR, ACTIVE_SUBPANEL_SELECTOR,
+                                    action_name="Active subpanel focus", item_text=item_text, result_label=result_label):
+            logger.warning("Could not explicitly focus the active subpanel; proceeding anyway")
+        # Wait briefly to let the panel update
+        time.sleep(SLEEP_INTERVAL)
+
+        # Step 3: Click the SGK dropdown within the active subpanel
+        if result_label:
+            result_label.config(text=f"Performing SGK query for {item_text} - Opening SGK dropdown...")
+        if not click_element_merged(driver, By.CSS_SELECTOR, SGK_DROPDOWN_SELECTOR,
+                                    action_name="SGK dropdown", item_text=item_text, result_label=result_label):
             save_to_json(extracted_data)
             return False, extracted_data
 
-        # Itemleri sırayla işle
-        for index, dropdown_item in enumerate(items):
-            item_name = dropdown_item.text.strip() or f"Item {index + 1}"
-            if result_label:
-                result_label.config(text=f"SGK sorgu için {item_text} - {item_name} işleniyor...")
-            logger.info(f"Dropdown item işleniyor: {item_name}")
-
-            # Her bir dropdown itemine tıkla
-            if not click_element(driver, By.XPATH, f"//*[text()='{item_name}']"):
-                logger.warning(f"Dropdown item '{item_name}' tıklanamadı, devam ediliyor...")
-                continue
-
-            # Step 3: Sorgula butonuna tıkla
-            if result_label:
-                result_label.config(text=f"SGK sorgu için {item_text} - {item_name} için Sorgula butonuna tıklanıyor...")
-            if not click_element(driver, By.CSS_SELECTOR, SORGULA_BUTTON_CSS):
-                logger.warning(f"Sorgula butonu tıklanamadı: {item_name}, devam ediliyor...")
-                continue
-
-            # Veri işleme şimdilik boş
-            logger.info(f"{item_name} için sorgulama tamamlandı (veri işleme yok)")
-            time.sleep(1)  # Her sorgudan sonra kısa bir bekleme
-
-            # Dropdown’u tekrar aç (bir sonraki item için)
-            if index < len(items) - 1:
-                if not click_element(driver, By.CSS_SELECTOR, SGK_DROPDOWN_CSS):
-                    error_msg = f"SGK dropdown tekrar açılamadı: {item_text}"
-                    if result_label:
-                        result_label.config(text=error_msg)
-                    logger.error(error_msg)
-                    break
-
-        # İşlem tamamlandı
-        if result_label:
-            result_label.config(text=f"SGK sorgu için {item_text} - Tüm itemler işlendi")
-        logger.info(f"SGK sorgu tamamlandı: {item_text}")
-        save_to_json(extracted_data)
-        time.sleep(3)  # Diğer sorgularla uyumlu
+        # Additional SGK query steps can be added here...
         return True, extracted_data
 
     except Exception as e:
-        error_msg = f"SGK sorgu hatası: {item_text}: {e}"
+        error_msg = f"SGK query error for {item_text}: {e}"
         if result_label:
             result_label.config(text=error_msg)
         logger.error(error_msg)
         save_to_json(extracted_data)
         return False, extracted_data
+
