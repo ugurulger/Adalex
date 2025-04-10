@@ -28,7 +28,7 @@ SORGULA_BUTTON_CSS = "[aria-label='Sorgula']"
 DESKTOP_PATH = os.path.join(os.path.expanduser("~"), "Desktop", "extracted_data")
 JSON_FILE = os.path.join(DESKTOP_PATH, "sgk_sorgu.json")
 
-# Sabit dropdown item listesi (önceki loglardan aldım)
+# Sabit dropdown item listesi
 DROPDOWN_ITEMS = [
     "Kamu Çalışanı",
     "Kamu Emeklisi",
@@ -93,9 +93,43 @@ def click_element_merged(driver, by, value, action_name="", item_text="", result
     logger.error(err)
     return False
 
+def extract_data_from_card(driver):
+    """
+    Hedef card-body'den veriyi çeker: pdftable varsa tabloyu, yoksa card-body içindeki metni döner.
+    """
+    wait = WebDriverWait(driver, SHORT_TIMEOUT)
+    try:
+        # Hedef card-body'yi bul
+        card_body = wait.until(EC.presence_of_element_located((By.CLASS_NAME, "hedef-card-body")))
+        # Card-body'ye scroll yap
+        driver.execute_script("arguments[0].scrollIntoView({block:'center'});", card_body)
+        # Card-body'nin görünür olmasını bekle
+        wait.until(EC.visibility_of_element_located((By.CLASS_NAME, "hedef-card-body")))
+        
+        # pdftable varsa tabloyu çek
+        try:
+            table = card_body.find_element(By.ID, "pdftable")
+            wait.until(EC.visibility_of_element_located((By.ID, "pdftable")))
+            rows = table.find_elements(By.TAG_NAME, "tr")
+            table_data = []
+            for row in rows:
+                cells = row.find_elements(By.TAG_NAME, "td")
+                row_data = [cell.text.strip() for cell in cells if cell.text.strip()]  # Boş hücreleri atla
+                if row_data:  # Boş satırları atla
+                    table_data.append(row_data)
+            return table_data if table_data else "Tablo boş"
+        except:
+            # pdftable yoksa card-body içindeki tüm metni çek
+            card_text = card_body.text.strip()
+            return card_text if card_text else "Card-body boş"
+    
+    except TimeoutException:
+        logger.warning("Hedef card-body bulunamadı")
+        return "Hedef card-body bulunamadı"
+
 def perform_sgk_sorgu(driver, item_text, dosya_no, result_label=None):
     wait = WebDriverWait(driver, TIMEOUT)
-    extracted_data = {dosya_no: {item_text: {"SGK": []}}}
+    extracted_data = {dosya_no: {item_text: {}}}
     
     # Step 1: Click SGK button
     if result_label:
@@ -132,10 +166,14 @@ def perform_sgk_sorgu(driver, item_text, dosya_no, result_label=None):
             logger.warning(f"Sorgula başarısız; {current_text} atlanıyor")
             continue
         
-        # Extract data (placeholder)
-        extracted_item = {"dropdown_item": current_text, "data": "extracted_placeholder"}
-        extracted_data[dosya_no][item_text]["SGK"].append(extracted_item)
-        logger.info(f"Extracted data for '{current_text}'")
+        # Veriyi çek
+        sonuc = extract_data_from_card(driver)
+        time.sleep(5)
+        # Extracted data'ya ekle
+        if item_text not in extracted_data[dosya_no]:
+            extracted_data[dosya_no][item_text] = {}
+        extracted_data[dosya_no][item_text][current_text] = {"sonuc": sonuc}
+        logger.info(f"Extracted data for '{current_text}': {sonuc}")
         time.sleep(1)
     
     save_to_json(extracted_data)
