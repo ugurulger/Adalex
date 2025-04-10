@@ -74,9 +74,11 @@ def click_element_merged(driver, by, value, action_name="", item_text="", result
     target = item_text if item_text else value
     for attempt in range(RETRY_ATTEMPTS):
         try:
+            element = wait.until(EC.presence_of_element_located((by, value)))
             element = wait.until(EC.element_to_be_clickable((by, value)))
+            element = wait.until(EC.visibility_of_element_located((by, value)))
             driver.execute_script("arguments[0].scrollIntoView({block:'center'});", element)
-            time.sleep(SLEEP_INTERVAL)
+
             if use_js_first:
                 driver.execute_script("arguments[0].click();", element)
                 logger.info(f"Clicked {action_name} via JS for {target} (attempt {attempt+1})")
@@ -90,18 +92,6 @@ def click_element_merged(driver, by, value, action_name="", item_text="", result
             return True
         except (TimeoutException, StaleElementReferenceException, ElementNotInteractableException, ElementClickInterceptedException) as e:
             logger.warning(f"{action_name} click attempt {attempt+1} failed for {target}: {e}")
-            try:
-                time.sleep(SLEEP_INTERVAL)
-                element = driver.find_element(by, value)
-                driver.execute_script("arguments[0].click();", element)
-                logger.info(f"Clicked {action_name} via JS fallback for {target} (attempt {attempt+1})")
-                if OVERLAY_SELECTOR:
-                    wait.until_not(EC.presence_of_element_located((By.CSS_SELECTOR, OVERLAY_SELECTOR)),
-                                 message="Overlay persists")
-                    logger.info("Overlay gone (fallback).")
-                return True
-            except Exception as js_e:
-                logger.warning(f"JS fallback failed for {target}: {js_e}")
             time.sleep(SLEEP_INTERVAL)
     err = f"Failed to click {action_name} for {target} after {RETRY_ATTEMPTS} attempts"
     if result_label:
@@ -155,6 +145,7 @@ def perform_sorgulama(driver, dosya_no, selected_options, result_label=None):
     # Adım 6: Dosya pop-up’ının açılması
     status("Opening dosya pop-up...")
     try:
+        time.sleep(4) #gecici olarak 1sn eklendi. Buraya daha sonra etkili bir filtre koyulacak
         wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, RESULT_ROW_SELECTOR)))
         if not click_element_merged(driver, By.ID, DOSYA_GORUNTULE_ID, action_name="Open dosya pop-up"):
             status("Failed to open dosya pop-up.")
