@@ -73,7 +73,7 @@ def click_element_merged(driver, by, value, action_name="", item_text="", result
             element = wait.until(EC.element_to_be_clickable((by, value)))
             element = wait.until(EC.visibility_of_element_located((by, value)))
             driver.execute_script("arguments[0].scrollIntoView({block:'center'});", element)
-            time.sleep(SLEEP_INTERVAL)
+            
             if use_js_first:
                 driver.execute_script("arguments[0].click();", element)
                 logger.info(f"Clicked {action_name} via JS for {target} (attempt {attempt+1})")
