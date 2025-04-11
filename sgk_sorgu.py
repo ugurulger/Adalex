@@ -64,107 +64,120 @@ def save_to_json(extracted_data):
     except Exception as e:
         logger.error(f"Error writing JSON: {e}")
 
-def click(driver, by, value, action_name="", item_text="", result_label=None, use_js=False):
+# Orijinal click_element_merged fonksiyonu aynen korundu.
+def click_element_merged(driver, by, value, action_name="", item_text="", result_label=None, use_js_first=False):
     wait = WebDriverWait(driver, TIMEOUT)
+    target = item_text if item_text else value
     for attempt in range(3):
         try:
+            element = wait.until(EC.presence_of_element_located((by, value)))
             element = wait.until(EC.element_to_be_clickable((by, value)))
+            element = wait.until(EC.visibility_of_element_located((by, value)))
             driver.execute_script("arguments[0].scrollIntoView({block:'center'});", element)
-            if use_js:
+            
+            if use_js_first:
                 driver.execute_script("arguments[0].click();", element)
+                logger.info(f"Clicked {action_name} via JS for {target} (attempt {attempt+1})")
             else:
                 element.click()
+                logger.info(f"Clicked {action_name} for {target} (attempt {attempt+1})")
             if OVERLAY_SELECTOR:
-                wait.until_not(EC.visibility_of_element_located((By.CSS_SELECTOR, OVERLAY_SELECTOR)))
-            logger.info(f"Clicked {action_name} for {item_text or value} (attempt {attempt+1}).")
+                wait.until_not(EC.visibility_of_element_located((By.CSS_SELECTOR, OVERLAY_SELECTOR)), "Overlay persists")
+                logger.info("Overlay gone.")
             return True
-        except (TimeoutException, StaleElementReferenceException,
-                ElementNotInteractableException, ElementClickInterceptedException) as e:
-            logger.warning(f"{action_name} click attempt {attempt+1} failed for {item_text or value}: {e}")
+        except (TimeoutException, StaleElementReferenceException, ElementNotInteractableException, ElementClickInterceptedException) as e:
+            logger.warning(f"{action_name} click attempt {attempt+1} failed for {target}: {e}")
             time.sleep(SLEEP_INTERVAL)
-    err = f"Failed to click {action_name} for {item_text or value} after 3 attempts"
+    err = f"Failed to click {action_name} for {target} after 3 attempts"
     if result_label:
         result_label.config(text=err)
     logger.error(err)
     return False
 
 def extract_data_from_card(driver):
+    """
+    Hedef card-body'den veriyi çeker: pdftable varsa tabloyu, yoksa card-body içindeki metni döner.
+    """
     wait = WebDriverWait(driver, SHORT_TIMEOUT)
     try:
         parent_panel = wait.until(EC.presence_of_element_located(
             (By.XPATH, "//*[contains(@class, 'dx-item') and contains(@class, 'dx-multiview-item') and contains(@class, 'dx-item-selected')]")
         ))
-        logger.info("Parent panel located.")
+        logger.info("Parent panel bulundu.")
         driver.execute_script("arguments[0].scrollIntoView({block:'center'});", parent_panel)
         rows = parent_panel.find_elements(By.XPATH, ".//div[contains(@class, 'row')]")
+        logger.info(f"Toplam {len(rows)} adet 'row' bulundu.")
         if not rows:
-            logger.warning("No 'row' element found")
-            return "No 'row' element found"
+            logger.warning("Hiç 'row' elementi bulunamadı")
+            return "Hiç 'row' elementi bulunamadı"
+        
         card_body = None
         for index, row in enumerate(rows):
             try:
                 card_body = row.find_element(By.CSS_SELECTOR, HEDEF_CARD_BODY_SELECTOR)
-                logger.info(f"Card body found in row {index+1}.")
+                logger.info(f"hedef-card-body, {index+1}. row'da bulundu.")
                 break
             except Exception:
                 continue
+        
         if not card_body:
-            for index, row in enumerate(rows):
-                logger.info(f"Row {index+1} content: {row.get_attribute('outerHTML')}")
-            logger.warning("Card body not found in any row.")
-            return "Card body not found in any row"
+            logger.warning("Herhangi bir row içinde hedef-card-body bulunamadı")
+            return "Herhangi bir row içinde hedef-card-body bulunamadı"
+        
         driver.execute_script("arguments[0].scrollIntoView({block:'center'});", card_body)
         wait.until(EC.visibility_of(card_body))
+        
         try:
             table = card_body.find_element(By.ID, "pdftable")
-            wait.until(EC.visibility_of(table))
+            wait.until(EC.visibility_of_element_located((By.ID, "pdftable")))
             table_rows = table.find_elements(By.TAG_NAME, "tr")
             table_data = [
                 [cell.text.strip() for cell in row.find_elements(By.TAG_NAME, "td") if cell.text.strip()]
                 for row in table_rows if row.find_elements(By.TAG_NAME, "td")
             ]
-            return table_data if table_data else "Table is empty"
+            return table_data if table_data else "Tablo boş"
         except Exception:
             card_text = card_body.text.strip()
-            return card_text if card_text else "Card body is empty"
+            return card_text if card_text else "Card-body boş"
+    
     except TimeoutException as e:
-        logger.warning(f"Parent panel or card body not found: {e}")
-        return "Parent panel or card body not found"
+        logger.warning(f"Hedef card-body veya üst yapı bulunamadı: {e}")
+        return "Hedef card-body veya üst yapı bulunamadı"
 
 def perform_sgk_sorgu(driver, item_text, dosya_no, result_label=None):
     extracted_data = {dosya_no: {item_text: {}}}
     
     if result_label:
-        result_label.config(text=f"Clicking SGK button for {item_text}...")
-    if not click(driver, By.CSS_SELECTOR, SGK_BUTTON_CSS, "SGK button", item_text, result_label):
+        result_label.config(text=f"SGK sorgu için {item_text} - SGK butonuna tıklanıyor...")
+    if not click_element_merged(driver, By.CSS_SELECTOR, SGK_BUTTON_CSS, "SGK button", item_text, result_label):
         save_to_json(extracted_data)
         return False, extracted_data
 
-    if not click(driver, By.CSS_SELECTOR, ACTIVE_SUBPANEL_SELECTOR, "Active subpanel focus", item_text, result_label):
-        logger.warning("Active subpanel focus failed; continuing anyway.")
+    if not click_element_merged(driver, By.CSS_SELECTOR, ACTIVE_SUBPANEL_SELECTOR, "Active subpanel focus", item_text, result_label):
+        logger.warning("Subpanel focus başarısız; devam ediliyor")
 
     for current_item in DROPDOWN_ITEMS:
         if result_label:
-            result_label.config(text=f"Opening SGK dropdown for {item_text} ({current_item})...")
-        if not click(driver, By.CSS_SELECTOR, SGK_DROPDOWN_SELECTOR, "SGK dropdown", item_text, result_label):
-            logger.warning(f"Dropdown did not open; skipping {current_item}.")
+            result_label.config(text=f"{item_text} için SGK dropdown açılıyor ({current_item})...")
+        if not click_element_merged(driver, By.CSS_SELECTOR, SGK_DROPDOWN_SELECTOR, "SGK dropdown", item_text, result_label):
+            logger.warning(f"Dropdown açılamadı; {current_item} atlanıyor")
             continue
 
         xpath = f"//*[contains(@class, 'dx-list-item') and contains(text(), '{current_item}')]"
-        if not click(driver, By.XPATH, xpath, "Dropdown item", current_item, result_label, use_js=True):
-            logger.warning(f"Failed to click '{current_item}'; skipping.")
+        if not click_element_merged(driver, By.XPATH, xpath, "Dropdown item", current_item, result_label, use_js_first=True):
+            logger.warning(f"Failed to click '{current_item}'; skipping")
             continue
-
-        if not click(driver, By.CSS_SELECTOR, SORGULA_BUTTON_CSS, "Sorgula button", current_item, result_label):
-            logger.warning(f"Sorgula click failed for {current_item}; skipping.")
+        
+        if not click_element_merged(driver, By.CSS_SELECTOR, SORGULA_BUTTON_CSS, "Sorgula button", current_item, result_label):
+            logger.warning(f"Sorgula başarısız; {current_item} atlanıyor")
             continue
-
-        time.sleep(1)  # Sayfanın yüklenmesi için bekleme
-        result = extract_data_from_card(driver)
+        
+        time.sleep(1)  # Sayfa yüklenmesi için ek bekleme
+        sonuc = extract_data_from_card(driver)
         #time.sleep(5)
-        extracted_data[dosya_no][item_text][current_item] = {"sonuc": result}
-        logger.info(f"Data extracted for '{current_item}': {result}")
+        extracted_data[dosya_no][item_text][current_item] = {"sonuc": sonuc}
+        logger.info(f"Extracted data for '{current_item}': {sonuc}")
         #time.sleep(1)
-
+    
     save_to_json(extracted_data)
     return True, extracted_data
