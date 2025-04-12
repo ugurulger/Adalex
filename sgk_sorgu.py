@@ -94,55 +94,79 @@ def click_element_merged(driver, by, value, action_name="", item_text="", result
     logger.error(err)
     return False
 
+def card_body_finder(driver):
+    """
+    Sayfa tamamen yüklenmemişse, maksimum 5 deneme yaparak
+    hedef card-body öğesini arar ve bulmaya çalışır.
+    """
+    wait = WebDriverWait(driver, SHORT_TIMEOUT)
+    max_attempts = 5
+    card_body = None
+
+    for attempt in range(max_attempts):
+        
+        time.sleep(SLEEP_INTERVAL)  # Her denemeden önce bekle
+
+        # Parent paneli arıyoruz
+        try:
+            parent_panel = wait.until(EC.presence_of_element_located(
+                (By.XPATH, "//*[contains(@class, 'dx-item') and contains(@class, 'dx-multiview-item') and contains(@class, 'dx-item-selected')]")
+            ))
+        except TimeoutException as e:
+            logger.warning(f"card_body_finder: Parent panel bulunamadı: {e}")
+            continue
+
+        driver.execute_script("arguments[0].scrollIntoView({block:'center'});", parent_panel)
+        rows = parent_panel.find_elements(By.XPATH, ".//div[contains(@class, 'row')]")
+        if not rows:
+            logger.warning("card_body_finder: Hiç 'row' elementi bulunamadı.")
+            continue
+
+        # Her row'da hedef-card-body araması
+        for index, row in enumerate(rows):
+            try:
+                card_body = row.find_element(By.CSS_SELECTOR, HEDEF_CARD_BODY_SELECTOR)
+                logger.info(f"card_body_finder: hedef-card-body, deneme {attempt+1} başarılı.")
+                break  # Card-body bulundu, döngüden çık
+            except Exception:
+                continue
+
+        if card_body is not None:
+            break
+        else:
+            logger.info(f"card_body_finder: Deneme {attempt+1} başarısız, hedef-card-body bulunamadı.")
+
+    if card_body is None:
+        logger.warning("card_body_finder: 5 deneme sonunda hedef-card-body bulunamadı.")
+    return card_body
+
+
 def extract_data_from_card(driver):
     """
     Hedef card-body'den veriyi çeker: pdftable varsa tabloyu, yoksa card-body içindeki metni döner.
     """
     wait = WebDriverWait(driver, SHORT_TIMEOUT)
-    try:
-        parent_panel = wait.until(EC.presence_of_element_located(
-            (By.XPATH, "//*[contains(@class, 'dx-item') and contains(@class, 'dx-multiview-item') and contains(@class, 'dx-item-selected')]")
-        ))
-        logger.info("Parent panel bulundu.")
-        driver.execute_script("arguments[0].scrollIntoView({block:'center'});", parent_panel)
-        rows = parent_panel.find_elements(By.XPATH, ".//div[contains(@class, 'row')]")
-        logger.info(f"Toplam {len(rows)} adet 'row' bulundu.")
-        if not rows:
-            logger.warning("Hiç 'row' elementi bulunamadı")
-            return "Hiç 'row' elementi bulunamadı"
-        
-        card_body = None
-        for index, row in enumerate(rows):
-            try:
-                card_body = row.find_element(By.CSS_SELECTOR, HEDEF_CARD_BODY_SELECTOR)
-                logger.info(f"hedef-card-body, {index+1}. row'da bulundu.")
-                break
-            except Exception:
-                continue
-        
-        if not card_body:
-            logger.warning("Herhangi bir row içinde hedef-card-body bulunamadı")
-            return "Herhangi bir row içinde hedef-card-body bulunamadı"
-        
-        driver.execute_script("arguments[0].scrollIntoView({block:'center'});", card_body)
-        wait.until(EC.visibility_of(card_body))
-        
-        try:
-            table = card_body.find_element(By.ID, "pdftable")
-            wait.until(EC.visibility_of_element_located((By.ID, "pdftable")))
-            table_rows = table.find_elements(By.TAG_NAME, "tr")
-            table_data = [
-                [cell.text.strip() for cell in row.find_elements(By.TAG_NAME, "td") if cell.text.strip()]
-                for row in table_rows if row.find_elements(By.TAG_NAME, "td")
-            ]
-            return table_data if table_data else "Tablo boş"
-        except Exception:
-            card_text = card_body.text.strip()
-            return card_text if card_text else "Card-body boş"
+    card_body = card_body_finder(driver)
+    if card_body is None:
+        return "Herhangi bir row içinde hedef-card-body bulunamadı"
     
-    except TimeoutException as e:
-        logger.warning(f"Hedef card-body veya üst yapı bulunamadı: {e}")
-        return "Hedef card-body veya üst yapı bulunamadı"
+    # Card-body bulundu, ekrana kaydırıp görünürlüğünü teyit ediyoruz.
+    driver.execute_script("arguments[0].scrollIntoView({block:'center'});", card_body)
+    wait.until(EC.visibility_of(card_body))
+    
+    try:
+        table = card_body.find_element(By.ID, "pdftable")
+        wait.until(EC.visibility_of_element_located((By.ID, "pdftable")))
+        table_rows = table.find_elements(By.TAG_NAME, "tr")
+        table_data = [
+            [cell.text.strip() for cell in row.find_elements(By.TAG_NAME, "td") if cell.text.strip()]
+            for row in table_rows if row.find_elements(By.TAG_NAME, "td")
+        ]
+        return table_data if table_data else "Tablo boş"
+    except Exception:
+        card_text = card_body.text.strip()
+        return card_text if card_text else "Card-body boş"
+    
 
 def perform_sgk_sorgu(driver, item_text, dosya_no, result_label=None):
     extracted_data = {dosya_no: {item_text: {}}}
@@ -181,7 +205,7 @@ def perform_sgk_sorgu(driver, item_text, dosya_no, result_label=None):
             logger.warning(f"Sorgula başarısız; {current_item} atlanıyor")
             continue
         
-        time.sleep(3)  # Sayfa yüklenmesi için ek bekleme
+        #time.sleep(3)  # Sayfa yüklenmesi için ek bekleme
         sonuc = extract_data_from_card(driver)
         #time.sleep(5)
         extracted_data[dosya_no][item_text][current_item] = {"sonuc": sonuc}
