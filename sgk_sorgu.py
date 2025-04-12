@@ -104,7 +104,7 @@ def card_body_finder(driver):
     card_body = None
 
     for attempt in range(max_attempts):
-        
+
         time.sleep(SLEEP_INTERVAL)  # Her denemeden önce bekle
 
         # Parent paneli arıyoruz
@@ -173,6 +173,7 @@ def perform_sgk_sorgu(driver, item_text, dosya_no, result_label=None):
     
     if result_label:
         result_label.config(text=f"SGK sorgu için {item_text} - SGK butonuna tıklanıyor...")
+    time.sleep(SLEEP_INTERVAL) #gecici bir cozum daha kalici bir cozum bulunacak
     if not click_element_merged(driver, By.CSS_SELECTOR, SGK_BUTTON_CSS, "SGK button", item_text, result_label):
         save_to_json(extracted_data)
         return False, extracted_data
