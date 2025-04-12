@@ -156,23 +156,32 @@ def perform_sgk_sorgu(driver, item_text, dosya_no, result_label=None):
     if not click_element_merged(driver, By.CSS_SELECTOR, ACTIVE_SUBPANEL_SELECTOR, "Active subpanel focus", item_text, result_label):
         logger.warning("Subpanel focus başarısız; devam ediliyor")
 
+    # Her item için dropdown kontrollerini akıllıca gerçekleştir:
     for current_item in DROPDOWN_ITEMS:
         if result_label:
             result_label.config(text=f"{item_text} için SGK dropdown açılıyor ({current_item})...")
+        # Dropdown'u aç
         if not click_element_merged(driver, By.CSS_SELECTOR, SGK_DROPDOWN_SELECTOR, "SGK dropdown", item_text, result_label):
             logger.warning(f"Dropdown açılamadı; {current_item} atlanıyor")
             continue
 
-        xpath = f"//*[contains(@class, 'dx-list-item') and contains(text(), '{current_item}')]"
-        if not click_element_merged(driver, By.XPATH, xpath, "Dropdown item", current_item, result_label, use_js_first=True):
-            logger.warning(f"Failed to click '{current_item}'; skipping")
+        # Mevcut dropdown itemlerini kontrol et.
+        # normalize-space() kullanılarak boşluklar temizleniyor
+        xpath_item = f"//*[contains(@class, 'dx-list-item') and contains(normalize-space(text()), '{current_item}')]"
+        available_items = driver.find_elements(By.XPATH, xpath_item)
+        if not available_items:
+            logger.warning(f"Dropdown listesinde '{current_item}' bulunamadı; atlanıyor.")
             continue
-        
+
+        if not click_element_merged(driver, By.XPATH, xpath_item, "Dropdown item", current_item, result_label, use_js_first=True):
+            logger.warning(f"'{current_item}' üzerinde tıklama başarısız; atlanıyor.")
+            continue
+
         if not click_element_merged(driver, By.CSS_SELECTOR, SORGULA_BUTTON_CSS, "Sorgula button", current_item, result_label):
             logger.warning(f"Sorgula başarısız; {current_item} atlanıyor")
             continue
         
-        time.sleep(1)  # Sayfa yüklenmesi için ek bekleme
+        time.sleep(3)  # Sayfa yüklenmesi için ek bekleme
         sonuc = extract_data_from_card(driver)
         #time.sleep(5)
         extracted_data[dosya_no][item_text][current_item] = {"sonuc": sonuc}
