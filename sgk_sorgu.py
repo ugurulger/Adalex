@@ -100,7 +100,7 @@ def card_body_finder(driver):
     hedef card-body öğesini arar ve bulmaya çalışır.
     """
     wait = WebDriverWait(driver, SHORT_TIMEOUT)
-    max_attempts = 5
+    max_attempts = 9
     card_body = None
 
     for attempt in range(max_attempts):
@@ -141,9 +141,65 @@ def card_body_finder(driver):
     return card_body
 
 
+def parse_pdf_table_subtable(table_element):
+    """
+    pdfTable içerisindeki verileri aşağıdaki mantıkla ayrıştırır:
+      - Eğer satır tek hücre içeriyorsa ve bu hücre "fw-bold text-center" içeriyorsa, bu hücre başlıktır.
+      - Aynı başlık ikinci kez gelirse 'Başlık_2', üçüncü kez gelirse 'Başlık_3' vb. olarak adlandırılır.
+      - Diğer satırlarda "fw-bold" sınıfına sahip hücreyi label, hemen sonraki hücreyi value kabul eder.
+    """
+    main_dict = {}
+    current_subtable = main_dict  # İlk başta ana sözlüğe ekliyoruz
+    heading_counts = {}  # Aynı başlık tekrarında sayıyı tutar
+
+    rows = table_element.find_elements(By.TAG_NAME, "tr")
+
+    for row in rows:
+        tds = row.find_elements(By.TAG_NAME, "td")
+
+        # 1) Tek hücre + fw-bold + text-center → Başlık
+        if len(tds) == 1:
+            td_class = tds[0].get_attribute("class") or ""
+            if "fw-bold" in td_class and "text-center" in td_class:
+                heading_text = tds[0].text.strip()
+                # Sayıyı artır
+                heading_counts[heading_text] = heading_counts.get(heading_text, 0) + 1
+                if heading_counts[heading_text] == 1:
+                    # İlk kez görüyorsak, orijinal heading'i ekleyelim
+                    main_dict[heading_text] = {}
+                    current_subtable = main_dict[heading_text]
+                else:
+                    # İkinci, üçüncü kez görüyorsak, heading_text_2 vb. olarak ekleyelim
+                    new_heading = f"{heading_text}_{heading_counts[heading_text]}"
+                    main_dict[new_heading] = {}
+                    current_subtable = main_dict[new_heading]
+                continue
+
+        # 2) Diğer satırlarda "fw-bold" sınıfına sahip hücre label, hemen yanındaki hücre value
+        i = 0
+        while i < len(tds):
+            label_cell = tds[i]
+            label_class = label_cell.get_attribute("class") or ""
+            label_text = label_cell.text.strip()
+            if "fw-bold" in label_class:
+                if i + 1 < len(tds):
+                    value_text = tds[i+1].text.strip()
+                else:
+                    value_text = ""
+                current_subtable[label_text] = value_text
+                i += 2
+            else:
+                i += 1
+
+    return main_dict
+
+
 def extract_data_from_card(driver):
     """
-    Hedef card-body'den veriyi çeker: pdftable varsa tabloyu, yoksa card-body içindeki metni döner.
+    Hedef card-body'den veriyi çeker:
+      - Eğer pdftable (id="pdfTable") varsa, parse_pdf_table_subtable ile tabloyu
+        ayrıştırıp tekrarlayan başlıkları numaralandıran bir yapı döndürür.
+      - Eğer pdftable yoksa, fallback olarak card-body'nin text'ini döndürür.
     """
     wait = WebDriverWait(driver, SHORT_TIMEOUT)
     card_body = card_body_finder(driver)
@@ -155,18 +211,15 @@ def extract_data_from_card(driver):
     wait.until(EC.visibility_of(card_body))
     
     try:
-        table = card_body.find_element(By.ID, "pdftable")
-        wait.until(EC.visibility_of_element_located((By.ID, "pdftable")))
-        table_rows = table.find_elements(By.TAG_NAME, "tr")
-        table_data = [
-            [cell.text.strip() for cell in row.find_elements(By.TAG_NAME, "td") if cell.text.strip()]
-            for row in table_rows if row.find_elements(By.TAG_NAME, "td")
-        ]
-        return table_data if table_data else "Tablo boş"
-    except Exception:
+        table = card_body.find_element(By.ID, "pdfTable")
+        wait.until(EC.visibility_of_element_located((By.ID, "pdfTable")))
+
+        structured_data = parse_pdf_table_subtable(table)
+        return structured_data if structured_data else "Tablo boş"
+    except Exception as e:
         card_text = card_body.text.strip()
         return card_text if card_text else "Card-body boş"
-    
+
 
 def perform_sgk_sorgu(driver, item_text, dosya_no, result_label=None):
     extracted_data = {dosya_no: {item_text: {}}}
@@ -206,12 +259,9 @@ def perform_sgk_sorgu(driver, item_text, dosya_no, result_label=None):
             logger.warning(f"Sorgula başarısız; {current_item} atlanıyor")
             continue
         
-        #time.sleep(3)  # Sayfa yüklenmesi için ek bekleme
         sonuc = extract_data_from_card(driver)
-        #time.sleep(5)
         extracted_data[dosya_no][item_text][current_item] = {"sonuc": sonuc}
         logger.info(f"Extracted data for '{current_item}': {sonuc}")
-        #time.sleep(1)
     
     save_to_json(extracted_data)
     return True, extracted_data
