@@ -74,16 +74,21 @@ def save_to_json(extracted_data):
 def click_element_merged(driver, by, value, action_name="", item_text="", result_label=None, use_js_first=False):
     """
     Verilen locator (by, value) ile tanımlanan elementin tıklanabilir hale gelmesini bekler,
-    sayfada ortalar ve tıklama işlemini gerçekleştirir. Normal click başarısız olursa JS fallback uygular.
-    Overlay kontrolü de global OVERLAY_SELECTOR ile yapılır.
+    sayfada ortalar ve tıklama işlemini gerçekleştirir.
     """
     wait = WebDriverWait(driver, TIMEOUT)
     target = item_text if item_text else value
     for attempt in range(RETRY_ATTEMPTS):
         try:
+            if OVERLAY_SELECTOR:
+                wait.until_not(EC.visibility_of_element_located((By.CSS_SELECTOR, OVERLAY_SELECTOR)), "Overlay persists")
+                logger.info("ilk overlay gone.")
+
+            element = wait.until(EC.presence_of_element_located((by, value)))
             element = wait.until(EC.element_to_be_clickable((by, value)))
+            element = wait.until(EC.visibility_of_element_located((by, value)))
             driver.execute_script("arguments[0].scrollIntoView({block:'center'});", element)
-            time.sleep(SLEEP_INTERVAL)
+            
             if use_js_first:
                 driver.execute_script("arguments[0].click();", element)
                 logger.info(f"Clicked {action_name} via JS for {target} (attempt {attempt+1})")
@@ -91,24 +96,11 @@ def click_element_merged(driver, by, value, action_name="", item_text="", result
                 element.click()
                 logger.info(f"Clicked {action_name} for {target} (attempt {attempt+1})")
             if OVERLAY_SELECTOR:
-                wait.until_not(EC.presence_of_element_located((By.CSS_SELECTOR, OVERLAY_SELECTOR)),
-                             message="Overlay persists")
-                logger.info("Overlay gone.")
+                wait.until_not(EC.visibility_of_element_located((By.CSS_SELECTOR, OVERLAY_SELECTOR)), "Overlay persists")
+                logger.info("ikinci overlay gone.")
             return True
         except (TimeoutException, StaleElementReferenceException, ElementNotInteractableException, ElementClickInterceptedException) as e:
             logger.warning(f"{action_name} click attempt {attempt+1} failed for {target}: {e}")
-            try:
-                time.sleep(SLEEP_INTERVAL)
-                element = driver.find_element(by, value)
-                driver.execute_script("arguments[0].click();", element)
-                logger.info(f"Clicked {action_name} via JS fallback for {target} (attempt {attempt+1})")
-                if OVERLAY_SELECTOR:
-                    wait.until_not(EC.presence_of_element_located((By.CSS_SELECTOR, OVERLAY_SELECTOR)),
-                                 message="Overlay persists")
-                    logger.info("Overlay gone (fallback).")
-                return True
-            except Exception as js_e:
-                logger.warning(f"JS fallback failed for {target}: {js_e}")
             time.sleep(SLEEP_INTERVAL)
     err = f"Failed to click {action_name} for {target} after {RETRY_ATTEMPTS} attempts"
     if result_label:
@@ -146,7 +138,7 @@ def perform_banka_sorgu(driver, item_text, dosya_no, result_label=None):
         if result_label:
             result_label.config(text=f"Performing Banka sorgu for {item_text} - Clicking Banka button...")
         if not click_element_merged(driver, By.CSS_SELECTOR, BANKA_BUTTON_CSS,
-                                    action_name="Banka button", item_text=item_text, result_label=result_label):
+                                   action_name="Banka button", item_text=item_text, result_label=result_label):
             save_to_json(extracted_data)
             return False, extracted_data
 
@@ -154,7 +146,7 @@ def perform_banka_sorgu(driver, item_text, dosya_no, result_label=None):
         if result_label:
             result_label.config(text=f"Performing Banka sorgu for {item_text} - Clicking Sorgula button...")
         if not click_element_merged(driver, By.CSS_SELECTOR, SORGULA_BUTTON_CSS,
-                                    action_name="Sorgula button", item_text=item_text, result_label=result_label):
+                                   action_name="Sorgula button", item_text=item_text, result_label=result_label):
             save_to_json(extracted_data)
             return False, extracted_data
 
@@ -183,7 +175,7 @@ def perform_banka_sorgu(driver, item_text, dosya_no, result_label=None):
             if result_label:
                 result_label.config(text=f"Expanding bankalar table for {item_text}...")
             if not click_element_merged(driver, By.XPATH, GENISLET_BUTTON_XPATH,
-                                        action_name="Expand button", item_text=item_text, result_label=result_label):
+                                       action_name="Expand button", item_text=item_text, result_label=result_label):
                 logger.warning(f"Failed to expand table for {item_text}, proceeding without expansion")
             else:
                 time.sleep(1)
@@ -203,7 +195,6 @@ def perform_banka_sorgu(driver, item_text, dosya_no, result_label=None):
                         }
                         if banka["no"] and banka["kurum"]:
                             extracted_data[dosya_no][item_text]["Banka"]["bankalar"].append(banka)
-                            logger.info(f"Extracted banka: {banka} for {item_text}")
                     else:
                         logger.warning(f"Row with insufficient columns in 'bankalar' table for {item_text}: {row.text}")
 
@@ -217,7 +208,6 @@ def perform_banka_sorgu(driver, item_text, dosya_no, result_label=None):
         if result_label:
             result_label.config(text=f"Banka sorgu completed for {item_text}")
         logger.info(f"Successfully extracted data for {item_text}: {extracted_data}")
-        time.sleep(3)
 
         save_to_json(extracted_data)
         return True, extracted_data

@@ -12,6 +12,7 @@ from selenium.common.exceptions import (
 
 # Global Constants
 TIMEOUT = 15
+RETRY_ATTEMPTS = 3
 SHORT_TIMEOUT = 5
 SLEEP_INTERVAL = 0.5
 OVERLAY_SELECTOR = ".dx-loadpanel-indicator.dx-loadindicator.dx-widget"
@@ -64,11 +65,10 @@ def save_to_json(extracted_data):
     except Exception as e:
         logger.error(f"Error writing JSON: {e}")
 
-# Orijinal click_element_merged fonksiyonu aynen korundu.
 def click_element_merged(driver, by, value, action_name="", item_text="", result_label=None, use_js_first=False):
     wait = WebDriverWait(driver, TIMEOUT)
     target = item_text if item_text else value
-    for attempt in range(3):
+    for attempt in range(RETRY_ATTEMPTS):
         try:
             element = wait.until(EC.presence_of_element_located((by, value)))
             element = wait.until(EC.element_to_be_clickable((by, value)))
@@ -88,7 +88,7 @@ def click_element_merged(driver, by, value, action_name="", item_text="", result
         except (TimeoutException, StaleElementReferenceException, ElementNotInteractableException, ElementClickInterceptedException) as e:
             logger.warning(f"{action_name} click attempt {attempt+1} failed for {target}: {e}")
             time.sleep(SLEEP_INTERVAL)
-    err = f"Failed to click {action_name} for {target} after 3 attempts"
+    err = f"Failed to click {action_name} for {target} after {RETRY_ATTEMPTS} attempts"
     if result_label:
         result_label.config(text=err)
     logger.error(err)

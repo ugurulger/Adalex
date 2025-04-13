@@ -74,6 +74,10 @@ def click_element_merged(driver, by, value, action_name="", item_text="", result
     target = item_text if item_text else value
     for attempt in range(RETRY_ATTEMPTS):
         try:
+            if OVERLAY_SELECTOR:
+                wait.until_not(EC.visibility_of_element_located((By.CSS_SELECTOR, OVERLAY_SELECTOR)), "Overlay persists")
+                logger.info("ilk overlay gone.")
+
             element = wait.until(EC.presence_of_element_located((by, value)))
             element = wait.until(EC.element_to_be_clickable((by, value)))
             element = wait.until(EC.visibility_of_element_located((by, value)))
@@ -88,7 +92,7 @@ def click_element_merged(driver, by, value, action_name="", item_text="", result
             if OVERLAY_SELECTOR:
                 wait.until_not(EC.visibility_of_element_located((By.CSS_SELECTOR, OVERLAY_SELECTOR)),
                              message="Overlay persists")
-                logger.info("Overlay gone.")
+                logger.info("ikinci overlay gone.")
             return True
         except (TimeoutException, StaleElementReferenceException, ElementNotInteractableException, ElementClickInterceptedException) as e:
             logger.warning(f"{action_name} click attempt {attempt+1} failed for {target}: {e}")
@@ -185,6 +189,8 @@ def perform_sorgulama(driver, dosya_no, selected_options, result_label=None):
                             from takbis_sorgu import perform_takbis_sorgu; perform_takbis_sorgu(driver, current, dosya_no, result_label)
                         elif opt == "SGK":
                             from sgk_sorgu import perform_sgk_sorgu; perform_sgk_sorgu(driver, current, dosya_no, result_label)
+                        elif opt == "İcra Dosyası":
+                            from icra_dosyasi_sorgu import perform_icra_dosyasi_sorgu; perform_icra_dosyasi_sorgu(driver, current, dosya_no, result_label)
                     except Exception as ex:
                         logger.error(f"Failed to process {opt} for {current}: {ex}")
             if index < len(items)-1:
