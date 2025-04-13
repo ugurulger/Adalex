@@ -10,7 +10,6 @@ from selenium.common.exceptions import (TimeoutException, NoSuchElementException
 TIMEOUT = 15                # Elementlerin beklenme süresi (saniye)
 RETRY_ATTEMPTS = 3          # Tıklama işlemleri için maksimum deneme sayısı
 SLEEP_INTERVAL = 0.5        # Her deneme sonrası bekleme süresi (saniye)
-OVERLAY_SELECTOR = ".dx-loadpanel-indicator dx-loadindicator dx-widget"  # Overlay öğe seçicisi
 
 # Global Selectors / Address Paths (tüm adres path'ler merkezi olarak burada tanımlanır)
 MENU_BUTTON_SELECTOR    = "#sidebar-menu > li:nth-child(4) > button"
@@ -67,32 +66,44 @@ def save_to_json(data):
 def click_element_merged(driver, by, value, action_name="", item_text="", result_label=None, use_js_first=False):
     """
     Verilen locator (by, value) ile tanımlanan elementin tıklanabilir hale gelmesini bekler,
-    sayfada ortalar ve tıklama işlemini gerçekleştirir. Normal click başarısız olursa JS fallback uygular.
-    Overlay kontrolü de global OVERLAY_SELECTOR ile yapılır.
+    sayfada ortalar ve tıklama işlemini gerçekleştirir.
     """
     wait = WebDriverWait(driver, TIMEOUT)
     target = item_text if item_text else value
+    # Define multiple overlay selectors to catch variations
+    overlay_selectors = [
+        ".dx-loadindicator-wrapper dx-loadindicator-image",
+        ".dx-loadpanel-content-wrapper",
+        ".dx-loadpanel-indicator dx-loadindicator dx-widget",
+        ".dx-overlay-wrapper dx-loadpanel-wrapper custom-loader dx-overlay-shader"
+    ]
     for attempt in range(RETRY_ATTEMPTS):
         try:
-            if OVERLAY_SELECTOR:
-                wait.until_not(EC.visibility_of_element_located((By.CSS_SELECTOR, OVERLAY_SELECTOR)), "Overlay persists")
-                logger.info("ilk overlay gone.")
+            # Check all overlay selectors
+            for overlay_sel in overlay_selectors:
+                try:
+                    wait.until_not(EC.visibility_of_element_located((By.CSS_SELECTOR, overlay_sel)), "Overlay persists")
+                except TimeoutException:
+                    logger.warning(f"Overlay {overlay_sel} still present, continuing.")
 
             element = wait.until(EC.presence_of_element_located((by, value)))
             element = wait.until(EC.element_to_be_clickable((by, value)))
             element = wait.until(EC.visibility_of_element_located((by, value)))
             driver.execute_script("arguments[0].scrollIntoView({block:'center'});", element)
-
+            
             if use_js_first:
                 driver.execute_script("arguments[0].click();", element)
                 logger.info(f"Clicked {action_name} via JS for {target} (attempt {attempt+1})")
             else:
                 element.click()
                 logger.info(f"Clicked {action_name} for {target} (attempt {attempt+1})")
-            if OVERLAY_SELECTOR:
-                wait.until_not(EC.visibility_of_element_located((By.CSS_SELECTOR, OVERLAY_SELECTOR)),
-                             message="Overlay persists")
-                logger.info("ikinci overlay gone.")
+
+            # Check overlays again post-click
+            for overlay_sel in overlay_selectors:
+                try:
+                    wait.until_not(EC.visibility_of_element_located((By.CSS_SELECTOR, overlay_sel)), "Overlay persists")
+                except TimeoutException:
+                    logger.warning(f"Post-click overlay {overlay_sel} still present.")
             return True
         except (TimeoutException, StaleElementReferenceException, ElementNotInteractableException, ElementClickInterceptedException) as e:
             logger.warning(f"{action_name} click attempt {attempt+1} failed for {target}: {e}")
@@ -191,6 +202,8 @@ def perform_sorgulama(driver, dosya_no, selected_options, result_label=None):
                             from sgk_sorgu import perform_sgk_sorgu; perform_sgk_sorgu(driver, current, dosya_no, result_label)
                         elif opt == "İcra Dosyası":
                             from icra_dosyasi_sorgu import perform_icra_dosyasi_sorgu; perform_icra_dosyasi_sorgu(driver, current, dosya_no, result_label)
+                        elif opt == "MERNİS":
+                            from mernis_sorgu import perform_mernis_sorgu; perform_mernis_sorgu(driver, current, dosya_no, result_label)
                     except Exception as ex:
                         logger.error(f"Failed to process {opt} for {current}: {ex}")
             if index < len(items)-1:

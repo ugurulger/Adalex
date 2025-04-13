@@ -86,6 +86,35 @@ class UYAPApp:
         self.check_banka = tk.Checkbutton(self.checkboxes_frame, text="Banka", variable=self.check_var_banka)
         self.check_banka.pack(side=tk.LEFT, padx=5)
 
+        # New checkboxes
+        self.check_var_mernis = tk.BooleanVar()
+        self.check_mernis = tk.Checkbutton(self.checkboxes_frame, text="MERNİS", variable=self.check_var_mernis)
+        self.check_mernis.pack(side=tk.LEFT, padx=5)
+
+        self.check_var_iski = tk.BooleanVar()
+        self.check_iski = tk.Checkbutton(self.checkboxes_frame, text="İSKİ", variable=self.check_var_iski)
+        self.check_iski.pack(side=tk.LEFT, padx=5)
+
+        self.check_var_gib = tk.BooleanVar()
+        self.check_gib = tk.Checkbutton(self.checkboxes_frame, text="GİB", variable=self.check_var_gib)
+        self.check_gib.pack(side=tk.LEFT, padx=5)
+
+        self.check_var_gsm = tk.BooleanVar()
+        self.check_gsm = tk.Checkbutton(self.checkboxes_frame, text="GSM", variable=self.check_var_gsm)
+        self.check_gsm.pack(side=tk.LEFT, padx=5)
+
+        self.check_var_dis_isleri = tk.BooleanVar()
+        self.check_dis_isleri = tk.Checkbutton(self.checkboxes_frame, text="Dış İşleri", variable=self.check_var_dis_isleri)
+        self.check_dis_isleri.pack(side=tk.LEFT, padx=5)
+
+        self.check_var_posta_ceki = tk.BooleanVar()
+        self.check_posta_ceki = tk.Checkbutton(self.checkboxes_frame, text="Posta Çeki", variable=self.check_var_posta_ceki)
+        self.check_posta_ceki.pack(side=tk.LEFT, padx=5)
+
+        self.check_var_sgk_haciz = tk.BooleanVar()
+        self.check_sgk_haciz = tk.Checkbutton(self.checkboxes_frame, text="SGK Haciz", variable=self.check_var_sgk_haciz)
+        self.check_sgk_haciz.pack(side=tk.LEFT, padx=5)
+
         # Fixed-size table container
         self.table_container = tk.Frame(root)
         self.table_container.pack(pady=10)
@@ -294,7 +323,14 @@ class UYAPApp:
             "TAKBİS": self.check_var_takbis.get(),
             "İcra Dosyası": self.check_var_icra.get(),
             "SGK": self.check_var_sgk.get(),
-            "Banka": self.check_var_banka.get()
+            "Banka": self.check_var_banka.get(),
+            "MERNİS": self.check_var_mernis.get(),
+            "İSKİ": self.check_var_iski.get(),
+            "GİB": self.check_var_gib.get(),
+            "GSM": self.check_var_gsm.get(),
+            "Dış İşleri": self.check_var_dis_isleri.get(),
+            "Posta Çeki": self.check_var_posta_ceki.get(),
+            "SGK Haciz": self.check_var_sgk_haciz.get()
         }
         if not any(selected_options.values()):
             messagebox.showwarning("Warning", "Please select at least one option.")

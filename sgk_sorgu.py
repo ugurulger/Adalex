@@ -15,7 +15,6 @@ TIMEOUT = 15
 RETRY_ATTEMPTS = 3
 SHORT_TIMEOUT = 5
 SLEEP_INTERVAL = 0.5
-OVERLAY_SELECTOR = ".dx-loadpanel-indicator.dx-loadindicator.dx-widget"
 SGK_BUTTON_CSS = "button.query-button [title='SGK']"
 SGK_DROPDOWN_SELECTOR = (
     "div[id^='dx-'] > div > div:nth-child(1) > div:nth-child(3) > "
@@ -66,10 +65,28 @@ def save_to_json(extracted_data):
         logger.error(f"Error writing JSON: {e}")
 
 def click_element_merged(driver, by, value, action_name="", item_text="", result_label=None, use_js_first=False):
+    """
+    Verilen locator (by, value) ile tanımlanan elementin tıklanabilir hale gelmesini bekler,
+    sayfada ortalar ve tıklama işlemini gerçekleştirir.
+    """
     wait = WebDriverWait(driver, TIMEOUT)
     target = item_text if item_text else value
+    # Define multiple overlay selectors to catch variations
+    overlay_selectors = [
+        ".dx-loadindicator-wrapper dx-loadindicator-image",
+        ".dx-loadpanel-content-wrapper",
+        ".dx-loadpanel-indicator dx-loadindicator dx-widget",
+        ".dx-overlay-wrapper dx-loadpanel-wrapper custom-loader dx-overlay-shader"
+    ]
     for attempt in range(RETRY_ATTEMPTS):
         try:
+            # Check all overlay selectors
+            for overlay_sel in overlay_selectors:
+                try:
+                    wait.until_not(EC.visibility_of_element_located((By.CSS_SELECTOR, overlay_sel)), "Overlay persists")
+                except TimeoutException:
+                    logger.warning(f"Overlay {overlay_sel} still present, continuing.")
+
             element = wait.until(EC.presence_of_element_located((by, value)))
             element = wait.until(EC.element_to_be_clickable((by, value)))
             element = wait.until(EC.visibility_of_element_located((by, value)))
@@ -81,9 +98,13 @@ def click_element_merged(driver, by, value, action_name="", item_text="", result
             else:
                 element.click()
                 logger.info(f"Clicked {action_name} for {target} (attempt {attempt+1})")
-            if OVERLAY_SELECTOR:
-                wait.until_not(EC.visibility_of_element_located((By.CSS_SELECTOR, OVERLAY_SELECTOR)), "Overlay persists")
-                logger.info("Overlay gone.")
+
+            # Check overlays again post-click
+            for overlay_sel in overlay_selectors:
+                try:
+                    wait.until_not(EC.visibility_of_element_located((By.CSS_SELECTOR, overlay_sel)), "Overlay persists")
+                except TimeoutException:
+                    logger.warning(f"Post-click overlay {overlay_sel} still present.")
             return True
         except (TimeoutException, StaleElementReferenceException, ElementNotInteractableException, ElementClickInterceptedException) as e:
             logger.warning(f"{action_name} click attempt {attempt+1} failed for {target}: {e}")
@@ -226,7 +247,7 @@ def perform_sgk_sorgu(driver, item_text, dosya_no, result_label=None):
     
     if result_label:
         result_label.config(text=f"SGK sorgu için {item_text} - SGK butonuna tıklanıyor...")
-    time.sleep(SLEEP_INTERVAL) #gecici bir cozum daha kalici bir cozum bulunacak
+    time.sleep(SLEEP_INTERVAL) # Küçük bir bekleme süresi ekleyelim
     if not click_element_merged(driver, By.CSS_SELECTOR, SGK_BUTTON_CSS, "SGK button", item_text, result_label):
         save_to_json(extracted_data)
         return False, extracted_data
