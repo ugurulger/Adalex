@@ -17,24 +17,14 @@ TIMEOUT = 15
 RETRY_ATTEMPTS = 3
 SLEEP_INTERVAL = 0.5
 
-BANKA_BUTTON_CSS = "button.query-button [title='Banka']"
+GIB_BUTTON_CSS = "button.query-button [title='GİB']"
 SORGULA_BUTTON_CSS = "[aria-label='Sorgula']"
-SONUC_XPATH = (
-    "/html/body/div[*]/div/div[*]/div/div/div/div/div[*]/div/div/div[*]/div/div[*]/div[*]/div/div/div[*]/"
-    "div/div[*]/div/div[*]/div/div/div[*]/div/div[1]/div[2]/div[3]/div[2]/div[1]"
-)
-BANKALAR_TABLE_XPATH = (
-    "/html/body/div[*]/div/div[*]/div/div/div/div/div[*]/div/div/div[*]/div/div[*]/div[*]/div/div/div[*]/"
-    "div/div[*]/div/div[*]/div/div/div[*]/div/div[1]/div[2]/div[3]/div[2]/div[2]/div/div[7]/div/div/div/div/table"
-)
-GENISLET_BUTTON_XPATH = (
-    "/html/body/div[*]/div/div[*]/div/div/div/div/div[*]/div/div/div[*]/div/div[*]/div[*]/div/div/div[*]/"
-    "div/div[*]/div/div[*]/div/div/div[*]/div/div[1]/div[2]/div[3]/div[2]/div[2]/div/div[11]/div[1]/div[4]"
-)
+SONUC_XPATH = "/html/body/div[*]/div/div[*]/div/div/div/div/div[*]/div/div/div[*]/div/div[*]/div[*]/div/div/div[*]/div/div[*]/div/div[*]/div/div/div[*]/div/div[1]/div[2]/div[2]/div[2]/div/div/div/div/div/div[1]/div"
+GIB_ADRES_XPATH = "/html/body/div[*]/div/div[*]/div/div/div/div/div[*]/div/div/div[*]/div/div[*]/div[*]/div/div/div[*]/div/div[*]/div/div[*]/div/div/div[*]/div/div[1]/div[2]/div[2]/div[2]/div/div/div/div/div/div[2]/div"
 
 # Desktop path for JSON file
 DESKTOP_PATH = os.path.join(os.path.expanduser("~"), "Desktop", "extracted_data")
-JSON_FILE = os.path.join(DESKTOP_PATH, "banka_sorgu.json")
+JSON_FILE = os.path.join(DESKTOP_PATH, "gib_sorgu.json")
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -42,7 +32,7 @@ logger = logging.getLogger(__name__)
 
 def save_to_json(extracted_data):
     """
-    Save or update extracted_data to banka_sorgu.json on the desktop.
+    Save or update extracted_data to gib_sorgu.json on the desktop.
     - Eğer dosya yoksa oluşturur.
     - Dosya varsa aynı dosya_no ve item_text'e sahip verileri güncelleyerek, yeni verileri ekler.
     """
@@ -121,15 +111,13 @@ def click_element_merged(driver, by, value, action_name="", item_text="", result
     logger.error(err)
     return False
 
-def perform_banka_sorgu(driver, item_text, dosya_no, result_label=None):
+def perform_gib_sorgu(driver, item_text, dosya_no, result_label=None):
     """
-    Belirli bir dropdown öğesi için Banka sorgusunu gerçekleştirir ve verileri çıkarır.
+    Belirli bir dropdown öğesi için GİB sorgusunu gerçekleştirir ve verileri çıkarır.
     Adımlar:
-      1. Banka butonuna tıklar.
+      1. GİB butonuna tıklar.
       2. "Sorgula" butonuna tıklar.
-      3. 'sonuc' ve 'bankalar' XPath’lerinden verileri çıkarır.
-         - 'bankalar' için önce expand butonuna tıklanır.
-         - Çıkarılan veriler banka_sorgu.json dosyasına kaydedilir.
+      3. Belirtilen XPath'lerden 'sonuc' ve 'GİB Adres' verilerini çıkarır.
     
     Returns:
       Tuple (success: bool, data: dict) - İşlem durumu ve çıkarılan veriler.
@@ -138,9 +126,9 @@ def perform_banka_sorgu(driver, item_text, dosya_no, result_label=None):
     extracted_data = {
         dosya_no: {
             item_text: {
-                "Banka": {
+                "GİB": {
                     "sonuc": "",
-                    "bankalar": []
+                    "GİB Adres": ""
                 }
             }
         }
@@ -148,86 +136,67 @@ def perform_banka_sorgu(driver, item_text, dosya_no, result_label=None):
 
     try:
         time.sleep(SLEEP_INTERVAL) # Küçük bir bekleme süresi ekleyelim
-        # Adım 1: Banka butonuna tıkla
+        # Adım 1: GİB butonuna tıkla
         if result_label:
-            result_label.config(text=f"Performing Banka sorgu for {item_text} - Clicking Banka button...")
-        if not click_element_merged(driver, By.CSS_SELECTOR, BANKA_BUTTON_CSS,
-                                   action_name="Banka button", item_text=item_text, result_label=result_label):
+            result_label.config(text=f"Performing GİB sorgu for {item_text} - Clicking GİB button...")
+        if not click_element_merged(driver, By.CSS_SELECTOR, GIB_BUTTON_CSS,
+                                   action_name="GİB button", item_text=item_text, result_label=result_label):
             save_to_json(extracted_data)
             return False, extracted_data
 
         # Adım 2: "Sorgula" butonuna tıkla
         if result_label:
-            result_label.config(text=f"Performing Banka sorgu for {item_text} - Clicking Sorgula button...")
+            result_label.config(text=f"Performing GİB sorgu for {item_text} - Clicking Sorgula button...")
         if not click_element_merged(driver, By.CSS_SELECTOR, SORGULA_BUTTON_CSS,
                                    action_name="Sorgula button", item_text=item_text, result_label=result_label):
             save_to_json(extracted_data)
             return False, extracted_data
 
-        wait.until(EC.presence_of_element_located((By.XPATH, SONUC_XPATH)))
+        # Wait for GİB panel to stabilize
+        wait.until(EC.presence_of_element_located((By.XPATH, "//div[contains(@id, 'dx-')]")))
 
         # Adım 3: Veri çıkarma işlemi
         if result_label:
-            result_label.config(text=f"Performing Banka sorgu for {item_text} - Extracting data...")
+            result_label.config(text=f"Performing GİB sorgu for {item_text} - Extracting data...")
 
+        # Extract 'sonuc'
         try:
             sonuc_element = wait.until(EC.presence_of_element_located((By.XPATH, SONUC_XPATH)))
             driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", sonuc_element)
+            wait.until(EC.visibility_of_element_located((By.XPATH, SONUC_XPATH)))
             raw_sonuc = sonuc_element.text.strip()
-            extracted_data[dosya_no][item_text]["Banka"]["sonuc"] = raw_sonuc
-            logger.info(f"Extracted raw 'sonuc' for {item_text}: {raw_sonuc}")
+            extracted_data[dosya_no][item_text]["GİB"]["sonuc"] = raw_sonuc
         except TimeoutException as e:
             error_msg = f"Failed to locate 'sonuc' element for {item_text}: {e}"
             if result_label:
                 result_label.config(text=error_msg)
             logger.error(error_msg)
-            extracted_data[dosya_no][item_text]["Banka"]["sonuc"] = ""
-            save_to_json(extracted_data)
-            return False, extracted_data
+            extracted_data[dosya_no][item_text]["GİB"]["sonuc"] = ""
+            # Continue to try extracting GİB Adres even if sonuc fails
 
+        # Extract 'GİB Adres'
         try:
-            if result_label:
-                result_label.config(text=f"Expanding bankalar table for {item_text}...")
-            if not click_element_merged(driver, By.XPATH, GENISLET_BUTTON_XPATH,
-                                       action_name="Expand button", item_text=item_text, result_label=result_label):
-                logger.warning(f"Failed to expand table for {item_text}, proceeding without expansion")
-            else:
-                time.sleep(SLEEP_INTERVAL)
-
-            bankalar_table = wait.until(EC.presence_of_element_located((By.XPATH, BANKALAR_TABLE_XPATH)))
-            driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", bankalar_table)
-            rows = bankalar_table.find_elements(By.XPATH, ".//tbody//tr")
-            if not rows:
-                logger.warning(f"No rows found in 'bankalar' table for {item_text}")
-            else:
-                for row in rows:
-                    columns = row.find_elements(By.TAG_NAME, "td")
-                    if len(columns) >= 2:
-                        banka = {
-                            "no": columns[0].text.strip(),
-                            "kurum": columns[1].text.strip()
-                        }
-                        if banka["no"] and banka["kurum"]:
-                            extracted_data[dosya_no][item_text]["Banka"]["bankalar"].append(banka)
-                    else:
-                        logger.warning(f"Row with insufficient columns in 'bankalar' table for {item_text}: {row.text}")
-
-                if not extracted_data[dosya_no][item_text]["Banka"]["bankalar"]:
-                    logger.info(f"No valid banka data extracted for {item_text}")
+            adres_element = wait.until(EC.presence_of_element_located((By.XPATH, GIB_ADRES_XPATH)))
+            driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", adres_element)
+            wait.until(EC.visibility_of_element_located((By.XPATH, GIB_ADRES_XPATH)))
+            raw_adres = adres_element.text.strip()
+            extracted_data[dosya_no][item_text]["GİB"]["GİB Adres"] = raw_adres
         except TimeoutException as e:
-            logger.warning(f"Failed to locate 'bankalar' table for {item_text}: {e}")
-        except Exception as e:
-            logger.warning(f"Error extracting 'bankalar' table for {item_text}: {e}")
+            error_msg = f"Failed to locate 'GİB Adres' element for {item_text}: {e}"
+            if result_label:
+                result_label.config(text=error_msg)
+            logger.error(error_msg)
+            extracted_data[dosya_no][item_text]["GİB"]["GİB Adres"] = ""
 
         if result_label:
-            result_label.config(text=f"Banka sorgu completed for {item_text}")
+            result_label.config(text=f"GİB sorgu completed for {item_text}")
         logger.info(f"Successfully extracted data for {item_text}: {extracted_data}")
 
         save_to_json(extracted_data)
         return True, extracted_data
 
     except Exception as e:
-        error_msg = f"Banka sorgu error for {item_text}: {e}"
+        error_msg = f"GİB sorgu error for {item_text}: {e}"
         if result_label:
             result_label.config(text=error_msg)
         logger.error(error_msg)
