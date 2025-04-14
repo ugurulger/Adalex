@@ -174,7 +174,6 @@ def perform_gsm_sorgu(driver, item_text, dosya_no, result_label=None):
             wait.until(EC.visibility_of_element_located((By.XPATH, SONUC_XPATH)))
             raw_sonuc = sonuc_element.text.strip()
             extracted_data[dosya_no][item_text]["GSM"]["sonuc"] = raw_sonuc
-            logger.info(f"Extracted 'sonuc' for {item_text}: {raw_sonuc}")
         except TimeoutException as e:
             error_msg = f"Failed to locate 'sonuc' element for {item_text}: {e}"
             if result_label:
@@ -196,10 +195,10 @@ def perform_gsm_sorgu(driver, item_text, dosya_no, result_label=None):
                     columns = row.find_elements(By.TAG_NAME, "td")
                     if len(columns) >= 2:
                         adres_entry = {
-                            "no": columns[0].text.strip(),
-                            "adres": columns[1].text.strip()
+                            "Operator": columns[0].text.strip(),
+                            "Adres": columns[1].text.strip()
                         }
-                        if adres_entry["no"] or adres_entry["adres"]:  # Skip empty rows
+                        if adres_entry["Operator"] or adres_entry["Adres"]:  # Skip empty rows
                             extracted_data[dosya_no][item_text]["GSM"]["GSM Adres"].append(adres_entry)
                     else:
                         logger.warning(f"Row with insufficient columns in 'GSM Adres' table for {item_text}: {row.text}")
@@ -214,7 +213,7 @@ def perform_gsm_sorgu(driver, item_text, dosya_no, result_label=None):
 
         if result_label:
             result_label.config(text=f"GSM sorgu completed for {item_text}")
-        logger.info(f"Successfully extracted data for {item_text}: {extracted_data}")
+        logger.info(f"Successfully extracted data for {item_text}")
 
         save_to_json(extracted_data)
         return True, extracted_data
