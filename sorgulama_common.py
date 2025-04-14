@@ -212,8 +212,8 @@ def perform_sorgulama(driver, dosya_no, selected_options, result_label=None):
                             from gsm_sorgu import perform_gsm_sorgu; perform_gsm_sorgu(driver, current, dosya_no, result_label)
                         # elif opt == "Dış İşleri":
                         #     from dis_isleri_sorgu import perform_dis_isleri_sorgu; perform_dis_isleri_sorgu(driver, current, dosya_no, result_label)
-                        # elif opt == "Posta Çeki":
-                        #     from posta_ceki_sorgu import perform_posta_ceki_sorgu; perform_posta_ceki_sorgu(driver, current, dosya_no, result_label)
+                        elif opt == "Posta Çeki":
+                            from posta_ceki_sorgu import perform_posta_ceki_sorgu; perform_posta_ceki_sorgu(driver, current, dosya_no, result_label)
                         # elif opt == "SGK Haciz":
                         #     from sgk_haciz_sorgu import perform_sgk_haciz_sorgu; perform_sgk_haciz_sorgu(driver, current, dosya_no, result_label)
                     except Exception as ex:
