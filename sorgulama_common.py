@@ -204,8 +204,8 @@ def perform_sorgulama(driver, dosya_no, selected_options, result_label=None):
                             from icra_dosyasi_sorgu import perform_icra_dosyasi_sorgu; perform_icra_dosyasi_sorgu(driver, current, dosya_no, result_label)
                         elif opt == "MERNİS":
                             from mernis_sorgu import perform_mernis_sorgu; perform_mernis_sorgu(driver, current, dosya_no, result_label)
-                        # elif opt == "İSKİ":
-                        #     from iski_sorgu import perform_iski_sorgu; perform_iski_sorgu(driver, current, dosya_no, result_label)
+                        elif opt == "İSKİ":
+                            from iski_sorgu import perform_iski_sorgu; perform_iski_sorgu(driver, current, dosya_no, result_label)
                         elif opt == "GİB":
                             from gib_sorgu import perform_gib_sorgu; perform_gib_sorgu(driver, current, dosya_no, result_label)
                         elif opt == "GSM":

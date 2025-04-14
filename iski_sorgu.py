@@ -17,15 +17,13 @@ TIMEOUT = 15
 RETRY_ATTEMPTS = 3
 SLEEP_INTERVAL = 0.5
 
-GSM_BUTTON_CSS = "button.query-button [title='GSM']"
+ISKI_BUTTON_CSS = "button.query-button [title='İSKİ']"
 SORGULA_BUTTON_CSS = "[aria-label='Sorgula']"
-EXPAND_BUTTON_XPATH = "/html/body/div[*]/div/div[*]/div/div/div/div/div[*]/div/div/div[*]/div/div[*]/div[*]/div/div/div[*]/div/div[*]/div/div[*]/div/div/div[*]/div/div[*]/div[*]/div[*]/div[*]/div/div[11]/div[1]/div[4]"
 SONUC_XPATH = "/html/body/div[*]/div/div[*]/div/div/div/div/div[*]/div/div/div[*]/div/div[*]/div[*]/div/div/div[*]/div/div[*]/div/div[*]/div/div/div[*]/div/div[1]/div[2]/div[2]/div[2]/div/div/div"
-GSM_ADRES_TABLE_XPATH = "/html/body/div[*]/div/div[*]/div/div/div/div/div[*]/div/div/div[*]/div/div[*]/div[*]/div/div/div[*]/div/div[*]/div/div[*]/div/div/div[*]/div/div[*]/div[*]/div[*]/div[*]/div/div[7]/div/div/div/div/table"
 
 # Desktop path for JSON file
 DESKTOP_PATH = os.path.join(os.path.expanduser("~"), "Desktop", "extracted_data")
-JSON_FILE = os.path.join(DESKTOP_PATH, "gsm_sorgu.json")
+JSON_FILE = os.path.join(DESKTOP_PATH, "iski_sorgu.json")
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -33,7 +31,7 @@ logger = logging.getLogger(__name__)
 
 def save_to_json(extracted_data):
     """
-    Save or update extracted_data to gsm_sorgu.json on the desktop.
+    Save or update extracted_data to iski_sorgu.json on the desktop.
     - Eğer dosya yoksa oluşturur.
     - Dosya varsa aynı dosya_no ve item_text'e sahip verileri güncelleyerek, yeni verileri ekler.
     """
@@ -112,14 +110,13 @@ def click_element_merged(driver, by, value, action_name="", item_text="", result
     logger.error(err)
     return False
 
-def perform_gsm_sorgu(driver, item_text, dosya_no, result_label=None):
+def perform_iski_sorgu(driver, item_text, dosya_no, result_label=None):
     """
-    Belirli bir dropdown öğesi için GSM sorgusunu gerçekleştirir ve verileri çıkarır.
+    Belirli bir dropdown öğesi için İSKİ sorgusunu gerçekleştirir ve verileri çıkarır.
     Adımlar:
-      1. GSM butonuna tıklar.
+      1. İSKİ butonuna tıklar.
       2. "Sorgula" butonuna tıklar.
-      3. Tabloyu genişletmek için expand butonuna tıklar.
-      4. 'sonuc' ve 'GSM Adres' tablosundan verileri çıkarır.
+      3. Belirtilen XPath'ten 'sonuc' verisini çıkarır.
     
     Returns:
       Tuple (success: bool, data: dict) - İşlem durumu ve çıkarılan veriler.
@@ -128,9 +125,8 @@ def perform_gsm_sorgu(driver, item_text, dosya_no, result_label=None):
     extracted_data = {
         dosya_no: {
             item_text: {
-                "GSM": {
-                    "sonuc": "",
-                    "GSM Adres": []
+                "İSKİ": {
+                    "sonuc": ""
                 }
             }
         }
@@ -138,34 +134,25 @@ def perform_gsm_sorgu(driver, item_text, dosya_no, result_label=None):
 
     try:
         time.sleep(SLEEP_INTERVAL) # Küçük bir bekleme süresi ekleyelim
-        # Adım 1: GSM butonuna tıkla
+        # Adım 1: İSKİ butonuna tıkla
         if result_label:
-            result_label.config(text=f"Performing GSM sorgu for {item_text} - Clicking GSM button...")
-        if not click_element_merged(driver, By.CSS_SELECTOR, GSM_BUTTON_CSS,
-                                   action_name="GSM button", item_text=item_text, result_label=result_label):
+            result_label.config(text=f"Performing İSKİ sorgu for {item_text} - Clicking İSKİ button...")
+        if not click_element_merged(driver, By.CSS_SELECTOR, ISKI_BUTTON_CSS,
+                                   action_name="İSKİ button", item_text=item_text, result_label=result_label):
             save_to_json(extracted_data)
             return False, extracted_data
 
         # Adım 2: "Sorgula" butonuna tıkla
         if result_label:
-            result_label.config(text=f"Performing GSM sorgu for {item_text} - Clicking Sorgula button...")
+            result_label.config(text=f"Performing İSKİ sorgu for {item_text} - Clicking Sorgula button...")
         if not click_element_merged(driver, By.CSS_SELECTOR, SORGULA_BUTTON_CSS,
                                    action_name="Sorgula button", item_text=item_text, result_label=result_label):
             save_to_json(extracted_data)
             return False, extracted_data
 
-        # Adım 3: Expand butonuna tıkla
+        # Adım 3: Veri çıkarma işlemi
         if result_label:
-            result_label.config(text=f"Performing GSM sorgu for {item_text} - Clicking Expand button...")
-        if not click_element_merged(driver, By.XPATH, EXPAND_BUTTON_XPATH,
-                                   action_name="Expand button", item_text=item_text, result_label=result_label):
-            logger.warning(f"Failed to expand table for {item_text}, proceeding without expansion")
-        else:
-            time.sleep(SLEEP_INTERVAL) # Küçük bir bekleme süresi ekleyelim
-
-        # Adım 4: Veri çıkarma işlemi
-        if result_label:
-            result_label.config(text=f"Performing GSM sorgu for {item_text} - Extracting data...")
+            result_label.config(text=f"Performing İSKİ sorgu for {item_text} - Extracting data...")
 
         # Extract 'sonuc'
         try:
@@ -173,53 +160,23 @@ def perform_gsm_sorgu(driver, item_text, dosya_no, result_label=None):
             driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", sonuc_element)
             wait.until(EC.visibility_of_element_located((By.XPATH, SONUC_XPATH)))
             raw_sonuc = sonuc_element.text.strip()
-            extracted_data[dosya_no][item_text]["GSM"]["sonuc"] = raw_sonuc
+            extracted_data[dosya_no][item_text]["İSKİ"]["sonuc"] = raw_sonuc
         except TimeoutException as e:
             error_msg = f"Failed to locate 'sonuc' element for {item_text}: {e}"
             if result_label:
                 result_label.config(text=error_msg)
             logger.error(error_msg)
-            extracted_data[dosya_no][item_text]["GSM"]["sonuc"] = ""
-            # Continue to try extracting GSM Adres even if sonuc fails
-
-        # Extract 'GSM Adres' table
-        try:
-            adres_table = wait.until(EC.presence_of_element_located((By.XPATH, GSM_ADRES_TABLE_XPATH)))
-            driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", adres_table)
-            wait.until(EC.visibility_of_element_located((By.XPATH, GSM_ADRES_TABLE_XPATH)))
-            rows = adres_table.find_elements(By.XPATH, ".//tbody//tr")
-            if not rows:
-                logger.warning(f"No rows found in 'GSM Adres' table for {item_text}")
-            else:
-                for row in rows:
-                    columns = row.find_elements(By.TAG_NAME, "td")
-                    if len(columns) >= 2:
-                        adres_entry = {
-                            "Operator": columns[0].text.strip(),
-                            "Adres": columns[1].text.strip()
-                        }
-                        if adres_entry["Operator"] or adres_entry["Adres"]:  # Skip empty rows
-                            extracted_data[dosya_no][item_text]["GSM"]["GSM Adres"].append(adres_entry)
-                    else:
-                        logger.warning(f"Row with insufficient columns in 'GSM Adres' table for {item_text}: {row.text}")
-                if not extracted_data[dosya_no][item_text]["GSM"]["GSM Adres"]:
-                    logger.info(f"No valid GSM Adres data extracted for {item_text}")
-        except TimeoutException as e:
-            error_msg = f"Failed to locate 'GSM Adres' table for {item_text}: {e}"
-            if result_label:
-                result_label.config(text=error_msg)
-            logger.error(error_msg)
-            extracted_data[dosya_no][item_text]["GSM"]["GSM Adres"] = []
+            extracted_data[dosya_no][item_text]["İSKİ"]["sonuc"] = ""
 
         if result_label:
-            result_label.config(text=f"GSM sorgu completed for {item_text}")
+            result_label.config(text=f"İSKİ sorgu completed for {item_text}")
         logger.info(f"Successfully extracted data for {item_text}: {extracted_data}")
 
         save_to_json(extracted_data)
         return True, extracted_data
 
     except Exception as e:
-        error_msg = f"GSM sorgu error for {item_text}: {e}"
+        error_msg = f"İSKİ sorgu error for {item_text}: {e}"
         if result_label:
             result_label.config(text=error_msg)
         logger.error(error_msg)
