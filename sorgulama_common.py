@@ -208,8 +208,8 @@ def perform_sorgulama(driver, dosya_no, selected_options, result_label=None):
                         #     from iski_sorgu import perform_iski_sorgu; perform_iski_sorgu(driver, current, dosya_no, result_label)
                         elif opt == "GİB":
                             from gib_sorgu import perform_gib_sorgu; perform_gib_sorgu(driver, current, dosya_no, result_label)
-                        # elif opt == "GSM":
-                        #     from gsm_sorgu import perform_gsm_sorgu; perform_gsm_sorgu(driver, current, dosya_no, result_label)
+                        elif opt == "GSM":
+                            from gsm_sorgu import perform_gsm_sorgu; perform_gsm_sorgu(driver, current, dosya_no, result_label)
                         # elif opt == "Dış İşleri":
                         #     from dis_isleri_sorgu import perform_dis_isleri_sorgu; perform_dis_isleri_sorgu(driver, current, dosya_no, result_label)
                         # elif opt == "Posta Çeki":
