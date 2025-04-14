@@ -94,7 +94,6 @@ def click_element_merged(driver, by, value, action_name="", item_text="", result
             else:
                 element.click()
                 logger.info(f"Clicked {action_name} for {target} (attempt {attempt+1})")
-
             # Check overlays again post-click
             for overlay_sel in overlay_selectors:
                 try:
@@ -105,6 +104,7 @@ def click_element_merged(driver, by, value, action_name="", item_text="", result
         except (TimeoutException, StaleElementReferenceException, ElementNotInteractableException, ElementClickInterceptedException) as e:
             logger.warning(f"{action_name} click attempt {attempt+1} failed for {target}: {e}")
             time.sleep(SLEEP_INTERVAL)
+
     err = f"Failed to click {action_name} for {target} after {RETRY_ATTEMPTS} attempts"
     if result_label:
         result_label.config(text=err)
