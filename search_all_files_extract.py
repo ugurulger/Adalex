@@ -155,7 +155,7 @@ def extract_data_from_table(driver, ui_callback=None):
                                     # Attempt to click the tab
                                     driver.execute_script("arguments[0].click();", tab)
                                     logger.info(f"Clicked '{tab_name}' tab for Row {row_index + 1} on Page {page}")
-                                    time.sleep(1.5)  # Wait for any post-click actions to complete
+                                    time.sleep(0.5)  # Wait for any post-click actions to complete
                                     return True
                             
                             logger.warning(f"'{tab_name}' tab not found for Row {row_index + 1} on Page {page}. Skipping...")

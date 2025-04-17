@@ -22,6 +22,8 @@ DOSYA_GORUNTULE_ID      = "dosya-goruntule"
 BORCLU_TAB_XPATH        = "//div[contains(@class, 'dx-tab-content')]//span[contains(text(), 'Borçlu Bilgileri')]"
 DROPDOWN_SELECTOR       = ".dx-texteditor-buttons-container .dx-dropdowneditor-button"
 DROPDOWN_ITEMS_SELECTOR = ".dx-dropdowneditor-overlay .dx-list-item"
+CLOSE_BUTTON_CSS        = "div[role='button'][aria-label='Kapat'].dx-button"
+CLEAR_SEARCH_CSS        = ".dx-tag-remove-button"
 
 # Ek Hızlandırma Bekleme Süreleri
 DROPDOWN_LOAD_SLEEP = 0.1   # Dropdown menü açıldıktan sonra bekleme süresi
@@ -224,5 +226,17 @@ def perform_sorgulama(driver, dosya_no, selected_options, result_label=None):
                     status("Failed to re-open dropdown.")
                     break
         status("Dropdown items processing completed.")
+        # Adım 10: Pop-up penceresini kapat
+        status("Closing popup window...")
+        if not click_element_merged(driver, By.CSS_SELECTOR, CLOSE_BUTTON_CSS, action_name="Close popup"):
+            status("Failed to close popup window.")
+            return
+        # Adım 11: Arama çubuğunu temizle
+        status("Clearing search bar...")
+        if not click_element_merged(driver, By.CSS_SELECTOR, CLEAR_SEARCH_CSS, action_name="Clear search bar"):
+            status("Failed to clear search bar.")
+            return
+        else:
+            status("Search bar cleared successfully.")
     except TimeoutException:
         status("No dropdown items found.")
