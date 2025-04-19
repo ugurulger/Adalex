@@ -121,6 +121,60 @@ def click_element_merged(driver, by, value, action_name="", item_text="", result
     logger.error(err)
     return False
 
+def handle_popup_if_present(driver, item_text, result_label=None):
+    """
+    Check for a popup, extract its message if present, and close the popup.
+    Returns the popup message if a popup was handled, None if no popup was found.
+    """
+    # Pop-up ile ilgili sabitler
+    POPUP_CSS = ".dx-overlay-content.dx-popup-normal.dx-popup-flex-height.dx-resizable"
+    POPUP_MESSAGE_XPATH = (
+        "/html/body/div[contains(@class, 'dx-overlay-wrapper') and contains(@class, 'dx-popup-wrapper') and "
+        "contains(@class, 'custom-popup-alert')]/div/div/div/div/p"
+    )
+    TAMAM_BUTTON_CSS = "[aria-label='Tamam']"
+
+    try:
+        # Hızlıca pop-up elementini ara
+        popup_elements = driver.find_elements(By.CSS_SELECTOR, POPUP_CSS)
+        if not popup_elements:
+            logger.info(f"No popup detected for {item_text}")
+            return None
+
+        # Pop-up varsa, görünür olup olmadığını kontrol et (dx-state-invisible olmamalı)
+        popup = popup_elements[0]
+        if "dx-state-invisible" in popup.get_attribute("class"):
+            logger.info(f"Popup detected but invisible for {item_text}")
+            return None
+
+        logger.info(f"Popup detected for {item_text}")
+
+        # Mesajı çıkar
+        wait = WebDriverWait(driver, TIMEOUT)
+        try:
+            message_element = wait.until(EC.presence_of_element_located((By.XPATH, POPUP_MESSAGE_XPATH)))
+            popup_message = message_element.text.strip()
+            logger.info(f"Extracted popup message for {item_text}: {popup_message}")
+        except TimeoutException:
+            logger.warning(f"Could not locate popup message for {item_text}")
+            popup_message = "Popup message could not be extracted"
+
+        # 'Tamam' butonuna tıkla
+        if not click_element_merged(driver, By.CSS_SELECTOR, TAMAM_BUTTON_CSS,
+                                   action_name="Tamam button", item_text=item_text, result_label=result_label):
+            logger.error(f"Failed to close popup for {item_text}")
+            popup_message += " (Failed to close popup)"
+        
+        # result_label'ı güncelle
+        if result_label:
+            result_label.config(text=f"Popup detected for {item_text}: {popup_message}")
+        
+        return popup_message  # Mesajı döndür
+
+    except Exception as e:
+        logger.info(f"No popup detected for {item_text}: {e}")
+        return None  # Hata durumunda pop-up yok kabul et
+
 def perform_banka_sorgu(driver, item_text, dosya_no, result_label=None):
     """
     Belirli bir dropdown öğesi için Banka sorgusunu gerçekleştirir ve verileri çıkarır.
@@ -128,6 +182,7 @@ def perform_banka_sorgu(driver, item_text, dosya_no, result_label=None):
       1. Banka butonuna tıklar.
       2. "Sorgula" butonuna tıklar.
       3. 'sonuc' ve 'bankalar' XPath’lerinden verileri çıkarır.
+         - Pop-up kontrolü, SONUC_XPATH bulunamadığında yapılır.
          - 'bankalar' için önce expand butonuna tıklanır.
          - Çıkarılan veriler banka_sorgu.json dosyasına kaydedilir.
     
@@ -164,8 +219,6 @@ def perform_banka_sorgu(driver, item_text, dosya_no, result_label=None):
             save_to_json(extracted_data)
             return False, extracted_data
 
-        wait.until(EC.presence_of_element_located((By.XPATH, SONUC_XPATH)))
-
         # Adım 3: Veri çıkarma işlemi
         if result_label:
             result_label.config(text=f"Performing Banka sorgu for {item_text} - Extracting data...")
@@ -176,14 +229,26 @@ def perform_banka_sorgu(driver, item_text, dosya_no, result_label=None):
             raw_sonuc = sonuc_element.text.strip()
             extracted_data[dosya_no][item_text]["Banka"]["sonuc"] = raw_sonuc
             logger.info(f"Extracted raw 'sonuc' for {item_text}: {raw_sonuc}")
-        except TimeoutException as e:
-            error_msg = f"Failed to locate 'sonuc' element for {item_text}: {e}"
+        except TimeoutException:
+            logger.warning(f"Failed to locate 'sonuc' element for {item_text}, checking for popup...")
+            # Pop-up kontrolü
             if result_label:
-                result_label.config(text=error_msg)
-            logger.error(error_msg)
-            extracted_data[dosya_no][item_text]["Banka"]["sonuc"] = ""
-            save_to_json(extracted_data)
-            return False, extracted_data
+                result_label.config(text=f"Checking for popup for {item_text}...")
+            popup_message = handle_popup_if_present(driver, item_text, result_label)
+            if popup_message:
+                # Pop-up varsa mesajı kaydet ve işlemi sonlandır
+                extracted_data[dosya_no][item_text]["Banka"]["sonuc"] = popup_message
+                save_to_json(extracted_data)
+                return False, extracted_data
+            else:
+                # Pop-up yoksa hata mesajını kaydet
+                error_msg = f"Failed to locate 'sonuc' element for {item_text}: TimeoutException"
+                if result_label:
+                    result_label.config(text=error_msg)
+                logger.error(error_msg)
+                extracted_data[dosya_no][item_text]["Banka"]["sonuc"] = ""
+                save_to_json(extracted_data)
+                return False, extracted_data
 
         try:
             if result_label:
