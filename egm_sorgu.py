@@ -237,8 +237,6 @@ def perform_egm_sorgu(driver, item_text, dosya_no, result_label=None):
         if not click_with_retry(driver, wait, SORGULA_BUTTON_CSS, "Sorgula button", item_text, result_label):
             save_to_json(extracted_data)  # Hata olsa bile veriyi kaydet
             return False, extracted_data
-        # Wait dynamically for the pop-up/table to load
-        wait.until(EC.presence_of_element_located((By.XPATH, DATA_XPATH)))
 
         # Step 3: Extract data from the specified XPath
         if result_label:

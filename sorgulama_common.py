@@ -29,9 +29,6 @@ CLEAR_SEARCH_CSS        = ".dx-tag-remove-button"
 DROPDOWN_LOAD_SLEEP = 0.1   # Dropdown menü açıldıktan sonra bekleme süresi
 NEXT_ITEM_SLEEP     = 5     # Bir sonraki dropdown öğesine geçmeden önce bekleme süresi
 
-# SGK butonu (bu dosyada fonksiyon içerisinden çağrılacak)
-SGK_BUTTON_CSS = "button.query-button[title='SGK']"
-
 # Dosya yolu ayarları
 DESKTOP_PATH = os.path.join(os.path.expanduser("~"), "Desktop", "extracted_data")
 JSON_FILE = os.path.join(DESKTOP_PATH, "sgk_sorgu.json")
