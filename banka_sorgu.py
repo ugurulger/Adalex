@@ -1,4 +1,3 @@
-import logging
 import time
 import os
 import json
@@ -9,8 +8,10 @@ from selenium.common.exceptions import (
     TimeoutException,
     StaleElementReferenceException,
     ElementNotInteractableException,
-    ElementClickInterceptedException
+    ElementClickInterceptedException,
+    NoSuchElementException
 )
+from sorgulama_common import handle_popup_if_present, click_element_merged, save_to_json, get_logger
 
 # Global Sabitler
 TIMEOUT = 15
@@ -36,145 +37,6 @@ GENISLET_BUTTON_XPATH = (
 DESKTOP_PATH = os.path.join(os.path.expanduser("~"), "Desktop", "extracted_data")
 JSON_FILE = os.path.join(DESKTOP_PATH, "banka_sorgu.json")
 
-# Configure logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
-
-def save_to_json(extracted_data):
-    """
-    Save or update extracted_data to banka_sorgu.json on the desktop.
-    - Eğer dosya yoksa oluşturur.
-    - Dosya varsa aynı dosya_no ve item_text'e sahip verileri güncelleyerek, yeni verileri ekler.
-    """
-    os.makedirs(DESKTOP_PATH, exist_ok=True)
-
-    if os.path.exists(JSON_FILE):
-        try:
-            with open(JSON_FILE, 'r', encoding='utf-8') as f:
-                existing_data = json.load(f)
-        except (json.JSONDecodeError, IOError) as e:
-            logger.warning(f"Error reading existing JSON file, starting fresh: {e}")
-            existing_data = {}
-    else:
-        existing_data = {}
-
-    for dosya_no, items in extracted_data.items():
-        if dosya_no not in existing_data:
-            existing_data[dosya_no] = {}
-        existing_data[dosya_no].update(items)
-
-    try:
-        with open(JSON_FILE, 'w', encoding='utf-8') as f:
-            json.dump(existing_data, f, ensure_ascii=False, indent=4)
-        logger.info(f"Data saved/updated in {JSON_FILE}")
-    except IOError as e:
-        logger.error(f"Error writing to JSON file: {e}")
-
-def click_element_merged(driver, by, value, action_name="", item_text="", result_label=None, use_js_first=False):
-    """
-    Verilen locator (by, value) ile tanımlanan elementin tıklanabilir hale gelmesini bekler,
-    sayfada ortalar ve tıklama işlemini gerçekleştirir.
-    """
-    wait = WebDriverWait(driver, TIMEOUT)
-    target = item_text if item_text else value
-    # Define multiple overlay selectors to catch variations
-    overlay_selectors = [
-        ".dx-loadindicator-wrapper dx-loadindicator-image",
-        ".dx-loadpanel-content-wrapper",
-        ".dx-loadpanel-indicator dx-loadindicator dx-widget",
-        ".dx-overlay-wrapper dx-loadpanel-wrapper custom-loader dx-overlay-shader"
-    ]
-    for attempt in range(RETRY_ATTEMPTS):
-        try:
-            # Check all overlay selectors
-            for overlay_sel in overlay_selectors:
-                try:
-                    wait.until_not(EC.visibility_of_element_located((By.CSS_SELECTOR, overlay_sel)), "Overlay persists")
-                except TimeoutException:
-                    logger.warning(f"Overlay {overlay_sel} still present, continuing.")
-
-            element = wait.until(EC.presence_of_element_located((by, value)))
-            element = wait.until(EC.element_to_be_clickable((by, value)))
-            element = wait.until(EC.visibility_of_element_located((by, value)))
-            driver.execute_script("arguments[0].scrollIntoView({block:'center'});", element)
-            
-            if use_js_first:
-                driver.execute_script("arguments[0].click();", element)
-                logger.info(f"Clicked {action_name} via JS for {target} (attempt {attempt+1})")
-            else:
-                element.click()
-                logger.info(f"Clicked {action_name} for {target} (attempt {attempt+1})")
-
-            # Check overlays again post-click
-            for overlay_sel in overlay_selectors:
-                try:
-                    wait.until_not(EC.visibility_of_element_located((By.CSS_SELECTOR, overlay_sel)), "Overlay persists")
-                except TimeoutException:
-                    logger.warning(f"Post-click overlay {overlay_sel} still present.")
-            return True
-        except (TimeoutException, StaleElementReferenceException, ElementNotInteractableException, ElementClickInterceptedException) as e:
-            logger.warning(f"{action_name} click attempt {attempt+1} failed for {target}: {e}")
-            time.sleep(SLEEP_INTERVAL)
-    err = f"Failed to click {action_name} for {target} after {RETRY_ATTEMPTS} attempts"
-    if result_label:
-        result_label.config(text=err)
-    logger.error(err)
-    return False
-
-def handle_popup_if_present(driver, item_text, result_label=None):
-    """
-    Check for a popup, extract its message if present, and close the popup.
-    Returns the popup message if a popup was handled, None if no popup was found.
-    """
-    # Pop-up ile ilgili sabitler
-    POPUP_CSS = ".dx-overlay-content.dx-popup-normal.dx-popup-flex-height.dx-resizable"
-    POPUP_MESSAGE_XPATH = (
-        "/html/body/div[contains(@class, 'dx-overlay-wrapper') and contains(@class, 'dx-popup-wrapper') and "
-        "contains(@class, 'custom-popup-alert')]/div/div/div/div/p"
-    )
-    TAMAM_BUTTON_CSS = "[aria-label='Tamam']"
-
-    try:
-        # Hızlıca pop-up elementini ara
-        popup_elements = driver.find_elements(By.CSS_SELECTOR, POPUP_CSS)
-        if not popup_elements:
-            logger.info(f"No popup detected for {item_text}")
-            return None
-
-        # Pop-up varsa, görünür olup olmadığını kontrol et (dx-state-invisible olmamalı)
-        popup = popup_elements[0]
-        if "dx-state-invisible" in popup.get_attribute("class"):
-            logger.info(f"Popup detected but invisible for {item_text}")
-            return None
-
-        logger.info(f"Popup detected for {item_text}")
-
-        # Mesajı çıkar
-        wait = WebDriverWait(driver, TIMEOUT)
-        try:
-            message_element = wait.until(EC.presence_of_element_located((By.XPATH, POPUP_MESSAGE_XPATH)))
-            popup_message = message_element.text.strip()
-            logger.info(f"Extracted popup message for {item_text}: {popup_message}")
-        except TimeoutException:
-            logger.warning(f"Could not locate popup message for {item_text}")
-            popup_message = "Popup message could not be extracted"
-
-        # 'Tamam' butonuna tıkla
-        if not click_element_merged(driver, By.CSS_SELECTOR, TAMAM_BUTTON_CSS,
-                                   action_name="Tamam button", item_text=item_text, result_label=result_label):
-            logger.error(f"Failed to close popup for {item_text}")
-            popup_message += " (Failed to close popup)"
-        
-        # result_label'ı güncelle
-        if result_label:
-            result_label.config(text=f"Popup detected for {item_text}: {popup_message}")
-        
-        return popup_message  # Mesajı döndür
-
-    except Exception as e:
-        logger.info(f"No popup detected for {item_text}: {e}")
-        return None  # Hata durumunda pop-up yok kabul et
-
 def perform_banka_sorgu(driver, item_text, dosya_no, result_label=None):
     """
     Belirli bir dropdown öğesi için Banka sorgusunu gerçekleştirir ve verileri çıkarır.
@@ -182,13 +44,14 @@ def perform_banka_sorgu(driver, item_text, dosya_no, result_label=None):
       1. Banka butonuna tıklar.
       2. "Sorgula" butonuna tıklar.
       3. 'sonuc' ve 'bankalar' XPath’lerinden verileri çıkarır.
-         - Pop-up kontrolü, SONUC_XPATH bulunamadığında yapılır.
+         - Pop-up ve SONUC_XPATH için paralel bekleme yapılır.
          - 'bankalar' için önce expand butonuna tıklanır.
          - Çıkarılan veriler banka_sorgu.json dosyasına kaydedilir.
     
     Returns:
       Tuple (success: bool, data: dict) - İşlem durumu ve çıkarılan veriler.
     """
+    logger = get_logger()
     wait = WebDriverWait(driver, TIMEOUT)
     extracted_data = {
         dosya_no: {
@@ -202,7 +65,7 @@ def perform_banka_sorgu(driver, item_text, dosya_no, result_label=None):
     }
 
     try:
-        time.sleep(SLEEP_INTERVAL) # Küçük bir bekleme süresi ekleyelim
+        time.sleep(SLEEP_INTERVAL)  # Küçük bir bekleme süresi ekleyelim
         # Adım 1: Banka butonuna tıkla
         if result_label:
             result_label.config(text=f"Performing Banka sorgu for {item_text} - Clicking Banka button...")
@@ -223,33 +86,41 @@ def perform_banka_sorgu(driver, item_text, dosya_no, result_label=None):
         if result_label:
             result_label.config(text=f"Performing Banka sorgu for {item_text} - Extracting data...")
 
-        try:
-            sonuc_element = wait.until(EC.presence_of_element_located((By.XPATH, SONUC_XPATH)))
-            driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", sonuc_element)
-            raw_sonuc = sonuc_element.text.strip()
-            extracted_data[dosya_no][item_text]["Banka"]["sonuc"] = raw_sonuc
-            logger.info(f"Extracted raw 'sonuc' for {item_text}: {raw_sonuc}")
-        except TimeoutException:
-            logger.warning(f"Failed to locate 'sonuc' element for {item_text}, checking for popup...")
-            # Pop-up kontrolü
-            if result_label:
-                result_label.config(text=f"Checking for popup for {item_text}...")
+        # Pop-up ve SONUC_XPATH için paralel bekleme
+        def check_sonuc_or_popup(driver):
+            try:
+                element = driver.find_element(By.XPATH, SONUC_XPATH)
+                if element.is_displayed():
+                    return element
+            except NoSuchElementException:
+                pass
             popup_message = handle_popup_if_present(driver, item_text, result_label)
             if popup_message:
-                # Pop-up varsa mesajı kaydet ve işlemi sonlandır
-                extracted_data[dosya_no][item_text]["Banka"]["sonuc"] = popup_message
-                save_to_json(extracted_data)
-                return False, extracted_data
-            else:
-                # Pop-up yoksa hata mesajını kaydet
-                error_msg = f"Failed to locate 'sonuc' element for {item_text}: TimeoutException"
-                if result_label:
-                    result_label.config(text=error_msg)
-                logger.error(error_msg)
-                extracted_data[dosya_no][item_text]["Banka"]["sonuc"] = ""
-                save_to_json(extracted_data)
-                return False, extracted_data
+                return popup_message
+            return False
 
+        try:
+            result = wait.until(check_sonuc_or_popup)
+            if isinstance(result, str):  # Pop-up mesajı
+                extracted_data[dosya_no][item_text]["Banka"]["sonuc"] = result
+                save_to_json(extracted_data)
+                return False, extracted_data
+            else:  # SONUC_XPATH elementi
+                sonuc_element = result
+                driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", sonuc_element)
+                raw_sonuc = sonuc_element.text.strip()
+                extracted_data[dosya_no][item_text]["Banka"]["sonuc"] = raw_sonuc
+                logger.info(f"Extracted raw 'sonuc' for {item_text}: {raw_sonuc}")
+        except TimeoutException:
+            error_msg = f"Neither 'sonuc' element nor popup found for {item_text}"
+            if result_label:
+                result_label.config(text=error_msg)
+            logger.error(error_msg)
+            extracted_data[dosya_no][item_text]["Banka"]["sonuc"] = ""
+            save_to_json(extracted_data)
+            return False, extracted_data
+
+        # Bankalar tablosunu genişletme ve veri çıkarma
         try:
             if result_label:
                 result_label.config(text=f"Expanding bankalar table for {item_text}...")

@@ -1,4 +1,4 @@
-import logging, time, os, json
+import logging, time, os, json, inspect
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
@@ -31,20 +31,49 @@ NEXT_ITEM_SLEEP     = 5     # Bir sonraki dropdown öğesine geçmeden önce bek
 
 # Dosya yolu ayarları
 DESKTOP_PATH = os.path.join(os.path.expanduser("~"), "Desktop", "extracted_data")
-JSON_FILE = os.path.join(DESKTOP_PATH, "sgk_sorgu.json")
 
-# Logging yapılandırması
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+def get_logger():
+    """Çağrıldığı modülün adıyla logger oluşturur."""
+    # Çağrı zincirinde sorgulama_common dışındaki ilk modülü bul
+    for frame_info in inspect.stack():
+        module_name = frame_info[0].f_globals.get('__name__')
+        if module_name != 'sorgulama_common':
+            if module_name == '__main__':
+                module_name = 'sorgulama_common'  # __main__ yerine sorgulama_common kullan
+            break
+    else:
+        module_name = 'sorgulama_common'  # Varsayılan olarak kendi modülü
+    logger = logging.getLogger(module_name)
+    # Propagasyonu kapat
+    logger.propagate = False
+    # Eğer logger'ın handler'ı yoksa, yeni bir handler ekle
+    if not logger.handlers:
+        handler = logging.StreamHandler()
+        formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+        handler.setFormatter(formatter)
+        logger.addHandler(handler)
+        logger.setLevel(logging.INFO)
+    return logger
 
-def save_to_json(data):
+def save_to_json(data, filename=None):
     """
     data sözlüğünü JSON dosyasına kaydeder veya, dosya varsa, mevcut veriler ile günceller.
+    filename verilmezse, çağrıldığı modülün adına göre dosya adı oluşturulur.
     """
+    logger = get_logger()
+    # Çağrıcı modülün adını al
+    caller_module = inspect.stack()[1][0].f_globals.get('__name__')
+    if caller_module == '__main__':
+        caller_module = 'sorgulama_common'
+    
+    # Eğer filename verilmediyse, modül adına göre dosya adı oluştur
+    if filename is None:
+        filename = os.path.join(DESKTOP_PATH, f"{caller_module}.json")
+    
     os.makedirs(DESKTOP_PATH, exist_ok=True)
-    if os.path.exists(JSON_FILE):
+    if os.path.exists(filename):
         try:
-            with open(JSON_FILE, 'r', encoding='utf-8') as f:
+            with open(filename, 'r', encoding='utf-8') as f:
                 existing = json.load(f)
         except (json.JSONDecodeError, IOError):
             existing = {}
@@ -56,9 +85,9 @@ def save_to_json(data):
             existing[key] = {}
         existing[key].update(value)
     try:
-        with open(JSON_FILE, 'w', encoding='utf-8') as f:
+        with open(filename, 'w', encoding='utf-8') as f:
             json.dump(existing, f, ensure_ascii=False, indent=4)
-        logger.info(f"Data saved in {JSON_FILE}")
+        logger.info(f"Data saved in {filename}")
     except IOError as e:
         logger.error(f"JSON write error: {e}")
 
@@ -67,6 +96,7 @@ def click_element_merged(driver, by, value, action_name="", item_text="", result
     Verilen locator (by, value) ile tanımlanan elementin tıklanabilir hale gelmesini bekler,
     sayfada ortalar ve tıklama işlemini gerçekleştirir.
     """
+    logger = get_logger()
     wait = WebDriverWait(driver, TIMEOUT)
     target = item_text if item_text else value
     # Define multiple overlay selectors to catch variations
@@ -113,6 +143,61 @@ def click_element_merged(driver, by, value, action_name="", item_text="", result
     logger.error(err)
     return False
 
+def handle_popup_if_present(driver, item_text, result_label=None):
+    """
+    Check for a popup, extract its message if present, and close the popup.
+    Returns the popup message if a popup was handled, None if no popup was found.
+    """
+    logger = get_logger()
+    # Pop-up ile ilgili sabitler
+    POPUP_CSS = ".dx-overlay-content.dx-popup-normal.dx-popup-flex-height.dx-resizable"
+    POPUP_MESSAGE_XPATH = (
+        "/html/body/div[contains(@class, 'dx-overlay-wrapper') and contains(@class, 'dx-popup-wrapper') and "
+        "contains(@class, 'custom-popup-alert')]/div/div/div/div/p"
+    )
+    TAMAM_BUTTON_CSS = "[aria-label='Tamam']"
+
+    try:
+        # Hızlıca pop-up elementini ara
+        popup_elements = driver.find_elements(By.CSS_SELECTOR, POPUP_CSS)
+        if not popup_elements:
+            logger.info(f"No popup detected for {item_text}")
+            return None
+
+        # Pop-up varsa, görünür olup olmadığını kontrol et (dx-state-invisible olmamalı)
+        popup = popup_elements[0]
+        if "dx-state-invisible" in popup.get_attribute("class"):
+            logger.info(f"Popup detected but invisible for {item_text}")
+            return None
+
+        logger.info(f"Popup detected for {item_text}")
+
+        # Mesajı çıkar
+        wait = WebDriverWait(driver, TIMEOUT)
+        try:
+            message_element = wait.until(EC.presence_of_element_located((By.XPATH, POPUP_MESSAGE_XPATH)))
+            popup_message = message_element.text.strip()
+            logger.info(f"Extracted popup message for {item_text}: {popup_message}")
+        except TimeoutException:
+            logger.warning(f"Could not locate popup message for {item_text}")
+            popup_message = "Popup message could not be extracted"
+
+        # 'Tamam' butonuna tıkla
+        if not click_element_merged(driver, By.CSS_SELECTOR, TAMAM_BUTTON_CSS,
+                                   action_name="Tamam button", item_text=item_text, result_label=result_label):
+            logger.error(f"Failed to close popup for {item_text}")
+            popup_message += " (Failed to close popup)"
+        
+        # result_label'ı güncelle
+        if result_label:
+            result_label.config(text=f"Popup detected for {item_text}: {popup_message}")
+        
+        return popup_message  # Mesajı döndür
+
+    except Exception as e:
+        logger.info(f"No popup detected for {item_text}: {e}")
+        return None  # Hata durumunda pop-up yok kabul et
+
 def perform_sorgulama(driver, dosya_no, selected_options, result_label=None):
     """
     Dosya sorgulama işlemini gerçekleştirir. Aşamalar:
@@ -124,6 +209,7 @@ def perform_sorgulama(driver, dosya_no, selected_options, result_label=None):
       6. 'Borçlu Bilgileri' sekmesinin tıklanması,
       7. Dropdown menüden seçeneklerin işlenmesi.
     """
+    logger = get_logger()
     wait = WebDriverWait(driver, TIMEOUT)
     def status(msg):
         if result_label:
