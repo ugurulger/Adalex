@@ -1,11 +1,18 @@
-import logging
 import time
 import os
 import json
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.common.exceptions import TimeoutException, StaleElementReferenceException, ElementNotInteractableException, ElementClickInterceptedException, NoSuchFrameException
+from selenium.common.exceptions import (
+    TimeoutException,
+    StaleElementReferenceException,
+    ElementNotInteractableException,
+    ElementClickInterceptedException,
+    NoSuchElementException,
+    NoSuchFrameException
+)
+from sorgulama_common import handle_popup_if_present, click_element_merged, save_to_json, get_logger, check_result_or_popup
 
 # Constants
 TIMEOUT = 15
@@ -31,94 +38,12 @@ CLOSE_BUTTON_CSS = "[aria-label='Kapat']"
 DESKTOP_PATH = os.path.join(os.path.expanduser("~"), "Desktop", "extracted_data")
 JSON_FILE = os.path.join(DESKTOP_PATH, "takbis_sorgu.json")
 
-# Configure logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
-
-def save_to_json(extracted_data):
-    """Save or update extracted_data to takbis_sorgu.json on the desktop."""
-    os.makedirs(DESKTOP_PATH, exist_ok=True)
-    if os.path.exists(JSON_FILE):
-        try:
-            with open(JSON_FILE, 'r', encoding='utf-8') as f:
-                existing_data = json.load(f)
-        except (json.JSONDecodeError, IOError) as e:
-            logger.warning(f"Error reading existing JSON file, starting fresh: {e}")
-            existing_data = {}
-    else:
-        existing_data = {}
-
-    for dosya_no, items in extracted_data.items():
-        if dosya_no not in existing_data:
-            existing_data[dosya_no] = {}
-        existing_data[dosya_no].update(items)
-
-    try:
-        with open(JSON_FILE, 'w', encoding='utf-8') as f:
-            json.dump(existing_data, f, ensure_ascii=False, indent=4)
-        logger.info(f"Data saved/updated in {JSON_FILE}")
-    except IOError as e:
-        logger.error(f"Error writing to JSON file: {e}")
-
-def click_with_retry(driver, wait, locator, locator_value, action_name, item_text, result_label=None, retries=RETRY_ATTEMPTS, use_js_first=False):
-    """Click an element with retry logic, optionally using JS first."""
-    for attempt in range(retries):
-        try:
-            element = wait.until(EC.element_to_be_clickable((locator, locator_value)))
-            driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", element)
-            time.sleep(SLEEP_INTERVAL)
-            if use_js_first:
-                driver.execute_script("arguments[0].click();", element)
-                logger.info(f"Clicked {action_name} via JavaScript for {item_text} (attempt {attempt + 1})")
-            else:
-                element.click()
-                logger.info(f"Clicked {action_name} for {item_text} (attempt {attempt + 1})")
-            return True
-        except (TimeoutException, StaleElementReferenceException, ElementNotInteractableException, ElementClickInterceptedException) as e:
-            logger.warning(f"{action_name} click attempt {attempt + 1} failed for {item_text}: {e}")
-            try:
-                time.sleep(SLEEP_INTERVAL)
-                element = driver.find_element(locator, locator_value)
-                driver.execute_script("arguments[0].click();", element)
-                logger.info(f"Clicked {action_name} via JavaScript for {item_text} (attempt {attempt + 1})")
-                return True
-            except Exception as e2:
-                logger.warning(f"JavaScript click also failed: {e2}")
-            time.sleep(SLEEP_INTERVAL)
-    error_msg = f"Failed to click {action_name} for {item_text} after {retries} attempts"
-    if result_label:
-        result_label.config(text=error_msg)
-    logger.error(error_msg)
-    return False
-
-def switch_to_frame_if_exists(driver, wait):
-    """Check if there are any iframes and switch to the first one if it exists."""
-    try:
-        iframes = driver.find_elements(By.TAG_NAME, "iframe")
-        if iframes:
-            driver.switch_to.frame(iframes[0])
-            logger.info("Switched to iframe")
-        else:
-            logger.info("No iframe found, staying in default content")
-    except Exception as e:
-        logger.warning(f"Failed to switch to iframe: {e}")
-    finally:
-        return driver
-
-def switch_to_default_content(driver):
-    """Switch back to the default content."""
-    try:
-        driver.switch_to.default_content()
-        logger.info("Switched back to default content")
-    except Exception as e:
-        logger.warning(f"Failed to switch to default content: {e}")
 
 def extract_table_data(driver, wait, table_xpath, column_mappings, item_text):
     """Extract all rows from a table dynamically with retry logic."""
+    logger = get_logger()
     for attempt in range(RETRY_ATTEMPTS):
         try:
-            # Switch to iframe if exists
-            driver = switch_to_frame_if_exists(driver, wait)
 
             table = wait.until(EC.presence_of_element_located((By.XPATH, table_xpath)))
             driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", table)
@@ -142,16 +67,14 @@ def extract_table_data(driver, wait, table_xpath, column_mappings, item_text):
         except (TimeoutException, StaleElementReferenceException) as e:
             logger.warning(f"Failed to extract table {table_xpath} for {item_text} on attempt {attempt + 1}: {e}")
             time.sleep(SLEEP_INTERVAL)
-        finally:
-            switch_to_default_content(driver)
+
     logger.error(f"Failed to extract table {table_xpath} for {item_text} after {RETRY_ATTEMPTS} attempts")
     return []
 
 def close_popup(driver, wait, item_text, popup_name, row_idx, hisse_idx=None):
     """Attempt to close the topmost popup using aria-label='Kapat'."""
+    logger = get_logger()
     try:
-        # Switch to iframe if exists
-        driver = switch_to_frame_if_exists(driver, wait)
 
         # Find all close buttons and target the last one (topmost popup)
         close_buttons = driver.find_elements(By.CSS_SELECTOR, CLOSE_BUTTON_CSS)
@@ -174,11 +97,10 @@ def close_popup(driver, wait, item_text, popup_name, row_idx, hisse_idx=None):
     except Exception as e:
         logger.warning(f"Failed to close {popup_name} popup for {item_text}, row {row_idx}" + (f", hisse {hisse_idx}" if hisse_idx else "") + f": {e}")
         return False
-    finally:
-        switch_to_default_content(driver)
 
 def perform_takbis_sorgu(driver, item_text, dosya_no, result_label=None):
     """Perform TAKBIS sorgu and extract nested data with dynamic row handling."""
+    logger = get_logger()
     wait = WebDriverWait(driver, TIMEOUT)
     extracted_data = {
         dosya_no: {
@@ -195,39 +117,45 @@ def perform_takbis_sorgu(driver, item_text, dosya_no, result_label=None):
         # Step 1: Click the TAKBIS button
         if result_label:
             result_label.config(text=f"Performing TAKBIS sorgu for {item_text} - Clicking TAKBIS button...")
-        if not click_with_retry(driver, wait, By.CSS_SELECTOR, TAKBIS_BUTTON_CSS, "TAKBIS button", item_text, result_label):
+        if not click_element_merged(driver, By.CSS_SELECTOR, TAKBIS_BUTTON_CSS,
+                                   action_name="TAKBIS button", item_text=item_text, result_label=result_label):
             save_to_json(extracted_data)
             return False, extracted_data
 
         # Step 2: Click the "Sorgula" button
         if result_label:
             result_label.config(text=f"Performing TAKBIS sorgu for {item_text} - Clicking Sorgula button...")
-        if not click_with_retry(driver, wait, By.CSS_SELECTOR, SORGULA_BUTTON_CSS, "Sorgula button", item_text, result_label):
+        if not click_element_merged(driver, By.CSS_SELECTOR, SORGULA_BUTTON_CSS,
+                                   action_name="Sorgula button", item_text=item_text, result_label=result_label, use_js_first=True):
             save_to_json(extracted_data)
             return False, extracted_data
-
-        # Wait for data to load
-        wait.until(EC.presence_of_element_located((By.XPATH, SONUC_XPATH)))
 
         # Step 3: Extract data
         if result_label:
             result_label.config(text=f"Performing TAKBIS sorgu for {item_text} - Extracting data...")
 
-        # Extract 'sonuc'
+        # Pop-up ve SONUC_XPATH için paralel bekleme
         try:
-            # Switch to iframe if exists
-            driver = switch_to_frame_if_exists(driver, wait)
-            sonuc_element = wait.until(EC.presence_of_element_located((By.XPATH, SONUC_XPATH)))
-            driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", sonuc_element)
-            extracted_data[dosya_no][item_text]["TAKBIS"]["sonuc"] = sonuc_element.text.strip()
-            logger.info(f"Extracted 'sonuc' for {item_text}: {extracted_data[dosya_no][item_text]['TAKBIS']['sonuc']}")
+            result = wait.until(lambda d: check_result_or_popup(d, (By.XPATH, SONUC_XPATH), item_text, result_label))
+            if isinstance(result, str):  # Pop-up mesajı
+                extracted_data[dosya_no][item_text]["TAKBIS"]["sonuc"] = result
+                save_to_json(extracted_data)
+                return False, extracted_data
+            else:  # SONUC_XPATH elementi
+                sonuc_element = result
+                driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", sonuc_element)
+                wait.until(EC.visibility_of_element_located((By.XPATH, SONUC_XPATH)))
+                raw_sonuc = sonuc_element.text.strip()
+                extracted_data[dosya_no][item_text]["TAKBIS"]["sonuc"] = raw_sonuc
+                logger.info(f"Extracted 'sonuc' for {item_text}: {raw_sonuc}")
         except TimeoutException as e:
-            logger.error(f"Failed to locate 'sonuc' element for {item_text}: {e}")
+            error_msg = f"Neither 'sonuc' element nor popup found for {item_text}: {e}"
+            if result_label:
+                result_label.config(text=error_msg)
+            logger.error(error_msg)
             extracted_data[dosya_no][item_text]["TAKBIS"]["sonuc"] = ""
             save_to_json(extracted_data)
             return False, extracted_data
-        finally:
-            switch_to_default_content(driver)
 
         # Extract 'tasinmazlar' table
         tasinmaz_mappings = {
@@ -247,7 +175,8 @@ def perform_takbis_sorgu(driver, item_text, dosya_no, result_label=None):
         for idx, tasinmaz in enumerate(tasinmazlar, 1):
             # Click button in 11th column for 'hisse_bilgisi'
             hisse_button_xpath = f"{TASINMAZLAR_TABLE_XPATH}/tbody/tr[{idx}]/td[11]/div[1]"
-            if click_with_retry(driver, wait, By.XPATH, hisse_button_xpath, f"Hisse button (row {idx})", item_text, result_label):
+            if click_element_merged(driver, By.XPATH, hisse_button_xpath,
+                                   action_name=f"Hisse button (row {idx})", item_text=item_text, result_label=result_label):
                 time.sleep(SLEEP_INTERVAL)
                 hisse_mappings = {
                     "no": 0,
@@ -257,7 +186,8 @@ def perform_takbis_sorgu(driver, item_text, dosya_no, result_label=None):
                 }
                 
                 # Hisse tablosunu her popup açıldığında genişlet
-                if click_with_retry(driver, wait, By.XPATH, GENISLET_HISSE_BUTTON_XPATH, "Hisse table extend button", item_text, result_label):
+                if click_element_merged(driver, By.XPATH, GENISLET_HISSE_BUTTON_XPATH,
+                                       action_name="Hisse table extend button", item_text=item_text, result_label=result_label):
                     logger.info(f"Extended hisse_bilgisi table for {item_text}, row {idx}")
                 else:
                     logger.warning(f"Failed to extend hisse_bilgisi table for {item_text}, row {idx}")
@@ -272,7 +202,9 @@ def perform_takbis_sorgu(driver, item_text, dosya_no, result_label=None):
                 for h_idx in range(len(hisse_bilgisi)):
                     # Click button in 5th column for 'takdiyat_bilgisi'
                     takdiyat_button_xpath = f"{HISSE_POPUP_TABLE_XPATH}/tbody/tr[{h_idx + 1}]/td[5]/div[1]"
-                    if click_with_retry(driver, wait, By.XPATH, takdiyat_button_xpath, f"Takdiyat button (row {idx}, hisse {h_idx + 1})", item_text, result_label, use_js_first=True):
+                    if click_element_merged(driver, By.XPATH, takdiyat_button_xpath,
+                                           action_name=f"Takdiyat button (row {idx}, hisse {h_idx + 1})", item_text=item_text,
+                                           result_label=result_label, use_js_first=True):
                         time.sleep(SLEEP_INTERVAL)
                         takdiyat_mappings = {
                             "no": 0,
@@ -281,7 +213,9 @@ def perform_takbis_sorgu(driver, item_text, dosya_no, result_label=None):
                         }
                         
                         # Takdiyat tablosunu her popup açıldığında genişlet
-                        if click_with_retry(driver, wait, By.XPATH, GENISLET_TAKDIYAT_BUTTON_XPATH, "Takdiyat table extend button", item_text, result_label):
+                        if click_element_merged(driver, By.XPATH, GENISLET_TAKDIYAT_BUTTON_XPATH,
+                                               action_name="Takdiyat table extend button", item_text=item_text,
+                                               result_label=result_label):
                             logger.info(f"Extended takdiyat_bilgisi table for {item_text}, row {idx}, hisse {h_idx + 1}")
                         else:
                             logger.warning(f"Failed to extend takdiyat_bilgisi table for {item_text}, row {idx}, hisse {h_idx + 1}")
