@@ -11,7 +11,7 @@ from selenium.common.exceptions import (
     ElementClickInterceptedException,
     NoSuchElementException
 )
-from sorgulama_common import handle_popup_if_present, click_element_merged, save_to_json, get_logger
+from sorgulama_common import handle_popup_if_present, click_element_merged, save_to_json, get_logger, check_result_or_popup
 
 # Global Sabitler
 TIMEOUT = 15
@@ -87,20 +87,8 @@ def perform_banka_sorgu(driver, item_text, dosya_no, result_label=None):
             result_label.config(text=f"Performing Banka sorgu for {item_text} - Extracting data...")
 
         # Pop-up ve SONUC_XPATH için paralel bekleme
-        def check_sonuc_or_popup(driver):
-            try:
-                element = driver.find_element(By.XPATH, SONUC_XPATH)
-                if element.is_displayed():
-                    return element
-            except NoSuchElementException:
-                pass
-            popup_message = handle_popup_if_present(driver, item_text, result_label)
-            if popup_message:
-                return popup_message
-            return False
-
         try:
-            result = wait.until(check_sonuc_or_popup)
+            result = wait.until(lambda d: check_result_or_popup(d, (By.XPATH, SONUC_XPATH), item_text, result_label))
             if isinstance(result, str):  # Pop-up mesajı
                 extracted_data[dosya_no][item_text]["Banka"]["sonuc"] = result
                 save_to_json(extracted_data)

@@ -190,7 +190,27 @@ def handle_popup_if_present(driver, item_text, result_label=None):
 
     except Exception as e:
         logger.info(f"No popup detected for {item_text}: {e}")
-        return None  # Hata durumunda pop-up yok kabul et
+        return None # Hata durumunda pop-up yok kabul et
+
+def check_result_or_popup(driver, result_locator, item_text, result_label=None):
+    """
+    Belirtilen result_locator ile sonucu veya pop-up'ı kontrol eder.
+    Returns:
+      - Sonuç elementi (WebElement) varsa onu döner.
+      - Pop-up mesajı (str) varsa onu döner.
+      - Hiçbiri yoksa False döner.
+    """
+    logger = get_logger()
+    try:
+        element = driver.find_element(*result_locator)
+        if element.is_displayed():
+            return element
+    except NoSuchElementException:
+        pass
+    popup_message = handle_popup_if_present(driver, item_text, result_label)
+    if popup_message:
+        return popup_message
+    return False
 
 def perform_sorgulama(driver, dosya_no, selected_options, result_label=None):
     """
