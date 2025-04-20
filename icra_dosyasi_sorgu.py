@@ -1,4 +1,3 @@
-import logging
 import time
 import os
 import json
@@ -9,103 +8,31 @@ from selenium.common.exceptions import (
     TimeoutException,
     StaleElementReferenceException,
     ElementNotInteractableException,
-    ElementClickInterceptedException
+    ElementClickInterceptedException,
+    NoSuchElementException
 )
+from sorgulama_common import handle_popup_if_present, click_element_merged, save_to_json, get_logger, check_result_or_popup
 
 # Global Sabitler
 TIMEOUT = 15
 RETRY_ATTEMPTS = 3
 SLEEP_INTERVAL = 0.5
-OVERLAY_SELECTOR = ".dx-loadpanel-indicator dx-loadindicator dx-widget"
 
-# İcra Dosyası butonu ve diğer selector'lar
 ICRA_DOSYASI_BUTTON_CSS = "button.query-button [title='İcra Dosyası']"
 SORGULA_BUTTON_CSS = "[aria-label='Sorgula']"
 SONUC_XPATH = (
     "/html/body/div[*]/div/div[*]/div/div/div/div/div[*]/div/div/div[*]/div/div[*]/div[*]/div/div/div[*]/div/div[*]/div/div[*]/div/div/div[*]/div/div[1]/div[2]/div[3]/div[2]/div/div[*]/div"
-)  # Yer tutucu, gerçek XPath gerekli
+)
 ICRA_DOSYALARI_TABLE_XPATH = (
     "/html/body/div[*]/div/div[*]/div/div/div/div/div[*]/div/div/div[*]/div/div[*]/div[*]/div/div/div[*]/div/div[*]/div/div[*]/div/div/div[*]/div/div[*]/div[*]/div[*]/div[*]/div/div[*]/div/div[*]/div/div/div/div/table"
-)  # Yer tutucu, gerçek XPath gerekli
+)
 GENISLET_BUTTON_XPATH = (
     "/html/body/div[*]/div/div[*]/div/div/div/div/div[*]/div/div/div[*]/div/div[*]/div[*]/div/div/div[*]/div/div[*]/div/div[*]/div/div/div[*]/div/div[*]/div[*]/div[*]/div[*]/div/div[*]/div/div[11]/div[1]/div[4]"
-)  # Yer tutucu, gerçek XPath gerekli
+)
 
 # Desktop path for JSON file
 DESKTOP_PATH = os.path.join(os.path.expanduser("~"), "Desktop", "extracted_data")
 JSON_FILE = os.path.join(DESKTOP_PATH, "icra_dosyasi_sorgu.json")
-
-# Configure logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
-
-def save_to_json(extracted_data):
-    """
-    Save or update extracted_data to icra_dosyasi_sorgu.json on the desktop.
-    - Eğer dosya yoksa oluşturur.
-    - Dosya varsa aynı dosya_no ve item_text'e sahip verileri güncelleyerek, yeni verileri ekler.
-    """
-    os.makedirs(DESKTOP_PATH, exist_ok=True)
-
-    if os.path.exists(JSON_FILE):
-        try:
-            with open(JSON_FILE, 'r', encoding='utf-8') as f:
-                existing_data = json.load(f)
-        except (json.JSONDecodeError, IOError) as e:
-            logger.warning(f"Error reading existing JSON file, starting fresh: {e}")
-            existing_data = {}
-    else:
-        existing_data = {}
-
-    for dosya_no, items in extracted_data.items():
-        if dosya_no not in existing_data:
-            existing_data[dosya_no] = {}
-        existing_data[dosya_no].update(items)
-
-    try:
-        with open(JSON_FILE, 'w', encoding='utf-8') as f:
-            json.dump(existing_data, f, ensure_ascii=False, indent=4)
-        logger.info(f"Data saved/updated in {JSON_FILE}")
-    except IOError as e:
-        logger.error(f"Error writing to JSON file: {e}")
-
-def click_element_merged(driver, by, value, action_name="", item_text="", result_label=None, use_js_first=False):
-    """
-    Verilen locator (by, value) ile tanımlanan elementin tıklanabilir hale gelmesini bekler,
-    sayfada ortalar ve tıklama işlemini gerçekleştirir.
-    """
-    wait = WebDriverWait(driver, TIMEOUT)
-    target = item_text if item_text else value
-    for attempt in range(RETRY_ATTEMPTS):
-        try:
-
-            if OVERLAY_SELECTOR:
-                wait.until_not(EC.visibility_of_element_located((By.CSS_SELECTOR, OVERLAY_SELECTOR)), "Overlay persists")
-                logger.info("ilk overlay gone.")
-
-            element = wait.until(EC.presence_of_element_located((by, value)))
-            element = wait.until(EC.element_to_be_clickable((by, value)))
-            element = wait.until(EC.visibility_of_element_located((by, value)))
-            driver.execute_script("arguments[0].scrollIntoView({block:'center'});", element)
-            
-            if use_js_first:
-                driver.execute_script("arguments[0].click();", element)
-                logger.info(f"Clicked {action_name} via JS for {target} (attempt {attempt+1})")
-            else:
-                element.click()
-                logger.info(f"Clicked {action_name} for {target} (attempt {attempt+1})")
-            if OVERLAY_SELECTOR:
-                wait.until_not(EC.visibility_of_element_located((By.CSS_SELECTOR, OVERLAY_SELECTOR)), "Overlay persists")
-                logger.info("ikinci overlay gone.")
-            return True
-        except (TimeoutException, StaleElementReferenceException, ElementNotInteractableException, ElementClickInterceptedException) as e:
-            logger.warning(f"{action_name} click attempt {attempt+1} failed for {target}: {e}")
-            time.sleep(SLEEP_INTERVAL)
-    err = f"Failed to click {action_name} for {target} after {RETRY_ATTEMPTS} attempts"
-    if result_label:
-        result_label.config(text=err)
-    logger.error(err)
-    return False
 
 def perform_icra_dosyasi_sorgu(driver, item_text, dosya_no, result_label=None):
     """
@@ -117,15 +44,10 @@ def perform_icra_dosyasi_sorgu(driver, item_text, dosya_no, result_label=None):
          - Tabloyu doğrular, genişletir ve verileri toplar.
          - Veriler icra_dosyasi_sorgu.json dosyasına kaydedilir.
     
-    Args:
-        driver: Selenium WebDriver nesnesi.
-        item_text (str): Dropdown öğesinin metni.
-        dosya_no (str): Dosya numarası.
-        result_label: Durum mesajlarını göstermek için opsiyonel UI etiketi.
-    
     Returns:
-        Tuple[bool, dict]: İşlem durumu (True/False) ve çıkarılan veriler.
+      Tuple (success: bool, data: dict) - İşlem durumu ve çıkarılan veriler.
     """
+    logger = get_logger()
     wait = WebDriverWait(driver, TIMEOUT)
     extracted_data = {
         dosya_no: {
@@ -142,11 +64,8 @@ def perform_icra_dosyasi_sorgu(driver, item_text, dosya_no, result_label=None):
         # Adım 1: İcra Dosyası butonuna tıkla
         if result_label:
             result_label.config(text=f"Performing İcra Dosyası sorgu for {item_text} - Clicking İcra Dosyası button...")
-            
-        if not click_element_merged(
-            driver, By.CSS_SELECTOR, ICRA_DOSYASI_BUTTON_CSS,
-            action_name="İcra Dosyası button", item_text=item_text, result_label=result_label
-        ):
+        if not click_element_merged(driver, By.CSS_SELECTOR, ICRA_DOSYASI_BUTTON_CSS,
+                                   action_name="İcra Dosyası button", item_text=item_text, result_label=result_label):
             logger.error("Failed to click İcra Dosyası button")
             save_to_json(extracted_data)
             return False, extracted_data
@@ -154,10 +73,8 @@ def perform_icra_dosyasi_sorgu(driver, item_text, dosya_no, result_label=None):
         # Adım 2: Sorgula butonuna tıkla
         if result_label:
             result_label.config(text=f"Performing İcra Dosyası sorgu for {item_text} - Clicking Sorgula button...")
-        if not click_element_merged(
-            driver, By.CSS_SELECTOR, SORGULA_BUTTON_CSS,
-            action_name="Sorgula button", item_text=item_text, result_label=result_label
-        ):
+        if not click_element_merged(driver, By.CSS_SELECTOR, SORGULA_BUTTON_CSS,
+                                   action_name="Sorgula button", item_text=item_text, result_label=result_label):
             logger.error("Failed to click Sorgula button")
             save_to_json(extracted_data)
             return False, extracted_data
@@ -166,14 +83,22 @@ def perform_icra_dosyasi_sorgu(driver, item_text, dosya_no, result_label=None):
         if result_label:
             result_label.config(text=f"Performing İcra Dosyası sorgu for {item_text} - Extracting data...")
 
-        # Sonuç alanını çıkar
+        # Pop-up ve SONUC_XPATH için paralel bekleme
         try:
-            sonuc_element = wait.until(EC.presence_of_element_located((By.XPATH, SONUC_XPATH)))
-            driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", sonuc_element)
-            extracted_data[dosya_no][item_text]["İcra Dosyası"]["sonuc"] = sonuc_element.text.strip()
-            logger.info(f"Extracted raw 'sonuc' for {item_text}: {extracted_data[dosya_no][item_text]['İcra Dosyası']['sonuc']}")
-        except TimeoutException as e:
-            error_msg = f"Failed to locate 'sonuc' element for {item_text}: {e}"
+            result = wait.until(lambda d: check_result_or_popup(d, (By.XPATH, SONUC_XPATH), item_text, result_label))
+            if isinstance(result, str):  # Pop-up mesajı
+                extracted_data[dosya_no][item_text]["İcra Dosyası"]["sonuc"] = result
+                save_to_json(extracted_data)
+                return False, extracted_data
+            else:  # SONUC_XPATH elementi
+                sonuc_element = result
+                driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", sonuc_element)
+                wait.until(EC.visibility_of_element_located((By.XPATH, SONUC_XPATH)))
+                raw_sonuc = sonuc_element.text.strip()
+                extracted_data[dosya_no][item_text]["İcra Dosyası"]["sonuc"] = raw_sonuc
+                logger.info(f"Extracted raw 'sonuc' for {item_text}: {raw_sonuc}")
+        except TimeoutException:
+            error_msg = f"Neither 'sonuc' element nor popup found for {item_text}"
             if result_label:
                 result_label.config(text=error_msg)
             logger.error(error_msg)
@@ -206,10 +131,8 @@ def perform_icra_dosyasi_sorgu(driver, item_text, dosya_no, result_label=None):
             # Tablo doğrulandı, genişlet butonuna tıkla
             if result_label:
                 result_label.config(text=f"Expanding icra_dosyalari table for {item_text}...")
-            if not click_element_merged(
-                driver, By.XPATH, GENISLET_BUTTON_XPATH,
-                action_name="Expand button", item_text=item_text, result_label=result_label
-            ):
+            if not click_element_merged(driver, By.XPATH, GENISLET_BUTTON_XPATH,
+                                       action_name="Expand button", item_text=item_text, result_label=result_label):
                 logger.warning(f"Failed to expand table for {item_text}, proceeding without expansion")
             else:
                 # Genişletme sonrası tablonun yüklendiğinden emin ol
