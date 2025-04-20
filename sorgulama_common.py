@@ -99,22 +99,16 @@ def click_element_merged(driver, by, value, action_name="", item_text="", result
     logger = get_logger()
     wait = WebDriverWait(driver, TIMEOUT)
     target = item_text if item_text else value
-    # Define multiple overlay selectors to catch variations
-    overlay_selectors = [
-        ".dx-loadindicator-wrapper dx-loadindicator-image",
-        ".dx-loadpanel-content-wrapper",
-        ".dx-loadpanel-indicator dx-loadindicator dx-widget",
-        ".dx-overlay-wrapper dx-loadpanel-wrapper custom-loader dx-overlay-shader"
-    ]
+    overlay_selector = ".dx-overlay-wrapper.dx-loadpanel-wrapper.custom-loader.dx-overlay-shader"
+
     for attempt in range(RETRY_ATTEMPTS):
         try:
-            # Check all overlay selectors
-            for overlay_sel in overlay_selectors:
-                try:
-                    wait.until_not(EC.visibility_of_element_located((By.CSS_SELECTOR, overlay_sel)), "Overlay persists")
-                except TimeoutException:
-                    logger.warning(f"Overlay {overlay_sel} still present, continuing.")
-
+            # Check overlay before click
+            try:
+                wait.until_not(EC.visibility_of_element_located((By.CSS_SELECTOR, overlay_selector)), "Overlay persists")
+            except TimeoutException:
+                logger.warning("Overlay still present before click, continuing.")
+            
             element = wait.until(EC.presence_of_element_located((by, value)))
             element = wait.until(EC.element_to_be_clickable((by, value)))
             element = wait.until(EC.visibility_of_element_located((by, value)))
@@ -127,12 +121,12 @@ def click_element_merged(driver, by, value, action_name="", item_text="", result
                 element.click()
                 logger.info(f"Clicked {action_name} for {target} (attempt {attempt+1})")
 
-            # Check overlays again post-click
-            for overlay_sel in overlay_selectors:
-                try:
-                    wait.until_not(EC.visibility_of_element_located((By.CSS_SELECTOR, overlay_sel)), "Overlay persists")
-                except TimeoutException:
-                    logger.warning(f"Post-click overlay {overlay_sel} still present.")
+            # Check overlay after click
+            try:
+                wait.until_not(EC.visibility_of_element_located((By.CSS_SELECTOR, overlay_selector)), "Overlay persists")
+            except TimeoutException:
+                logger.warning("Overlay still present after click.")
+            
             return True
         except (TimeoutException, StaleElementReferenceException, ElementNotInteractableException, ElementClickInterceptedException) as e:
             logger.warning(f"{action_name} click attempt {attempt+1} failed for {target}: {e}")

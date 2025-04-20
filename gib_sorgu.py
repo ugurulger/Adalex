@@ -152,15 +152,15 @@ def perform_gib_sorgu(driver, item_text, dosya_no, result_label=None):
             save_to_json(extracted_data)
             return False, extracted_data
 
-        # Wait for GİB panel to stabilize
-        wait.until(EC.presence_of_element_located((By.XPATH, "//div[contains(@id, 'dx-')]")))
-
         # Adım 3: Veri çıkarma işlemi
         if result_label:
             result_label.config(text=f"Performing GİB sorgu for {item_text} - Extracting data...")
 
         # Extract 'sonuc'
         try:
+            # Wait for GİB panel to stabilize
+            wait.until(EC.presence_of_element_located((By.XPATH, "//div[contains(@id, 'dx-')]")))
+
             sonuc_element = wait.until(EC.presence_of_element_located((By.XPATH, SONUC_XPATH)))
             driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", sonuc_element)
             wait.until(EC.visibility_of_element_located((By.XPATH, SONUC_XPATH)))
