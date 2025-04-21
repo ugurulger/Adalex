@@ -14,7 +14,8 @@ USER_DATA_DIR = "/Users/ugurulger/Library/Application Support/Google/ChromeDupli
 PROFILE_DIRECTORY = "Default"
 ARKSIGNER_EXTENSION_PATH = "/Users/ugurulger/Library/Application Support/Google/Chrome/Default/Extensions/pllcidbcfbamjfbfpemnnjohnfcliakf/2.0.1_0"
 URL = "https://avukatbeta.uyap.gov.tr/"
-FIRST_BTN_SELECTOR = ".dx-widget.dx-button.dx-button-mode-contained.dx-button-normal.nav-link"
+FIRST_BTN_SELECTOR = "[aria-label='Uyap E-imza İle Giriş']"
+DROPDOWN_ITEM_SELECTOR = "[title='Uyap E-imza İle Giriş']"
 PIN_BOX_SELECTOR = "input[aria-id='pinKodu']"
 GIRIS_BTN_SELECTOR = ".dx-widget.dx-button.dx-button-mode-contained.dx-button-default.dx-button-has-icon.adalet-button.btn.btn-primary.px-4.btn-sm"
 
@@ -54,9 +55,16 @@ def open_browser_and_login(pinkodu, result_label=None):
         logger.info("First button clicked.")
         if result_label:
             result_label.config(text="First button clicked.")
+
+        # 3. Click the dropdown item
+        dropdown_item = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, DROPDOWN_ITEM_SELECTOR)))
+        dropdown_item.click()
+        logger.info("Dropdown item clicked.")
+        if result_label:
+            result_label.config(text="Dropdown item clicked.")
         time.sleep(5)  # Wait for the next page to load
 
-        # 3. Enter the PIN
+        # 4. Enter the PIN
         pin_box = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, PIN_BOX_SELECTOR)))
         pin_box.click()
         pin_box.clear()
@@ -65,7 +73,7 @@ def open_browser_and_login(pinkodu, result_label=None):
         if result_label:
             result_label.config(text="PIN entered.")
 
-        # 4. Click the "Giriş" button
+        # 5. Click the "Giriş" button
         giris_btn = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, GIRIS_BTN_SELECTOR)))
         driver.execute_script("arguments[0].click();", giris_btn)  # Use JavaScript to click
         logger.info("Giriş button clicked.")

@@ -175,7 +175,8 @@ def handle_popup_if_present(driver, item_text, result_label=None):
         except TimeoutException:
             logger.warning(f"Could not locate popup message for {item_text}")
             popup_message = "Popup message could not be extracted"
-
+        
+        time.sleep(SLEEP_INTERVAL) #Tamam'a tiklamadan once biraz bekle
         # 'Tamam' butonuna tıkla
         if not click_element_merged(driver, By.CSS_SELECTOR, TAMAM_BUTTON_CSS,
                                    action_name="Tamam button", item_text=item_text, result_label=result_label):
