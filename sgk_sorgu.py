@@ -191,14 +191,6 @@ def perform_sgk_sorgu(driver, item_text, dosya_no, result_label=None):
         logger.warning("Subpanel focus başarısız; devam ediliyor")
 
     for current_item in DROPDOWN_ITEMS:
-        
-        if not click_element_merged(driver, By.CSS_SELECTOR, SGK_BUTTON_CSS, "SGK button", item_text, result_label):
-        save_to_json(extracted_data)
-        return False, extracted_data
-
-        if not click_element_merged(driver, By.CSS_SELECTOR, ACTIVE_SUBPANEL_SELECTOR, "Active subpanel focus", item_text, result_label):
-        logger.warning("Subpanel focus başarısız; devam ediliyor")
-
         if result_label:
             result_label.config(text=f"{item_text} için SGK dropdown açılıyor ({current_item})...")
         if not click_element_merged(driver, By.CSS_SELECTOR, SGK_DROPDOWN_SELECTOR, "SGK dropdown", item_text, result_label):
