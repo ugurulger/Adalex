@@ -6,7 +6,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException, StaleElementReferenceException, ElementNotInteractableException
-from sorgulama_common import click_element_merged, save_to_json, get_logger
+from sorgulama_common import click_element_merged, save_to_json, get_logger, check_result_or_popup
 
 # Constants
 TIMEOUT = 15
@@ -190,116 +190,124 @@ def perform_egm_sorgu(driver, item_text, dosya_no, result_label=None):
         if result_label:
             result_label.config(text=f"Performing EGM sorgu for {item_text} - Extracting data...")
         try:
-            data_element = wait.until(EC.presence_of_element_located((By.XPATH, DATA_XPATH)))
-            driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", data_element)
-            logger.info(f"data_element content for {item_text}: {data_element.text}")
+            # Pop-up ve DATA_XPATH için paralel bekleme
+            result = wait.until(lambda d: check_result_or_popup(d, (By.XPATH, DATA_XPATH), item_text, result_label))
+            if isinstance(result, str):  # Pop-up mesajı
+                extracted_data[dosya_no][item_text]["EGM"]["Sonuc"] = result
+                save_to_json(extracted_data)
+                logger.info(f"Popup detected for {item_text}: {result}")
+                return False, extracted_data
+            else:  # DATA_XPATH elementi
+                data_element = result
+                driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", data_element)
+                logger.info(f"data_element content for {item_text}: {data_element.text}")
 
-            raw_data = data_element.text.strip()
-            if not raw_data:
-                logger.warning(f"Extracted data is empty for {item_text}")
-                extracted_data[dosya_no][item_text]["EGM"]["Sonuc"] = "Kayıt bulunamadı"
-            elif "Kayıt bulunamadı" in raw_data:
-                extracted_data[dosya_no][item_text]["EGM"]["Sonuc"] = raw_data
-            else:
-                extracted_data[dosya_no][item_text]["EGM"]["Sonuc"] = "bulundu"
-                tables = [data_element]
-                logger.info(f"Found {len(tables)} tables for {item_text}")
+                raw_data = data_element.text.strip()
+                if not raw_data:
+                    logger.warning(f"Extracted data is empty for {item_text}")
+                    extracted_data[dosya_no][item_text]["EGM"]["Sonuc"] = "Kayıt bulunamadı"
+                elif "araç kaydı yok" in raw_data:
+                    extracted_data[dosya_no][item_text]["EGM"]["Sonuc"] = raw_data
+                else:
+                    extracted_data[dosya_no][item_text]["EGM"]["Sonuc"] = "bulundu"
+                    tables = [data_element]
+                    logger.info(f"Found {len(tables)} tables for {item_text}")
 
-                if tables:
-                    for idx, table in enumerate(tables):
-                        logger.info(f"Table {idx} content for {item_text}: {table.text}")
-                        rows = table.find_elements(By.XPATH, ".//tbody//tr[contains(@class, 'dx-row dx-data-row')]")
-                        if not rows:
-                            rows = table.find_elements(By.XPATH, ".//tbody//tr")
+                    if tables:
+                        for idx, table in enumerate(tables):
+                            logger.info(f"Table {idx} content for {item_text}: {table.text}")
+                            rows = table.find_elements(By.XPATH, ".//tbody//tr[contains(@class, 'dx-row dx-data-row')]")
                             if not rows:
-                                logger.warning(f"No rows found in table {idx} for {item_text}")
-                                continue
+                                rows = table.find_elements(By.XPATH, ".//tbody//tr")
+                                if not rows:
+                                    logger.warning(f"No rows found in table {idx} for {item_text}")
+                                    continue
+                                else:
+                                    logger.info(f"Found {len(rows)} rows in table {idx} using general tbody//tr XPath for {item_text}")
                             else:
-                                logger.info(f"Found {len(rows)} rows in table {idx} using general tbody//tr XPath for {item_text}")
-                        else:
-                            logger.info(f"Found {len(rows)} rows in table {idx} with class 'dx-row dx-data-row' for {item_text}")
+                                logger.info(f"Found {len(rows)} rows in table {idx} with class 'dx-row dx-data-row' for {item_text}")
 
-                        rows_texts = [row.text for row in rows]
-                        logger.info(f"All rows in table {idx} for {item_text}: {rows_texts}")
+                            rows_texts = [row.text for row in rows]
+                            logger.info(f"All rows in table {idx} for {item_text}: {rows_texts}")
 
-                        if rows_texts:
-                            for row_idx in range(len(rows_texts)):
-                                try:
-                                    table = driver.find_element(By.XPATH, DATA_XPATH)
-                                    rows = table.find_elements(By.XPATH, ".//tbody//tr[contains(@class, 'dx-row dx-data-row')]") or table.find_elements(By.XPATH, ".//tbody//tr")
-                                    if row_idx >= len(rows):
-                                        logger.warning(f"Row {row_idx} no longer exists in table {idx} for {item_text}, skipping")
-                                        continue
-                                    row = rows[row_idx]
-                                    columns = row.find_elements(By.TAG_NAME, "td")
-                                    logger.info(f"Row {row_idx} in table {idx} has {len(columns)} columns: {[col.text for col in columns]}")
-                                    if "dx-header-row" in row.get_attribute("class") or (columns and columns[0].text.strip() == "No"):
-                                        logger.info(f"Row {row_idx} in table {idx} is likely a header row, skipping")
-                                        continue
-                                    if len(columns) >= 1:
-                                        arac = {
-                                            "No": columns[0].text.strip() if len(columns) > 0 else "",
-                                            "Plaka": columns[1].text.strip() if len(columns) > 1 else "",
-                                            "Marka": columns[2].text.strip() if len(columns) > 2 else "",
-                                            "Model": columns[3].text.strip() if len(columns) > 3 else "",
-                                            "Tipi": columns[4].text.strip() if len(columns) > 4 else "",
-                                            "Renk": columns[5].text.strip() if len(columns) > 5 else "",
-                                            "Cins": columns[6].text.strip() if len(columns) > 6 else "",
-                                            "Mahrumiyet": []
-                                        }
-                                        try:
-                                            # Sorgula butonunu bul
-                                            sorgula_button = row.find_element(By.CSS_SELECTOR, "[aria-label='Sorgula']")
-                                            logger.info(f"Clicking Sorgula button for vehicle {arac['No']} - {arac['Plaka']}")
-
-                                            # XPath'i al
-                                            xpath_selector = get_element_xpath(sorgula_button, driver)
-
-                                            # Scroll ve tıklama
-                                            driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", sorgula_button)
-                                            time.sleep(SLEEP_INTERVAL)
-                                            click_element_merged(driver, By.XPATH, xpath_selector, 
-                                                                action_name="Sorgula button in row", 
-                                                                item_text=f"{item_text} - Vehicle {arac['No']}", 
-                                                                result_label=result_label)
-                                        except Exception as e:
-                                            logger.warning(f"Could not locate or click Sorgula button in row for vehicle {arac['No']} - {arac['Plaka']}: {e}")
+                            if rows_texts:
+                                for row_idx in range(len(rows_texts)):
+                                    try:
+                                        table = driver.find_element(By.XPATH, DATA_XPATH)
+                                        rows = table.find_elements(By.XPATH, ".//tbody//tr[contains(@class, 'dx-row dx-data-row')]") or table.find_elements(By.XPATH, ".//tbody//tr")
+                                        if row_idx >= len(rows):
+                                            logger.warning(f"Row {row_idx} no longer exists in table {idx} for {item_text}, skipping")
                                             continue
-
-                                        try:
-                                            driver.switch_to.default_content()
-                                            extract_mahrumiyet_data(driver, wait, arac, item_text)
-                                            close_mahrumiyet_popup(driver, wait, item_text, arac, result_label)
-                                        except TimeoutException as e:
-                                            logger.warning(f"Failed to locate Mahrumiyet table for vehicle {arac['No']} - {arac['Plaka']}: {e}")
-                                            arac["Mahrumiyet"] = []
-                                        except StaleElementReferenceException as e:
-                                            logger.warning(f"Stale element error for Mahrumiyet table for vehicle {arac['No']} - {arac['Plaka']}: {e}")
+                                        row = rows[row_idx]
+                                        columns = row.find_elements(By.TAG_NAME, "td")
+                                        logger.info(f"Row {row_idx} in table {idx} has {len(columns)} columns: {[col.text for col in columns]}")
+                                        if "dx-header-row" in row.get_attribute("class") or (columns and columns[0].text.strip() == "No"):
+                                            logger.info(f"Row {row_idx} in table {idx} is likely a header row, skipping")
+                                            continue
+                                        if len(columns) >= 1:
+                                            arac = {
+                                                "No": columns[0].text.strip() if len(columns) > 0 else "",
+                                                "Plaka": columns[1].text.strip() if len(columns) > 1 else "",
+                                                "Marka": columns[2].text.strip() if len(columns) > 2 else "",
+                                                "Model": columns[3].text.strip() if len(columns) > 3 else "",
+                                                "Tipi": columns[4].text.strip() if len(columns) > 4 else "",
+                                                "Renk": columns[5].text.strip() if len(columns) > 5 else "",
+                                                "Cins": columns[6].text.strip() if len(columns) > 6 else "",
+                                                "Mahrumiyet": []
+                                            }
                                             try:
-                                                mahrumiyet_table = driver.find_element(By.XPATH, MAHRUMIYET_POPUP_TABLE_XPATH)
-                                                logger.info(f"Mahrumiyet table content (retry) for vehicle {arac['No']} - {arac['Plaka']}: {mahrumiyet_table.text}")
+                                                # Sorgula butonunu bul
+                                                sorgula_button = row.find_element(By.CSS_SELECTOR, "[aria-label='Sorgula']")
+                                                logger.info(f"Clicking Sorgula button for vehicle {arac['No']} - {arac['Plaka']}")
+
+                                                # XPath'i al
+                                                xpath_selector = get_element_xpath(sorgula_button, driver)
+
+                                                # Scroll ve tıklama
+                                                driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", sorgula_button)
+                                                time.sleep(SLEEP_INTERVAL)
+                                                click_element_merged(driver, By.XPATH, xpath_selector, 
+                                                                    action_name="Sorgula button in row", 
+                                                                    item_text=f"{item_text} - Vehicle {arac['No']}", 
+                                                                    result_label=result_label)
+                                            except Exception as e:
+                                                logger.warning(f"Could not locate or click Sorgula button in row for vehicle {arac['No']} - {arac['Plaka']}: {e}")
+                                                continue
+
+                                            try:
+                                                driver.switch_to.default_content()
                                                 extract_mahrumiyet_data(driver, wait, arac, item_text)
                                                 close_mahrumiyet_popup(driver, wait, item_text, arac, result_label)
-                                            except Exception as e2:
-                                                logger.warning(f"Retry failed for Mahrumiyet table for vehicle {arac['No']} - {arac['Plaka']}: {e2}")
+                                            except TimeoutException as e:
+                                                logger.warning(f"Failed to locate Mahrumiyet table for vehicle {arac['No']} - {arac['Plaka']}: {e}")
                                                 arac["Mahrumiyet"] = []
-                                        except Exception as e:
-                                            logger.warning(f"Error reading Mahrumiyet table for vehicle {arac['No']} - {arac['Plaka']}: {e}")
-                                            arac["Mahrumiyet"] = []
+                                            except StaleElementReferenceException as e:
+                                                logger.warning(f"Stale element error for Mahrumiyet table for vehicle {arac['No']} - {arac['Plaka']}: {e}")
+                                                try:
+                                                    mahrumiyet_table = driver.find_element(By.XPATH, MAHRUMIYET_POPUP_TABLE_XPATH)
+                                                    logger.info(f"Mahrumiyet table content (retry) for vehicle {arac['No']} - {arac['Plaka']}: {mahrumiyet_table.text}")
+                                                    extract_mahrumiyet_data(driver, wait, arac, item_text)
+                                                    close_mahrumiyet_popup(driver, wait, item_text, arac, result_label)
+                                                except Exception as e2:
+                                                    logger.warning(f"Retry failed for Mahrumiyet table for vehicle {arac['No']} - {arac['Plaka']}: {e2}")
+                                                    arac["Mahrumiyet"] = []
+                                            except Exception as e:
+                                                logger.warning(f"Error reading Mahrumiyet table for vehicle {arac['No']} - {arac['Plaka']}: {e}")
+                                                arac["Mahrumiyet"] = []
 
-                                        extracted_data[dosya_no][item_text]["EGM"]["Araclar"].append(arac)
-                                except Exception as e:
-                                    logger.warning(f"Error processing row {row_idx} for {item_text}: {e}")
-                                    continue
+                                            extracted_data[dosya_no][item_text]["EGM"]["Araclar"].append(arac)
+                                    except Exception as e:
+                                        logger.warning(f"Error processing row {row_idx} for {item_text}: {e}")
+                                        continue
 
-                if not extracted_data[dosya_no][item_text]["EGM"]["Araclar"]:
-                    logger.warning(f"No valid data rows found in any table for {item_text}")
-                    extracted_data[dosya_no][item_text]["EGM"]["Sonuc"] = "Tablo satırları bulunamadı"
+                    if not extracted_data[dosya_no][item_text]["EGM"]["Araclar"]:
+                        logger.warning(f"No valid data rows found in any table for {item_text}")
+                        extracted_data[dosya_no][item_text]["EGM"]["Sonuc"] = "Tablo satırları bulunamadı"
 
-                logger.info(f"Successfully extracted data for {item_text}: {extracted_data}")
+                    logger.info(f"Successfully extracted data for {item_text}: {extracted_data}")
 
         except TimeoutException as e:
-            error_msg = f"Failed to locate data element for {item_text}: {e}"
+            error_msg = f"Neither data element nor popup found for {item_text}: {e}"
             if result_label:
                 result_label.config(text=error_msg)
             logger.error(error_msg)
@@ -316,7 +324,7 @@ def perform_egm_sorgu(driver, item_text, dosya_no, result_label=None):
         if result_label:
             result_label.config(text=f"EGM sorgu completed for {item_text}")
         logger.info(f"Waiting 3 seconds after processing {item_text}")
-        time.sleep(SLEEP_INTERVAL)
+        time.sleep(3)
         
         save_to_json(extracted_data)
         return True, extracted_data
