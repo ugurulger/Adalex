@@ -1,107 +1,68 @@
-import logging
+from sorgulama_common import get_logger, click_element_merged
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.common.action_chains import ActionChains
-from selenium.common.exceptions import TimeoutException, NoSuchElementException, ElementClickInterceptedException, ElementNotInteractableException
-
-# Configure logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
-
-def click_element(driver, by, value, timeout=15):
-    """Waits for an element to be visible, scrolls it into view, and clicks it."""
-    wait = WebDriverWait(driver, timeout)
-    
-    try:
-        element = wait.until(EC.presence_of_element_located((by, value)))  
-        element = wait.until(EC.visibility_of_element_located((by, value)))  
-        element = wait.until(EC.element_to_be_clickable((by, value)))  
-
-        # Scroll into view before clicking
-        driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", element)
-
-        # Try normal click
-        try:
-            element.click()
-            logger.info(f"Clicked element: {value}")
-        except Exception as e:
-            logger.warning(f"Normal click failed for {value}. Trying JavaScript click. Error: {e}")
-            driver.execute_script("arguments[0].click();", element)
-
-        return True
-
-    except TimeoutException:
-        logger.error(f"Timeout: Element not clickable ({value})")
-    except NoSuchElementException:
-        logger.error(f"Element not found: {value}")
-    except Exception as e:
-        logger.error(f"Unexpected error clicking element ({value}): {e}")
-
-    return False
+from selenium.common.exceptions import TimeoutException
 
 def select_dropdown_option(driver, dropdown_selector, option_text):
-    """Helper function to select an option from a dropdown."""
+    """Dropdown'dan bir seçenek seçer."""
+    logger = get_logger()
     try:
-        wait = WebDriverWait(driver, 10)
-        dropdown = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, dropdown_selector)))
-        dropdown.click()
-        option = wait.until(EC.element_to_be_clickable((By.XPATH, f"//div[text()='{option_text}']")))
-        option.click()
-        logger.info(f"Selected dropdown option: {option_text}")
+        # Dropdown'u aç
+        if not click_element_merged(driver, By.CSS_SELECTOR, dropdown_selector, action_name="Dropdown aç"):
+            return False
+        # Seçeneği seç
+        if not click_element_merged(driver, By.XPATH, f"//div[text()='{option_text}']", action_name="Seçenek seç"):
+            return False
+        logger.info(f"Seçilen dropdown seçeneği: {option_text}")
         return True
-    except (TimeoutException, NoSuchElementException) as e:
-        logger.error(f"Failed to select option '{option_text}': {e}")
+    except Exception as e:
+        logger.error(f"Seçenek '{option_text}' seçilemedi: {e}")
         return False
 
 def search_all_files(driver, result_label=None):
-    """Automates the search process on UYAP."""
+    """UYAP'ta tüm dosyaları arama işlemini otomatikleştirir."""
+    logger = get_logger()
     try:
         wait = WebDriverWait(driver, 15)
 
-        # Step 1: Open Menu
-        if result_label: result_label.config(text="Opening menu...")
-        click_element(driver, By.CSS_SELECTOR, "#sidebar-menu > li:nth-child(4) > button")
+        # Adım 1: Menüyü aç
+        if result_label: result_label.config(text="Menü açılıyor...")
+        click_element_merged(driver, By.CSS_SELECTOR, "#sidebar-menu > li:nth-child(4) > button", action_name="Menü aç")
 
-        # Step 2: Click 'Dosya Sorgula'
-        if result_label: result_label.config(text="Navigating to 'Dosya Sorgula'...")
-        click_element(driver, By.CSS_SELECTOR, "[id='29954-alt-menu'] > a:nth-child(1) > li > span > span")
+        # Adım 2: 'Dosya Sorgula'ya tıkla
+        if result_label: result_label.config(text="'Dosya Sorgula'ya gidiliyor...")
+        click_element_merged(driver, By.CSS_SELECTOR, "[id='29954-alt-menu'] > a:nth-child(1) > li > span > span", action_name="'Dosya Sorgula' tıkla")
 
-        # Step 3: Click Radio Button with robust retry
-        if result_label: result_label.config(text="Selecting radio button...")
+        # Adım 3: Radyo butonunu seç
+        if result_label: result_label.config(text="Radyo butonu seçiliyor...")
         radio_button_xpath = "/html/body/div/div/div[1]/div[2]/div/div/div[1]/div/div[2]/div[1]/div[2]/div/div/div/div/div/div[4]"
-        
-        for attempt in range(3):  # Retry up to 3 times
-            if click_element(driver, By.XPATH, radio_button_xpath):
-                logger.info("Radio button clicked successfully.")
-                break
-            else:
-                logger.warning(f"Attempt {attempt + 1}: Radio button click failed. Retrying...")
+        click_element_merged(driver, By.XPATH, radio_button_xpath, action_name="Radyo buton seç")
 
-        # Step 4: Click Search All Files Button
-        if result_label: result_label.config(text="Clicking search button...")
-        click_element(driver, By.CSS_SELECTOR, "#content-div2 > div.white-content > div > div:nth-child(3) > div > div.col-xl-6 > div > div.d-flex.gap-1 > button")
+        # Adım 4: Arama butonuna tıkla
+        if result_label: result_label.config(text="Arama butonuna tıklanıyor...")
+        click_element_merged(driver, By.CSS_SELECTOR, "#content-div2 > div.white-content > div > div:nth-child(3) > div > div.col-xl-6 > div > div.d-flex.gap-1 > button", action_name="Arama buton tıkla")
 
-        # Step 4.5: Wait for the page to load after clicking the search button
+        # Adım 4.5: Sayfanın yüklenmesini bekle
         try:
             wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, "#yargi-turu-detayli-arama")))
-            logger.info("Page loaded successfully. Continuing to next steps.")
+            logger.info("Sayfa başarıyla yüklendi. Sonraki adımlara geçiliyor.")
         except TimeoutException:
-            logger.error("Timeout waiting for Yargı Türü dropdown to appear.")
+            logger.error("Yargı Türü dropdown'u görünmedi.")
 
-        # Step 5-7: Select dropdowns
+        # Adım 5-7: Dropdown'lardan seçim yap
         select_dropdown_option(driver, "#yargi-turu-detayli-arama", "İcra")
         select_dropdown_option(driver, "#yargi-birimi-detayli-arama", "İCRA DAİRESİ")
         select_dropdown_option(driver, "#mahkeme-detayli-arama", "Tümü")
 
-        # Step 8: Click Search Button
-        if result_label: result_label.config(text="Executing search...")
-        click_element(driver, By.CSS_SELECTOR, "#content-div2 > div.white-content > div > div:nth-child(2) > div > div.col-xl-6.t-1 > div > div > div.hedef-card-footer > div.dx-widget.dx-button.dx-button-mode-contained.dx-button-default.dx-button-has-text.dx-button-has-icon")
+        # Adım 8: Arama işlemini başlat
+        if result_label: result_label.config(text="Arama gerçekleştiriliyor...")
+        click_element_merged(driver, By.CSS_SELECTOR, "#content-div2 > div.white-content > div > div:nth-child(2) > div > div.col-xl-6.t-1 > div > div > div.hedef-card-footer > div.dx-widget.dx-button.dx-button-mode-contained.dx-button-default.dx-button-has-text.dx-button-has-icon", action_name="Aramayı başlat")
 
-        logger.info("Search process completed successfully.")
-        if result_label: result_label.config(text="Search completed. Ready to extract data.")
+        logger.info("Arama işlemi başarıyla tamamlandı.")
+        if result_label: result_label.config(text="Arama tamamlandı. Veri çıkarımı için hazır.")
 
     except Exception as e:
-        logger.error(f"Unexpected error during search: {e}")
+        logger.error(f"Arama sırasında beklenmeyen hata: {e}")
         if result_label:
-            result_label.config(text=f"Error: {e}")
+            result_label.config(text=f"Hata: {e}")
