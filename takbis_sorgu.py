@@ -161,84 +161,89 @@ def perform_takbis_sorgu(driver, item_text, dosya_no, result_label=None):
             save_to_json(extracted_data)
             return False, extracted_data
 
-        # Extract 'tasinmazlar' table
-        tasinmaz_mappings = {
-            "no": 0,
-            "tapu_mudurlugu": 1,
-            "il_ilce": 2,
-            "mahalle": 3,
-            "vasfi": 4,
-            "yuzolcumu": 5,
-            "mevki": 6,
-            "ada_no": 7,
-            "parcel_no": 8,
-            "bagimsiz_bolum": 9
-        }
-        tasinmazlar = extract_table_data(driver, wait, TASINMAZLAR_TABLE_XPATH, tasinmaz_mappings, item_text)
+        # Initialize tasinmazlar
+        tasinmazlar = []
+        # Check if 'yok' is in the sonuc (case-insensitive)
+        if 'yok' not in raw_sonuc.lower():
+            # Extract 'tasinmazlar' table
+            tasinmaz_mappings = {
+                "no": 0,
+                "tapu_mudurlugu": 1,
+                "il_ilce": 2,
+                "mahalle": 3,
+                "vasfi": 4,
+                "yuzolcumu": 5,
+                "mevki": 6,
+                "ada_no": 7,
+                "parcel_no": 8,
+                "bagimsiz_bolum": 9
+            }
+            tasinmazlar = extract_table_data(driver, wait, TASINMAZLAR_TABLE_XPATH, tasinmaz_mappings, item_text)
         
-        for idx, tasinmaz in enumerate(tasinmazlar, 1):
-            # Click button in 11th column for 'hisse_bilgisi'
-            hisse_button_xpath = f"{TASINMAZLAR_TABLE_XPATH}/tbody/tr[{idx}]/td[11]/div[1]"
-            if click_element_merged(driver, By.XPATH, hisse_button_xpath,
-                                   action_name=f"Hisse button (row {idx})", item_text=item_text, result_label=result_label, use_js_first=True):
-               time.sleep(SLEEP_INTERVAL_TINY) #tiny delay to allow for any potential loading
-                hisse_mappings = {
-                    "no": 0,
-                    "aciklama": 1,
-                    "hisse_tipi": 2,
-                    "durum": 3
-                }
-                
-                # Hisse tablosunu her popup açıldığında genişlet
-                if click_element_merged(driver, By.XPATH, GENISLET_HISSE_BUTTON_XPATH,
-                                       action_name="Hisse table extend button", item_text=item_text, result_label=result_label):
-                    logger.info(f"Extended hisse_bilgisi table for {item_text}, row {idx}")
-                else:
-                    logger.warning(f"Failed to extend hisse_bilgisi table for {item_text}, row {idx}")
-                
-                # Extract hisse_bilgisi
-                hisse_bilgisi = extract_table_data(driver, wait, HISSE_POPUP_TABLE_XPATH, hisse_mappings, item_text)
-                
-                # Create a copy to store updated hisse_bilgisi
-                updated_hisse_bilgisi = hisse_bilgisi.copy()
-                
-                # Process each hisse_bilgisi row
-                for h_idx in range(len(hisse_bilgisi)):
-                    # Click button in 5th column for 'takdiyat_bilgisi'
-                    takdiyat_button_xpath = f"{HISSE_POPUP_TABLE_XPATH}/tbody/tr[{h_idx + 1}]/td[5]/div[1]"
-                    if click_element_merged(driver, By.XPATH, takdiyat_button_xpath,
-                                           action_name=f"Takdiyat button (row {idx}, hisse {h_idx + 1})", item_text=item_text,
-                                           result_label=result_label, use_js_first=True):
-                        time.sleep(SLEEP_INTERVAL_TINY) #tiny delay to allow for any potential loading
-                        takdiyat_mappings = {
-                            "no": 0,
-                            "tipi": 1,
-                            "aciklama": 2
-                        }
-                        
-                        # Takdiyat tablosunu her popup açıldığında genişlet
-                        if click_element_merged(driver, By.XPATH, GENISLET_TAKDIYAT_BUTTON_XPATH,
-                                               action_name="Takdiyat table extend button", item_text=item_text,
-                                               result_label=result_label):
-                            logger.info(f"Extended takdiyat_bilgisi table for {item_text}, row {idx}, hisse {h_idx + 1}")
-                        else:
-                            logger.warning(f"Failed to extend takdiyat_bilgisi table for {item_text}, row {idx}, hisse {h_idx + 1}")
-                        
-                        # Extract takdiyat_bilgisi
-                        takdiyat_bilgisi = extract_table_data(driver, wait, TAKDIYAT_POPUP_TABLE_XPATH, takdiyat_mappings, item_text)
-                        updated_hisse_bilgisi[h_idx]["takdiyat_bilgisi"] = takdiyat_bilgisi
+            for idx, tasinmaz in enumerate(tasinmazlar, 1):
+                # Click button in 11th column for 'hisse_bilgisi'
+                hisse_button_xpath = f"{TASINMAZLAR_TABLE_XPATH}/tbody/tr[{idx}]/td[11]/div[1]"
+                if click_element_merged(driver, By.XPATH, hisse_button_xpath,
+                                       action_name=f"Hisse button (row {idx})", item_text=item_text, result_label=result_label, use_js_first=True):
+                    time.sleep(SLEEP_INTERVAL_TINY) #tiny delay to allow for any potential loading
+                    
+                    hisse_mappings = {
+                        "no": 0,
+                        "aciklama": 1,
+                        "hisse_tipi": 2,
+                        "durum": 3
+                    }
+                    
+                    # Hisse tablosunu her popup açıldığında genişlet
+                    if click_element_merged(driver, By.XPATH, GENISLET_HISSE_BUTTON_XPATH,
+                                           action_name="Hisse table extend button", item_text=item_text, result_label=result_label):
+                        logger.info(f"Extended hisse_bilgisi table for {item_text}, row {idx}")
+                    else:
+                        logger.warning(f"Failed to extend hisse_bilgisi table for {item_text}, row {idx}")
+                    
+                    # Extract hisse_bilgisi
+                    hisse_bilgisi = extract_table_data(driver, wait, HISSE_POPUP_TABLE_XPATH, hisse_mappings, item_text)
+                    
+                    # Create a copy to store updated hisse_bilgisi
+                    updated_hisse_bilgisi = hisse_bilgisi.copy()
+                    
+                    # Process each hisse_bilgisi row
+                    for h_idx in range(len(hisse_bilgisi)):
+                        # Click button in 5th column for 'takdiyat_bilgisi'
+                        takdiyat_button_xpath = f"{HISSE_POPUP_TABLE_XPATH}/tbody/tr[{h_idx + 1}]/td[5]/div[1]"
+                        if click_element_merged(driver, By.XPATH, takdiyat_button_xpath,
+                                               action_name=f"Takdiyat button (row {idx}, hisse {h_idx + 1})", item_text=item_text,
+                                               result_label=result_label, use_js_first=True):
+                            time.sleep(SLEEP_INTERVAL_TINY) #tiny delay to allow for any potential loading
+                            takdiyat_mappings = {
+                                "no": 0,
+                                "tipi": 1,
+                                "aciklama": 2
+                            }
+                            
+                            # Takdiyat tablosunu her popup açıldığında genişlet
+                            if click_element_merged(driver, By.XPATH, GENISLET_TAKDIYAT_BUTTON_XPATH,
+                                                   action_name="Takdiyat table extend button", item_text=item_text,
+                                                   result_label=result_label):
+                                logger.info(f"Extended takdiyat_bilgisi table for {item_text}, row {idx}, hisse {h_idx + 1}")
+                            else:
+                                logger.warning(f"Failed to extend takdiyat_bilgisi table for {item_text}, row {idx}, hisse {h_idx + 1}")
+                            
+                            # Extract takdiyat_bilgisi
+                            takdiyat_bilgisi = extract_table_data(driver, wait, TAKDIYAT_POPUP_TABLE_XPATH, takdiyat_mappings, item_text)
+                            updated_hisse_bilgisi[h_idx]["takdiyat_bilgisi"] = takdiyat_bilgisi
 
-                        # Close second popup (takdiyat)
-                        close_popup(driver, wait, item_text, "takdiyat", idx, h_idx + 1)
-                        time.sleep(SLEEP_INTERVAL)
-                
-                tasinmaz["hisse_bilgisi"] = updated_hisse_bilgisi
+                            # Close second popup (takdiyat)
+                            close_popup(driver, wait, item_text, "takdiyat", idx, h_idx + 1)
+                            time.sleep(SLEEP_INTERVAL)
+                    
+                    tasinmaz["hisse_bilgisi"] = updated_hisse_bilgisi
 
-                # Close first popup (hisse)
-                close_popup(driver, wait, item_text, "hisse", idx)
-                time.sleep(SLEEP_INTERVAL)
-            
-            tasinmazlar[idx - 1] = tasinmaz
+                    # Close first popup (hisse)
+                    close_popup(driver, wait, item_text, "hisse", idx)
+                    time.sleep(SLEEP_INTERVAL)
+                
+                tasinmazlar[idx - 1] = tasinmaz
 
         extracted_data[dosya_no][item_text]["TAKBIS"]["tasinmazlar"] = tasinmazlar
         logger.info(f"Successfully extracted data for {item_text}: {extracted_data}")
