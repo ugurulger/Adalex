@@ -17,7 +17,8 @@ from sorgulama_common import handle_popup_if_present, click_element_merged, save
 # Constants
 TIMEOUT = 15
 RETRY_ATTEMPTS = 3
-SLEEP_INTERVAL = 1.0
+SLEEP_INTERVAL = 0.5
+SLEEP_INTERVAL_TINY = 0.2
 TAKBIS_BUTTON_CSS = "button.query-button [title='TAKBİS']"
 SORGULA_BUTTON_CSS = "[aria-label='Sorgula']"
 SONUC_XPATH = (
@@ -44,10 +45,13 @@ def extract_table_data(driver, wait, table_xpath, column_mappings, item_text):
     logger = get_logger()
     for attempt in range(RETRY_ATTEMPTS):
         try:
+            
+            time.sleep(SLEEP_INTERVAL_TINY) #tiny delay to allow for any potential loading
+            table = wait.until(EC.visibility_of_element_located((By.XPATH, table_xpath)))
+            wait.until(lambda driver: table.find_elements(By.XPATH, ".//tbody//tr"))
 
-            table = wait.until(EC.presence_of_element_located((By.XPATH, table_xpath)))
             driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", table)
-            time.sleep(SLEEP_INTERVAL)
+            
             rows = table.find_elements(By.XPATH, ".//tbody//tr")
             if not rows:
                 logger.warning(f"No rows found in table {table_xpath} for {item_text}")
@@ -176,8 +180,8 @@ def perform_takbis_sorgu(driver, item_text, dosya_no, result_label=None):
             # Click button in 11th column for 'hisse_bilgisi'
             hisse_button_xpath = f"{TASINMAZLAR_TABLE_XPATH}/tbody/tr[{idx}]/td[11]/div[1]"
             if click_element_merged(driver, By.XPATH, hisse_button_xpath,
-                                   action_name=f"Hisse button (row {idx})", item_text=item_text, result_label=result_label):
-                time.sleep(SLEEP_INTERVAL)
+                                   action_name=f"Hisse button (row {idx})", item_text=item_text, result_label=result_label, use_js_first=True):
+               time.sleep(SLEEP_INTERVAL_TINY) #tiny delay to allow for any potential loading
                 hisse_mappings = {
                     "no": 0,
                     "aciklama": 1,
@@ -205,7 +209,7 @@ def perform_takbis_sorgu(driver, item_text, dosya_no, result_label=None):
                     if click_element_merged(driver, By.XPATH, takdiyat_button_xpath,
                                            action_name=f"Takdiyat button (row {idx}, hisse {h_idx + 1})", item_text=item_text,
                                            result_label=result_label, use_js_first=True):
-                        time.sleep(SLEEP_INTERVAL)
+                        time.sleep(SLEEP_INTERVAL_TINY) #tiny delay to allow for any potential loading
                         takdiyat_mappings = {
                             "no": 0,
                             "tipi": 1,
@@ -238,7 +242,6 @@ def perform_takbis_sorgu(driver, item_text, dosya_no, result_label=None):
 
         extracted_data[dosya_no][item_text]["TAKBIS"]["tasinmazlar"] = tasinmazlar
         logger.info(f"Successfully extracted data for {item_text}: {extracted_data}")
-        time.sleep(3)
 
         save_to_json(extracted_data)
         return True, extracted_data
