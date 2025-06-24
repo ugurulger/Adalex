@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Borçlu Files</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+        tr:nth-child(even) { background-color: #f9f9f9; }
+        tr:hover { background-color: #f5f5f5; }
+        a { color: #0066cc; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        .header { margin-bottom: 20px; }
+        .back-btn { 
+            background-color: #0066cc; 
+            color: white; 
+            padding: 10px 20px; 
+            text-decoration: none; 
+            border-radius: 5px; 
+            display: inline-block; 
+            margin-top: 20px; 
+        }
+        .back-btn:hover { background-color: #0052a3; }
+        .status-open { color: green; font-weight: bold; }
+        .status-closed { color: red; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>👤 Borçlu: {{ borclu_adi }}</h1>
+        <p>Total files for this borçlu: {{ files|length }}</p>
+    </div>
+    
+    <table>
+        <thead>
+            <tr>
+                <th>File ID</th>
+                <th>Klasör</th>
+                <th>Dosya No</th>
+                <th>Alacaklı Adı</th>
+                <th>Föy Türü</th>
+                <th>Durum</th>
+                <th>Takip Tarihi</th>
+                <th>İcra Müdürlüğü</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for file in files %}
+            <tr>
+                <td><a href="{{ url_for('file_detail', file_id=file[0]) }}">{{ file[0] }}</a></td>
+                <td>{{ file[1] }}</td>
+                <td>{{ file[2] }}</td>
+                <td>{{ file[4] }}</td>
+                <td>{{ file[5] }}</td>
+                <td class="{% if file[6] == 'Açık' %}status-open{% else %}status-closed{% endif %}">{{ file[6] }}</td>
+                <td>{{ file[7] }}</td>
+                <td>{{ file[8] }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    
+    <a href="{{ url_for('index') }}" class="back-btn">← Back to Files</a>
+</body>
+</html> 
