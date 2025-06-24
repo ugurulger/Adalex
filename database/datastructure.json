@@ -1,0 +1,371 @@
+//Butun json verileri ugurulger@Ugurs-MacBook-Air extracted_data %  doysasinin icerisinde bulunuyor.
+
+{
+    // Liste olarak gorulecek dosya bilgileri
+    "klasor": "", // extract row*  bilgisi from extracted_data_20250315.json (ornek: row3 ise '3' olarak kayit edilecek). Bu bilgi dosya ID si olarak islenecek.
+    "dosyaNo": "", // extract row*.Genel.Dosya No  bilgisi from extracted_data_20250315.json
+    "borcluAdi": "Ayşe Demir, Mehmet Demir", // extract row*.Taraf Bilgisi.Taraf*.Adi  (kac tane borçlu taraf var ise (row*.Taraf Bilgisi.Taraf*.Rol= 'Borçlu' olanlari ), ornekte ki gibi ',' ile kayit edecek) bilgisi from extracted_data_20250315.json
+    "alacakliAdi": "XYZ Holding A.Ş.", // extract row*.Taraf Bilgisi.Taraf*.Adi  (row*.Taraf Bilgisi.Taraf*.Rol= 'Alacaklı' olanlanin ) bilgisi from extracted_data_20250315.json
+    "foyTuru": "İlamlı İcra", // extract row*.Dosya Bilgileri.Dosya Türü  bilgisi from extracted_data_20250315.json
+    "durum": "Derdest", // extract row*.Genel.Dosya Durumu  bilgisi from extracted_data_20250315.json
+    "takipTarihi": "10.01.2024", // extract row*.Genel.Dosya Açılış Tarihi  bilgisi from extracted_data_20250315.json
+    "icraMudurlugu": "Ankara 2. İcra Müdürlüğü", // extract row*.Genel.Birim  bilgisi from extracted_data_20250315.json
+
+    //ilgili dosyaya girildiginde gosterilecek olan veriler(detaylar).
+    "takipSekli": "ÖRNEK: 7 İlamsız Takiplerde Ödeme Emri - Eski No: 49", // extract row*.Dosya Bilgileri.Şekli  bilgisi from extracted_data_20250315.json
+
+    "alacakliVekili": "Av. Ali Kaya", // extract row*.Taraf Bilgisi.Taraf*.Vekil  (row*.Taraf Bilgisi.Taraf*.Rol= 'Alacaklı' olanlanin ) bilgisi from extracted_data_20250315.json
+    "borcMiktari": "75.500,00 TL", // TBD - Simdilik bos birak.
+    "faizOrani": "%24 (Yıllık)", // TBD - Simdilik bos birak.
+    "guncelBorc": TBD!!!, // TBD - Simdilik bos birak.
+    "sonOdeme": TBD!!!, // TBD - Simdilik bos birak.
+
+    "borcluList": [
+        {
+            "ad": "Ayşe Demir",  // extract row*.Taraf Bilgisi.Taraf*.Adi (row*.Taraf Bilgisi.Taraf*.Rol= 'Borçlu' olan) from extracted_data_20250315.json, her bir Borçlu icin Adres, SGK, EGM, Gayrimenkul, Banka, Alacaklı Dosyaları, SGK Haciz, Dış İşleri Bakanlığı, GİB, GSM, İSKİ ve Posta Çeki bilgileri olacak.
+            "tcKimlik": "98765432109", // bu bilgi db deki asagida ki "Kimlik Bilgileri" kismindaki "T.C Kimlik No" degerinden alinir.
+            "telefon": "0533 987 65 43", // TBD - Simdilik bos birak.
+            "adres": "DOĞANAY MAH., 9110 SK. No: 16/1 KARABAĞLAR/İZMİR", // Bu bilgi db deki asagida ki "Adres Bilgileri" kismindaki degerlerin ("Mahalle", "Cadde/Sokak No:"Dış Kapı No"/"İç Kapı No" "İl"/"İlçe") seklinde yazdirilir.
+            "vekil": "Av. Zeynep Öz", // extract row*.Taraf Bilgisi.Taraf*.Vekil  (ilgili borclu icin yani row*.Taraf Bilgisi.Taraf*.Adi) bilgisi from extracted_data_20250315.json
+            
+            // Bu kisimdan sonra ki datalar web scrapping ile cekilecek olan data'larin tutulacagi kisimlar. Burdaki onemli nokta "dosyaNo" ve borclu "ad" ile ilgili jsonlarda arama yapilacak.
+            // Aşağıda ki bilgiler ilgili borclu icin mernis_sorgu.json, sgk_sorgu.json, egm_sorgu.json, takbis_sorgu.json, banka_sorgu.json, icra_dosyasi_sorgu.json, sgk_haciz_sorgu.json, dis_isleri_sorgu.json, gib_sorgu.json, gsm_sorgu.json, iski_sorgu.json ve posta_ceki_sorgu.json dosyalarindan cekilecek olan data'lar.
+            "Adres": { // Bu kisim mernis_sorgu.json dosyasindan " Adres kismindaki "Kimlik Bilgileri" ve "Adres Bilgileri" deki data etiketleri borcluya gore degisebiliyor o nedenle JSON'da olan butun datalari (icerigi bos olsa dahi) esnek olarak db'e almamiz gerekiyor. Asagidaki data'lar ornek olarak verilmistir.
+                // yukarida cekilen "dosyaNo" bilgi ve ilgili borclu "ad" icin mernis_sorgu.json dosyasindan cekilecek olan data. Hiyerarşi "dosyaNo"."ad"."MERNİS" icersindeki "sonuc" kismindaki "Kimlik Bilgileri" ve "Adres Bilgileri" olacak.
+                "sonuc": {
+                    "Kimlik Bilgileri": {
+                        "T.C Kimlik No": "41176566006",
+                        "Cinsiyeti": "E",
+                        "Adı": "ÖZCAN",
+                        "Soyadı": "KIRIM",
+                        "Baba Adı": "HİCRAN FERUDUN",
+                        "Ana Adı": "NİMET",
+                        "Doğum Yeri": "İZMİR",
+                        "Doğum Tarihi": "02/09/1985",
+                        "Nüf. Kay. İl": "",
+                        "Nüf. Kay. İlçe": "",
+                        "Mah/Köy": "",
+                        "Ver. Nedeni": "",
+                        "Ver. Tarih": "",
+                        "Ver. İl": "Bilinmiyor",
+                        "Ver. İlçe": "",
+                        "Cüzdan Seri": "A40T18897",
+                        "Cüzdan No": "",
+                        "Cilt No": "",
+                        "Aile Sıra No": "",
+                        "Sıra No": "",
+                        "Dini": "",
+                        "Önceki Soyadı": "",
+                        "Ölüm Tarihi": ""
+                    },
+                    "Adres Bilgileri": {
+                        "Adres Tipi": "IlIlceMerkeziAdresi",
+                        "Beyan Tarihi": "5/10/2016",
+                        "Taşınma Tarihi": "5/10/2016",
+                        "Tescil Tarihi": "5/10/2016",
+                        "Mahalle": "DOĞANAY MAH.",
+                        "Cadde/Sokak": "9110 SK.",
+                        "Dış Kapı No": "16",
+                        "İç Kapı No": "1",
+                        "İl": "İZMİR",
+                        "İlçe": "KARABAĞLAR"
+                    }
+                }
+            },
+
+            "SGK": { // SGK kisminin kisimlarindaki "sonuc"larda ki (yani Kamu Çalışanı,Kamu Emeklisi,SSK Çalışanı,SSK Emeklisi... ) data etiketleri borcluya gore degisebiliyor o nedenle JSON'da olan butun datalari (icerigi bos olsa dahi) esnek olarak db'e almamiz gerekiyor. Asagidaki data'lar ornek olarak verilmistir.
+                // yukarida cekilen "dosyaNo" bilgi ve ilgili borclu "ad" icin sgk_sorgu.json dosyasindan cekilecek olan data. Hiyerarşi "dosyaNo"."ad" icersindeki "Kamu Çalışanı", "Kamu Emeklisi", "SSK Çalışanı", "SSK Emeklisi", "Bağkur Çalışanı", "Bağkur Emeklisi" ve "SSK İş Yeri Bilgisi" olacak.
+                "Kamu Çalışanı": {
+                    "sonuc": "Bu işlem 120 dakikada 1 defa yapılabilmektedir."
+                },
+                "Kamu Emeklisi": {
+                    "sonuc": "Bu işlem 120 dakikada 1 defa yapılabilmektedir."
+                },
+                "SSK Çalışanı": {
+                    "İş Yeri Ünvanı": "UKASİS UZM AN KAYNAK SİSTEMLERİ SANAYİ VE TİCARET ANONİM ŞİRK",
+                    "İş Yeri Adresi": "MEHMET AKİF ERSOY MAH. 502 SK. 25 1 İZMİR KEMALPAŞA",
+                    "İş Yeri İl": "",
+                    "İş Yeri Sicil": "2-2553-01-01-1784935-035-10-79-000",
+                    "İlgili İş Yerindeki Kaydının Sonlanma Dönemi": "2025/3",
+                    "Durum": "Aktif",
+                    "Sicil No": "3501200745212",
+                    "İlk İşe Giriş Tarihi": "2007-05-30",
+                    "Son İşe Giriş Tarihi": "",
+                    "Son İşten Çıkış Tarihi": "",
+                    "Mernis No TC Kimlik No": "",
+                    "Vergi No": "8871183609",
+                    "Alt İş Yeri Ünvanı": "UKASİS UZMAN KAYNAK SİSTEMLERİ SANAYİ VE TİCARET ANONİM ŞİRKETİ"
+                },
+                "SSK Emeklisi": {
+                    "sonuc": "Bu işlem 120 dakikada 1 defa yapılabilmektedir."
+                },
+                "Bağkur Çalışanı": {
+                    "sonuc": "Bu işlem 120 dakikada 1 defa yapılabilmektedir."
+                },
+                "Bağkur Emeklisi": {
+                    "sonuc": "Bu işlem 120 dakikada 1 defa yapılabilmektedir."
+                },
+                "SSK İş Yeri Bilgisi": {
+                    "sonuc": "Bu işlem 120 dakikada 1 defa yapılabilmektedir."
+                }
+            },
+            "EGM": { // EGM'de ki sonuc ve araclar cekilecek. Asagidaki data'lar ornek olarak verilmistir.
+                // // yukarida cekilen "dosyaNo" bilgi ve ilgili borclu "ad" icin egm_sorgu.json dosyasindan cekilecek olan data. Hiyerarşi "dosyaNo"."ad"."EGM" icersindeki "sonuc" ve "Araclar" olacak.
+                "Sonuc": "bulundu",
+                "Araclar": [
+                    {
+                        "No": "1",
+                        "Plaka": "35****28",
+                        "Marka": "HONDA",
+                        "Model": "2006",
+                        "Tipi": "CBR 125 R",
+                        "Renk": "KIRMIZI",
+                        "Cins": "MOTOSİKLET",
+                        "Mahrumiyet": [
+                            {
+                                "Takyidat Sirasi": "1",
+                                "Ekleyen Birim": "Akhisar İcra Dairesi (2012-6223 İcra)",
+                                "Ekleme Tarihi": "23.08.2013",
+                                "Serh Turu": "HACİZLİ(H)",
+                                "Kurum Adi": "Adalet Bakanlığı"
+                            },
+                            {
+                                "Takyidat Sirasi": "2",
+                                "Ekleyen Birim": "İzmir 9. İcra Dairesi (2010-10993 İcra)",
+                                "Ekleme Tarihi": "19.09.2013",
+                                "Serh Turu": "HACİZLİ(H)",
+                                "Kurum Adi": "Adalet Bakanlığı"
+                            },
+                            {
+                                "Takyidat Sirasi": "3",
+                                "Ekleyen Birim": "İzmir 4. İcra Dairesi (2010-12070 İcra)",
+                                "Ekleme Tarihi": "27.02.2014",
+                                "Serh Turu": "HACİZLİ(H)",
+                                "Kurum Adi": "Adalet Bakanlığı"
+                            }
+                        ]
+                    },
+                    {
+                        "No": "2",
+                        "Plaka": "34****56",
+                        "Marka": "FORD",
+                        "Model": "2015",
+                        "Tipi": "FIESTA 1.0 ECOBOOST TITANIUM",
+                        "Renk": "MAVİ",
+                        "Cins": "OTOMOBİL",
+                        "Mahrumiyet": [
+                            {
+                                "Takyidat Sirasi": "1",
+                                "Ekleyen Birim": "İstanbul 12. İcra Dairesi (2015-12345 İcra)",
+                                "Ekleme Tarihi": "15.01.2016",
+                                "Serh Turu": "HACİZLİ(H)",
+                                "Kurum Adi": "Adalet Bakanlığı"
+                            },
+                            {
+                                "Takyidat Sirasi": "2",
+                                "Ekleyen Birim": "İzmir 9. İcra Dairesi (2010-10993 İcra)",
+                                "Ekleme Tarihi": "19.09.2013",
+                                "Serh Turu": "HACİZLİ(H)",
+                                "Kurum Adi": "Adalet Bakanlığı"
+                            }
+                        ]
+                    }
+                ]
+            },
+            "Gayrimenkul": { // Gayrimenkul kisminin kisimlarindaki "sonuc" ve "tasinmazlar" data etiketleri borcluya gore degisebiliyor o nedenle JSON'da olan butun datalari (icerigi bos olsa dahi) esnek olarak db'e almamiz gerekiyor. Asagidaki data'lar ornek olarak verilmistir.
+                // yukarida cekilen "dosyaNo" bilgi ve ilgili borclu "ad" icin takbis_sorgu.json dosyasindan cekilecek olan data. Hiyerarşi "dosyaNo"."ad"."TAKBIS" icersindeki "sonuc" ve "tasinmazlar" olacak.
+                "sonuc": "Kişiye ait taşınmaz kaydı var.",
+                "tasinmazlar": [
+                    {
+                        "no": "1", //birden fazla tasinmaz varsa bu no'lar artacak.
+                        "tapu_mudurlugu": "Akhisar",
+                        "il_ilce": "MANİSA/AKHİSAR",
+                        "mahalle": "DEREKÖY K",
+                        "vasfi": "AVLULU KERPİÇ EV",
+                        "yuzolcumu": "293.00000",
+                        "mevki": "",
+                        "ada_no": "",
+                        "parcel_no": "1263",
+                        "bagimsiz_bolum": "",
+                        "hisse_bilgisi": [
+                            {
+                                "no": "1", // birden fazla hisse bilgisi varsa bu no'lar artacak.
+                                "aciklama": "(SN:179588944) ASLI ŞAHİN : MUSTAFA Kızı KN:34708977050",
+                                "hisse_tipi": "Istirak",
+                                "durum": "Aktif",
+                                "takdiyat_bilgisi": [
+                                    {
+                                        "no": "1",
+                                        "tipi": "Beyan",
+                                        "aciklama": "Diğer (Konusu: MEHMET ALİ ŞAHİN İN VERASET VE İNTİKAL VERGİ İLİŞİĞİ KESİLMİŞTİR. ) Tarih: -19/11/2019 Sayı: -165521"
+                                    },
+                                    {
+                                        "no": "2",
+                                        "tipi": "Beyan",
+                                        "aciklama": "Diğer (Konusu: HATİCE AKGÜN ÜN VERASET VE İNTİKAL VERGİ İLİŞİĞİ KESİLMİŞTİR. ) Tarih: -14/11/2019 Sayı: -161403"
+                                    },
+                                    {
+                                        "no": "3",
+                                        "tipi": "Beyan",
+                                        "aciklama": "Diğer (Konusu: MUAMMER HATİCE ŞAHİN İN VERASET VE İNTİKAL VERGİ İLİŞİĞİ KESİLMİŞTİR. ) Tarih: -25/11/2019 Sayı: -484885"
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            },
+            "Banka": { // Banka kisminin kisimlarindaki "sonuc" ve "bankalar" data etiketleri borcluya gore degisebiliyor o nedenle JSON'da olan butun datalari (icerigi bos olsa dahi) esnek olarak db'e almamiz gerekiyor. Asagidaki data'lar ornek olarak verilmistir.
+                // yukarida cekilen "dosyaNo" bilgisi ve ilgili borclu "ad" icin banka_sorgu.json dosyasindan cekilecek olan data. Hiyerarşi "dosyaNo"."ad"."Banka" icersindeki "sonuc" ve "bankalar" olacak.
+                "sonuc": "Kişiye ait banka hesap kaydı var.",
+                "bankalar": [
+                    {
+                        "no": "1",
+                        "kurum": "T.C. ZİRAAT BANKASI A.Ş."
+                    },
+                    {
+                        "no": "2",
+                        "kurum": "TÜRKİYE VAKIFLAR BANKASI T.A.O."
+                    },
+                    {
+                        "no": "3",
+                        "kurum": "TÜRK EKONOMİ BANKASI A.Ş."
+                    },
+                    {
+                        "no": "4",
+                        "kurum": "AKBANK T.A.Ş."
+                    },
+                    {
+                        "no": "5",
+                        "kurum": "TÜRKİYE İŞ BANKASI A.Ş."
+                    },
+                    {
+                        "no": "6",
+                        "kurum": "YAPI VE KREDİ BANKASI A.Ş."
+                    },
+                    {
+                        "no": "7",
+                        "kurum": "ING BANK A.Ş."
+                    },
+                    {
+                        "no": "8",
+                        "kurum": "QNB BANK A.Ş."
+                    }
+                ]
+            },
+            "Alacakli Dosyalari": { // Alacakli Dosyalari kisminin kisimlarindaki "sonuc" ve "icra_dosyalari" data etiketleri borcluya gore degisebiliyor o nedenle JSON'da olan butun datalari (icerigi bos olsa dahi) esnek olarak db'e almamiz gerekiyor. Asagidaki data'lar ornek olarak verilmistir.
+                // yukarida cekilen "dosyaNo" bilgisi ve ilgili borclu "ad" icin banka_sorgu.json dosyasindan cekilecek olan data. Hiyerarşi "dosyaNo"."ad"."İcra Dosyası" icersindeki "sonuc" ve "icra_dosyalari" olacak.
+                "sonuc": "Kişiye ait alacaklı olduğu İcra Dosyası kaydı var.",
+                "icra_dosyalari": [
+                    {
+                        "No": "1",
+                        "Birim Adi/Dosya": "İzmir 14. İcra Dairesi 2024/6152 İcra Dosyası",
+                        "Takip Türü": "iLAMLI",
+                        "Takip Yolu/Şekli": "İlamların İcrası, Para ve Teminat Verilmesi Hakkındaki İlamların İcrası ( ÖRNEK: Eski No: 53 - Yeni No: 4-5 ) Para Borcuna Veya Teminat Verilmesine Veya Bir İşin Yapılması Veya Yapılmamasına , İrtifak Hakkının Kaldırılmasına Veya Yükletilmesine Dair İcra Emri",
+                        "Durumu": "Açık",
+                        "Açılış": "02.07.2024\n21:21",
+                        "Kapanış": ""
+                    },
+                    {
+                        "No": "2",
+                        "Birim Adi/Dosya": "İzmir 22. İcra Dairesi 2019/70 İcra Dosyası",
+                        "Takip Türü": "iLAMLI",
+                        "Takip Yolu/Şekli": "İlamların İcrası, Para ve Teminat Verilmesi Hakkındaki İlamların İcrası ( ÖRNEK: Eski No: 53 - Yeni No: 4-5 ) Para Borcuna Veya Teminat Verilmesine Veya Bir İşin Yapılması Veya Yapılmamasına , İrtifak Hakkının Kaldırılmasına Veya Yükletilmesine Dair İcra Emri",
+                        "Durumu": "Açık",
+                        "Açılış": "04.01.2019\n15:16",
+                        "Kapanış": ""
+                    }
+                ]
+            },
+
+            "SGK Haciz": { // SGK Haciz kisminin kisimlarindaki "sonuc" ve "SGK kayit" data etiketleri borcluya gore degisebiliyor o nedenle JSON'da olan butun datalari (icerigi bos olsa dahi) esnek olarak db'e almamiz gerekiyor. Asagidaki data'lar ornek olarak verilmistir.
+                        // yukarida cekilen "dosyaNo" bilgisi ve ilgili borclu "ad" icin sgk_haciz_sorgu.json dosyasindan cekilecek olan data. Hiyerarşi "dosyaNo"."ad"."SGK Haciz" icersindeki "sonuc" ve "SGK kayit" olacak.
+                "sonuc": "SGK kaydı var.",
+                "SGK kayit": [
+                    {
+                        "no": "1",
+                        "kurum": "Bağ-Kur Sigortalı Aktif",
+                        "islem": "Haciz Talebine Ekle"
+                    },
+                    {
+                        "no": "2",
+                        "kurum": "Diğer - Gerçek",
+                        "islem": ""
+                    },
+                    {
+                        "no": "3",
+                        "kurum": "GSS Sigortalısı (Gerçek)",
+                        "islem": ""
+                    }
+                ]
+            },
+
+            "Dis isler": {  // Dış İşleri Bakanlığı kisminin kisimlarindaki "sonuc" borcluya gore degisebiliyor o nedenle JSON'da olan butun datalari (icerigi bos olsa dahi) esnek olarak db'e almamiz gerekiyor. Asagidaki data'lar ornek olarak verilmistir.
+                            // yukarida cekilen "dosyaNo" bilgisi ve ilgili borclu "ad" icin dis_isleri_sorgu.json dosyasindan cekilecek olan data. Hiyerarşi "dosyaNo"."ad"."Dış İşleri" icersindeki "sonuc" olacak
+                "sonuc": "Kişiye ait Dış İşleri Bakanlığı kayıtlarına göre yurt dışı adres kaydı yok."
+            },
+
+            "GIB": {    // GİB kisminin kisimlarindaki "sonuc" ve "GİB Adres" data etiketleri borcluya gore degisebiliyor o nedenle JSON'da olan butun datalari (icerigi bos olsa dahi) esnek olarak db'e almamiz gerekiyor. Asagidaki data'lar ornek olarak verilmistir.
+                        // yukarida cekilen "dosyaNo" bilgisi ve ilgili borclu "ad" icin gib_sorgu.json dosyasindan cekilecek olan data. Hiyerarşi "dosyaNo"."ad"."GİB" icersindeki "sonuc" ve "GİB Adres" olacak.
+                "sonuc": "Kişiye ait GİB kayıtlarına göre adres kaydı var.",
+                "GİB Adres": "ADRES: MEHMET AKİF ERSOY MAH. 234 SK. KAPI NO:26 DAİRE NO: 4 - KEMALPAŞA"
+            },
+
+            "GSM": {    // GSM kisminin kisimlarindaki "sonuc" ve "GSM Adres" data etiketleri borcluya gore degisebiliyor o nedenle JSON'da olan butun datalari (icerigi bos olsa dahi) esnek olarak db'e almamiz gerekiyor. Asagidaki data'lar ornek olarak verilmistir.
+                        // yukarida cekilen "dosyaNo" bilgisi ve ilgili borclu "ad" icin gsm_sorgu.json dosyasindan cekilecek olan data. Hiyerarşi "dosyaNo"."ad"."GSM" icersindeki "sonuc" ve "GSM Adres" olacak.
+                "sonuc": "Kişiye ait GSM operatörlerinde kaydı var.",
+                "GSM Adres": [
+                    {
+                        "Operator": "Türk Telekom",
+                        "Adres": "112 SK D8-KEMALPAŞA"
+                    },
+                    {
+                        "Operator": "Vodafone",
+                        "Adres": "MEHMET AKİF ERSOY MAH. 196. SOKAK NO:14 KEMALPAŞA, İZMİR"
+                    },
+                    {
+                        "Operator": "Vodafone",
+                        "Adres": "MEHMET AKİF ERSOY MAH. 196. SOKAK NO:14 KEMALPAŞA, İZMİR"
+                    },
+                    {
+                        "Operator": "Türk Telekom",
+                        "Adres": "112 SK D8-KEMALPAŞA"
+                    }
+                ]
+            },
+
+            "ISKI": { // İSKİ kisminin kisimlarindaki "sonuc" borcluya gore degisebiliyor o nedenle JSON'da olan butun datalari (icerigi bos olsa dahi) esnek olarak db'e almamiz gerekiyor. Asagidaki data'lar ornek olarak verilmistir.
+                      // yukarida cekilen "dosyaNo" bilgisi ve ilgili borclu "ad" icin iski_sorgu.json dosyasindan cekilecek olan data. Hiyerarşi "dosyaNo"."ad"."İSKİ" icersindeki "sonuc" olacak.
+                "sonuc": "Kişiye Ait İSKİ kayıtlarına göre İstanbul adresi kaydı yok"
+            },
+            
+            "Posta Ceki": { // Posta Çeki kisminin kisimlarindaki "sonuc" borcluya gore degisebiliyor o nedenle JSON'da olan butun datalari (icerigi bos olsa dahi) esnek olarak db'e almamiz gerekiyor. Asagidaki data'lar ornek olarak verilmistir.
+                            // yukarida cekilen "dosyaNo" bilgisi ve ilgili borclu "ad" icin posta_ceki_sorgu.json dosyasindan cekilecek olan data. Hiyerarşi "dosyaNo"."ad"."Posta Çeki" icersindeki "sonuc" olacak.
+                "sonuc": "Kişiye ait posta çeki kaydı yok."
+            }
+
+        },
+        {
+            // Ikinci borclu icin de ayni sekilde bilgiler olacak.
+            "ad": "Mehmet Demir",
+            "tcKimlik": "11223344556",
+            "telefon": "0534 111 22 33",
+            "adres": "Kızılay Mahallesi, Atatürk Bulvarı No: 123/5",
+            "vekil": "Av. Zeynep Öz",
+
+            "Adres":{},
+            "SGK":{},
+            "EGM":{},
+            "Gayrimenkul":{},
+            "Banka":{},
+            "Alacakli Dosyalari":{},
+            "SGK Haciz":{},
+            "Dis isler":{},
+            "GIB":{},
+            "GSM":{},
+            "ISKI":{},
+            "Posta Ceki":{}
+        }
+    ],
+
+}
