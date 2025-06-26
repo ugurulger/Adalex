@@ -14,10 +14,10 @@ USER_DATA_DIR = "/Users/ugurulger/Library/Application Support/Google/ChromeDupli
 PROFILE_DIRECTORY = "Default"
 ARKSIGNER_EXTENSION_PATH = "/Users/ugurulger/Library/Application Support/Google/Chrome/Default/Extensions/pllcidbcfbamjfbfpemnnjohnfcliakf/2.0.1_0"
 URL = "https://avukatbeta.uyap.gov.tr/"
-FIRST_BTN_SELECTOR = "[aria-label='Uyap E-imza İle Giriş']"
+FIRST_BTN_SELECTOR = "/html/body/div[1]/div/div[1]/div[1]/div[1]/nav/div[2]/ul/li[1]/div/div"  # Updated to XPath
 DROPDOWN_ITEM_SELECTOR = "[title='Uyap E-imza İle Giriş']"
 PIN_BOX_SELECTOR = "input[aria-id='pinKodu']"
-GIRIS_BTN_SELECTOR = ".dx-widget.dx-button.dx-button-mode-contained.dx-button-default.dx-button-has-icon.adalet-button.btn.btn-primary.px-4.btn-sm"
+GIRIS_BTN_SELECTOR = "[aria-label='Giriş']"
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -51,18 +51,19 @@ def open_browser_and_login(pinkodu, result_label=None):
             result_label.config(text="Page opened successfully.")
 
         # 2. Click the first button
-        wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, FIRST_BTN_SELECTOR))).click()
+        wait.until(EC.element_to_be_clickable((By.XPATH, FIRST_BTN_SELECTOR))).click()
         logger.info("First button clicked.")
         if result_label:
             result_label.config(text="First button clicked.")
+        time.sleep(2)  # Wait to load
 
-        # 3. Click the dropdown item
-        dropdown_item = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, DROPDOWN_ITEM_SELECTOR)))
-        dropdown_item.click()
-        logger.info("Dropdown item clicked.")
-        if result_label:
-            result_label.config(text="Dropdown item clicked.")
-        time.sleep(5)  # Wait for the next page to load
+        # # 3. Click the dropdown item
+        # dropdown_item = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, DROPDOWN_ITEM_SELECTOR)))
+        # dropdown_item.click()
+        # logger.info("Dropdown item clicked.")
+        # if result_label:
+        #     result_label.config(text="Dropdown item clicked.")
+        # time.sleep(5)  # Wait for the next page to load
 
         # 4. Enter the PIN
         pin_box = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, PIN_BOX_SELECTOR)))

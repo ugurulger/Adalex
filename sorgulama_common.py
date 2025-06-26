@@ -16,17 +16,17 @@ MENU_BUTTON_SELECTOR    = "#sidebar-menu > li:nth-child(4) > button"
 DOSYA_SORGULA_SELECTOR  = "[id='29954-alt-menu'] > a:nth-child(1) > li > span > span"
 RADIO_BUTTON_XPATH      = "/html/body/div/div/div[1]/div[2]/div/div/div[1]/div/div[2]/div[1]/div[2]/div/div/div/div/div/div[4]"
 SEARCH_INPUT_XPATH      = "//div[contains(@class, 'dx-texteditor-input-container')]//input[@aria-label='Arama Alanı']"
-SEARCH_BUTTON_XPATH     = "//div[@role='button' and @title='Arama Yap' and contains(@class, 'dx-button')]"
+SEARCH_BUTTON_CSS       = "[aria-label='Sorgula']"
 RESULT_ROW_SELECTOR     = ".dx-datagrid-rowsview tbody tr"
 DOSYA_GORUNTULE_ID      = "dosya-goruntule"
 BORCLU_TAB_XPATH        = "//div[contains(@class, 'dx-tab-content')]//span[contains(text(), 'Borçlu Bilgileri')]"
-DROPDOWN_SELECTOR       = ".dx-texteditor-buttons-container .dx-dropdowneditor-button"
-DROPDOWN_ITEMS_SELECTOR = ".dx-dropdowneditor-overlay .dx-list-item"
+DROPDOWN_SELECTOR       = "#borclu-isim [aria-label='Select']"
+DROPDOWN_ITEMS_SELECTOR = "/html/body/div[4]/div/div/div/div[1]/div/div/div[2]/div"
 CLOSE_BUTTON_CSS        = "div[role='button'][aria-label='Kapat'].dx-button"
 CLEAR_SEARCH_CSS        = ".dx-tag-remove-button"
 
 # Ek Hızlandırma Bekleme Süreleri
-DROPDOWN_LOAD_SLEEP = 0.1   # Dropdown menü açıldıktan sonra bekleme süresi
+DROPDOWN_LOAD_SLEEP = 1   # Dropdown menü açıldıktan sonra bekleme süresi
 NEXT_ITEM_SLEEP     = 5     # Bir sonraki dropdown öğesine geçmeden önce bekleme süresi
 
 # Dosya yolu ayarları
@@ -90,6 +90,22 @@ def save_to_json(data, filename=None):
         logger.info(f"Data saved in {filename}")
     except IOError as e:
         logger.error(f"JSON write error: {e}")
+
+def select_dropdown_option(driver, dropdown_selector, option_text):
+    """Dropdown'dan bir seçenek seçer."""
+    logger = get_logger()
+    try:
+        # Dropdown'u aç
+        if not click_element_merged(driver, By.CSS_SELECTOR, dropdown_selector, action_name="Dropdown aç"):
+            return False
+        # Seçeneği seç
+        if not click_element_merged(driver, By.XPATH, f"//div[text()='{option_text}']", action_name="Seçenek seç"):
+            return False
+        logger.info(f"Seçilen dropdown seçeneği: {option_text}")
+        return True
+    except Exception as e:
+        logger.error(f"Seçenek '{option_text}' seçilemedi: {e}")
+        return False
 
 def click_element_merged(driver, by, value, action_name="", item_text="", result_label=None, use_js_first=False):
     """
@@ -237,24 +253,55 @@ def perform_sorgulama(driver, dosya_no, selected_options, result_label=None):
         if not click_element_merged(driver, by, selector, action_name=msg):
             status(f"Failed: {msg}")
             return
-    # Adım 3: Radyo butonunun seçilmesi
-    status("Selecting radio button...")
-    if not click_element_merged(driver, By.XPATH, RADIO_BUTTON_XPATH, action_name="Select radio button"):
-        status("Failed to select radio button.")
-        return
+    # # Adım 3: Radyo butonunun seçilmesi
+    # status("Selecting radio button...")
+    # if not click_element_merged(driver, By.XPATH, RADIO_BUTTON_XPATH, action_name="Select radio button"):
+    #     status("Failed to select radio button.")
+    #     return
     # Adım 4: Arama kutusunun doldurulması
-    status("Filling search input...")
-    try:
-        inp = wait.until(EC.visibility_of_element_located((By.XPATH, SEARCH_INPUT_XPATH)))
-        inp.clear()
-        inp.send_keys(dosya_no)
-        logger.info(f"Filled search input: {dosya_no}")
-    except TimeoutException:
-        status("Search input not found.")
-        return
-    # Adım 5: Arama butonuna tıklanması
+    # status("Filling search input...")
+    # try:
+    #     inp = wait.until(EC.visibility_of_element_located((By.XPATH, SEARCH_INPUT_XPATH)))
+    #     inp.clear()
+    #     inp.send_keys(dosya_no)
+    #     logger.info(f"Filled search input: {dosya_no}")
+    # except TimeoutException:
+    #     status("Search input not found.")
+    #     return
+
+    # Adım 4: Dropdown menülerden seçim yapılması
+    select_dropdown_option(driver, "#yargi-turu-detayli-arama", "İcra")
+    select_dropdown_option(driver, "#yargi-birimi-detayli-arama", "İCRA DAİRESİ")
+    select_dropdown_option(driver, "#mahkeme-detayli-arama", "Tümü")
+    time.sleep(1)  # Dropdown menülerinin yüklenmesi için bekleme
+
+    # Adim 4.1 Dosya numarasının arama kutusuna yazılması
+    ARA_BUTTON_CSS = "[aria-label='Dosya Yıl']"
+    select_dropdown_option(driver, ARA_BUTTON_CSS, dosya_no.split('/')[0])  # dosya_no'nun ilk kısmını seç
+    time.sleep(1)  # Dropdown menülerinin yüklenmesi için bekleme
+
+    DOSYA_NUMARA_CSS = "[aria-label='Dosya No'] .dx-texteditor-input-container input"
+    inp = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, DOSYA_NUMARA_CSS)))
+
+    # Input alanını temizleme
+    inp.clear()
+    logger.info("Input cleared")
+    
+    # Dosya numarasının split edilmiş halini yazma
+    dosya_no_value = dosya_no.split('/')[1]
+    inp.send_keys(dosya_no_value)
+    logger.info(f"Filled search input: {dosya_no}")
+    # driver.execute_script("arguments[0].click();", inp)
+    # driver.execute_script("arguments[0].value = '';", inp)
+    # logger.info(f"cleared")
+    # driver.execute_script("arguments[0].click();", inp)
+    # driver.execute_script("arguments[0].value = arguments[1];", inp, dosya_no.split('/')[1])
+    logger.info(f"Filled search input: {dosya_no}")
+    time.sleep(1)  # Arama kutusunun doldurulması için bekleme
+
+    #Adım 5: Arama butonuna tıklanması
     status("Clicking search button...")
-    if not click_element_merged(driver, By.XPATH, SEARCH_BUTTON_XPATH, action_name="Search button"):
+    if not click_element_merged(driver, By.CSS_SELECTOR, SEARCH_BUTTON_CSS, action_name="Search button"):
         status("Failed to click search button.")
         return
     # Adım 6: Dosya pop-up’ının açılması
@@ -280,7 +327,7 @@ def perform_sorgulama(driver, dosya_no, selected_options, result_label=None):
         return
     time.sleep(DROPDOWN_LOAD_SLEEP)  # Dropdown öğelerinin yüklenmesi için bekleme
     try:
-        items = wait.until(EC.presence_of_all_elements_located((By.CSS_SELECTOR, DROPDOWN_ITEMS_SELECTOR)))
+        items = wait.until(EC.presence_of_all_elements_located((By.XPATH, DROPDOWN_ITEMS_SELECTOR)))
         for index, item in enumerate(items):
             current = item.text.strip() or f"Item {index+1}"
             status(f"Processing dropdown item: {current}")
