@@ -12,7 +12,7 @@ from sorgulama_common import click_element_merged, save_to_json, get_logger, che
 TIMEOUT = 15
 SLEEP_INTERVAL = 0.5
 EGM_BUTTON_CSS = "button.query-button [title='EGM-TNB']"
-SORGULA_BUTTON_CSS = "[aria-label='Sorgula']"
+SORGULA_BUTTON_CSS = ".dx-widget.dx-button.dx-button-mode-contained.dx-button-default.dx-button-has-text.ms-auto"
 DATA_XPATH = (
     "/html/body/div/div/div/div/div/div/div/div/div/div/div/div/div/div/div/div/div/"
     "div/div/div/div/div/div/div/div/div[1]/div[2]/div[3]/div[2]/div/div/div/div/div/div[2]"

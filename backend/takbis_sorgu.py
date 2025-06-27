@@ -20,7 +20,7 @@ RETRY_ATTEMPTS = 3
 SLEEP_INTERVAL = 0.5
 SLEEP_INTERVAL_TINY = 0.2
 TAKBIS_BUTTON_CSS = "button.query-button [title='TAKBİS']"
-SORGULA_BUTTON_CSS = "[aria-label='Sorgula']"
+SORGULA_BUTTON_CSS = ".dx-widget.dx-button.dx-button-mode-contained.dx-button-default.dx-button-has-text.ms-auto"
 SONUC_XPATH = (
     "/html/body/div[*]/div/div[*]/div/div/div/div/div[*]/div/div/div[*]/div/div[*]/div[*]/div/div/div[*]/"
     "div/div[*]/div/div[*]/div/div/div[*]/div/div[1]/div[2]/div[3]/div/div/div[2]/div[1]/div/div/div/div"

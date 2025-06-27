@@ -19,7 +19,7 @@ RETRY_ATTEMPTS = 3
 SLEEP_INTERVAL = 0.5
 
 MERNIS_BUTTON_CSS = "button.query-button [title='MERNİS']"
-SORGULA_BUTTON_CSS = "[aria-label='Sorgula']"
+SORGULA_BUTTON_CSS = ".dx-widget.dx-button.dx-button-mode-contained.dx-button-default.dx-button-has-text.ms-auto"
 MERNIS_KIMLIK_TABLE_ID = "mernisKimlik"
 MERNIS_ADRES_TABLE_ID = "mernisAdres"
 

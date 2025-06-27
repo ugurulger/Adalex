@@ -19,7 +19,7 @@ RETRY_ATTEMPTS = 3
 SLEEP_INTERVAL = 0.5
 
 ISKI_BUTTON_CSS = "button.query-button [title='İSKİ']"
-SORGULA_BUTTON_CSS = "[aria-label='Sorgula']"
+SORGULA_BUTTON_CSS = ".dx-widget.dx-button.dx-button-mode-contained.dx-button-default.dx-button-has-text.ms-auto"
 SONUC_XPATH = "/html/body/div[*]/div/div[*]/div/div/div/div/div[*]/div/div/div[*]/div/div[*]/div[*]/div/div/div[*]/div/div[*]/div/div[*]/div/div/div[*]/div/div[1]/div[2]/div[2]/div[2]/div/div/div"
 
 # Desktop path for JSON file

@@ -19,7 +19,7 @@ RETRY_ATTEMPTS = 3
 SLEEP_INTERVAL = 0.5
 
 SGK_HACIZ_BUTTON_CSS = "button.query-button [title='SGK Haciz']"
-SORGULA_BUTTON_CSS = "[aria-label='Sorgula']"
+SORGULA_BUTTON_CSS = ".dx-widget.dx-button.dx-button-mode-contained.dx-button-default.dx-button-has-text.ms-auto"
 EXPAND_BUTTON_XPATH = "//*[@id='adaletDataGridContainer']/div/div[11]/div[1]/div[4]"
 SONUC_XPATH = "/html/body/div[*]/div/div[*]/div/div/div/div/div[*]/div/div/div[*]/div/div[*]/div[*]/div/div/div[*]/div/div[*]/div/div[*]/div/div/div[*]/div/div[1]/div[2]/div[4]/div[2]/div/div/div"
 SGK_KAYIT_TABLE_XPATH = "/html/body/div[*]/div/div[*]/div/div/div/div/div[*]/div/div/div[*]/div/div[*]/div[*]/div/div/div[*]/div/div[*]/div/div[*]/div/div/div[*]/div/div[*]/div[*]/div[*]/div[*]/div/div/div/div[*]/div/div/div/div/table"

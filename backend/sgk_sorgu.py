@@ -26,7 +26,7 @@ SGK_DROPDOWN_SELECTOR = (
     "div.dx-widget.dx-button-normal.dx-dropdowneditor-button"
 )
 ACTIVE_SUBPANEL_SELECTOR = "div.dx-multiview-item.dx-item-selected"
-SORGULA_BUTTON_CSS = "[aria-label='Sorgula']"
+SORGULA_BUTTON_CSS = ".dx-widget.dx-button.dx-button-mode-contained.dx-button-default.dx-button-has-text.ms-auto"
 DESKTOP_PATH = os.path.join(os.path.expanduser("~"), "Desktop", "extracted_data")
 JSON_FILE = os.path.join(DESKTOP_PATH, "sgk_sorgu.json")
 HEDEF_CARD_BODY_SELECTOR = (
