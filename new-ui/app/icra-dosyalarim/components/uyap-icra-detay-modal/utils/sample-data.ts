@@ -4,9 +4,9 @@
 // Main Page Execution Files Data (İcra Dosyalarım Page)
 export const icraDosyalariSampleData = [
   {
-    id: 1,
+    file_id: 1,
     klasor: "1",
-    no: "001",
+    dosyaNo: "001",
     borcluAdi: "Ahmet Yılmaz",
     borcluList: [
       {
@@ -30,9 +30,9 @@ export const icraDosyalariSampleData = [
     guncelBorc: "127.500,00 TL",
   },
   {
-    id: 2,
+    file_id: 2,
     klasor: "2",
-    no: "002",
+    dosyaNo: "002",
     borcluAdi: "Ayşe Demir, Mehmet Demir",
     borcluList: [
       {
@@ -63,9 +63,9 @@ export const icraDosyalariSampleData = [
     guncelBorc: "78.200,00 TL",
   },
   {
-    id: 3,
+    file_id: 3,
     klasor: "3",
-    no: "003",
+    dosyaNo: "003",
     borcluAdi: "Hasan Çelik, Fatma Çelik, Oğuz Çelik",
     borcluList: [
       {
@@ -103,9 +103,9 @@ export const icraDosyalariSampleData = [
     guncelBorc: "26.750,00 TL",
   },
   {
-    id: 4,
+    file_id: 4,
     klasor: "4",
-    no: "045",
+    dosyaNo: "045",
     borcluAdi: "Fatma Kara",
     borcluList: [
       {
@@ -129,9 +129,9 @@ export const icraDosyalariSampleData = [
     guncelBorc: "0,00 TL",
   },
   {
-    id: 5,
+    file_id: 5,
     klasor: "5",
-    no: "004",
+    dosyaNo: "004",
     borcluAdi: "Mehmet Özkan, Zeynep Özkan",
     borcluList: [
       {
@@ -162,9 +162,9 @@ export const icraDosyalariSampleData = [
     guncelBorc: "185.400,00 TL",
   },
   {
-    id: 6,
+    file_id: 6,
     klasor: "6",
-    no: "005",
+    dosyaNo: "005",
     borcluAdi: "Zeynep Şahin",
     borcluList: [
       {
@@ -188,9 +188,9 @@ export const icraDosyalariSampleData = [
     guncelBorc: "98.200,00 TL",
   },
   {
-    id: 7,
+    file_id: 7,
     klasor: "7",
-    no: "078",
+    dosyaNo: "078",
     borcluAdi: "Can Yıldız",
     borcluList: [
       {
@@ -214,9 +214,9 @@ export const icraDosyalariSampleData = [
     guncelBorc: "225.800,00 TL",
   },
   {
-    id: 8,
+    file_id: 8,
     klasor: "8",
-    no: "006",
+    dosyaNo: "006",
     borcluAdi: "Elif Arslan",
     borcluList: [
       {
@@ -229,7 +229,7 @@ export const icraDosyalariSampleData = [
     ],
     alacakliAdi: "Tekstil İhracat Ltd. Şti.",
     foyTuru: "İlamsız İcra",
-    takipSekli: "ÖRNEK: 7 İlamsız Takiplerde Ödeme Emri - Eski No: 49"
+    takipSekli: "ÖRNEK: 7 İlamsız Takiplerde Ödeme Emri - Eski No: 49",
     icraMudurlugu: "Gaziantep 1. İcra Müdürlüğü",
     durum: "Açık",
     takipTarihi: "02.02.2024",

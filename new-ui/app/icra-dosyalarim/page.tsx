@@ -37,7 +37,7 @@ export default function IcraDosyalarimPage() {
       const searchLower = value.toLowerCase()
       return (
         item.klasor.toLowerCase().includes(searchLower) ||
-        item.no.toLowerCase().includes(searchLower) ||
+        item.dosyaNo.toLowerCase().includes(searchLower) ||
         item.borcluAdi.toLowerCase().includes(searchLower) ||
         item.alacakliAdi.toLowerCase().includes(searchLower) ||
         item.foyTuru.toLowerCase().includes(searchLower) ||
@@ -196,15 +196,14 @@ export default function IcraDosyalarimPage() {
             {/* Right side - Uyap Status Badge */}
             <div className="flex items-center">
               <Badge
-                onClick={handleUyapToggle}
-                disabled={isConnecting}
+                onClick={isConnecting ? undefined : handleUyapToggle}
                 className={cn(
-                  "text-[10px] sm:text-xs px-2 py-1 cursor-pointer transition-all duration-300 hover:scale-105 select-none",
+                  "text-[10px] sm:text-xs px-2 py-1 transition-all duration-300 select-none",
                   uyapStatus === "Bağlı"
-                    ? "bg-green-100 text-green-800 border-green-200 hover:bg-green-200"
+                    ? "bg-green-100 text-green-800 border-green-200 hover:bg-green-200 cursor-pointer hover:scale-105"
                     : uyapStatus === "Bağlanıyor"
                       ? "bg-blue-100 text-blue-800 border-blue-200 cursor-not-allowed"
-                      : "bg-red-100 text-red-800 border-red-200 hover:bg-red-200",
+                      : "bg-red-100 text-red-800 border-red-200 hover:bg-red-200 cursor-pointer hover:scale-105",
                   isConnecting && "animate-pulse-slow",
                 )}
                 style={{
@@ -297,7 +296,7 @@ export default function IcraDosyalarimPage() {
                         <div className="block sm:hidden space-y-2">
                           {filteredData.map((item) => (
                             <Card
-                              key={item.id}
+                              key={item.file_id}
                               className="cursor-pointer transition-colors hover:bg-orange-50 border border-gray-200"
                               onClick={() => handleRowClick(item)}
                             >
@@ -306,7 +305,7 @@ export default function IcraDosyalarimPage() {
                                   <div className="flex justify-between items-start">
                                     <div>
                                       <p className="font-medium text-sm">{item.klasor}</p>
-                                      <p className="text-xs text-gray-600">No: {item.no}</p>
+                                      <p className="text-xs text-gray-600">No: {item.dosyaNo}</p>
                                     </div>
                                     {getStatusBadge(item.durum)}
                                   </div>
@@ -343,7 +342,7 @@ export default function IcraDosyalarimPage() {
                                   <TableHead className="font-semibold text-gray-700 py-1 px-1 w-12">
                                     <Button
                                       variant="ghost"
-                                      onClick={() => handleSort("no")}
+                                      onClick={() => handleSort("dosyaNo")}
                                       className="h-auto p-0 font-semibold text-gray-700 hover:text-gray-900 text-xs"
                                     >
                                       No
@@ -406,12 +405,12 @@ export default function IcraDosyalarimPage() {
                               <TableBody>
                                 {filteredData.map((item) => (
                                   <TableRow
-                                    key={item.id}
+                                    key={item.file_id}
                                     className="cursor-pointer hover:bg-orange-50 h-8"
                                     onClick={() => handleRowClick(item)}
                                   >
                                     <TableCell className="py-1 px-1 text-[10px] font-medium">{item.klasor}</TableCell>
-                                    <TableCell className="py-1 px-1 text-[10px]">{item.no}</TableCell>
+                                    <TableCell className="py-1 px-1 text-[10px]">{item.dosyaNo}</TableCell>
                                     <TableCell className="py-1 px-1 text-[10px]">
                                       <div className="max-w-[120px] truncate" title={item.borcluAdi}>
                                         {item.borcluAdi}

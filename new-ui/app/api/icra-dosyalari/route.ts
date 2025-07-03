@@ -10,9 +10,9 @@ export async function GET(req: NextRequest) {
     return new Promise((resolve, reject) => {
       db.all(
         `SELECT 
-          f.file_id as id,
+          f.file_id,
           f.klasor,
-          f.dosyaNo as no,
+          f.dosyaNo,
           f.borcluAdi,
           f.alacakliAdi,
           f.foyTuru,
