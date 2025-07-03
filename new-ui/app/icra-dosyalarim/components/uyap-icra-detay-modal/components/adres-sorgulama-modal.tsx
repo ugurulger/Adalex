@@ -114,7 +114,7 @@ export default function AdresSorgulamaModal({
             Borçlu kişinin adres bilgilerini UYAP üzerinden sorgulama sonuçları
           </DialogDescription>
           <div className="text-sm text-gray-600 mt-2">
-            <span className="font-medium">Dosya No:</span> {dosyaNo || "2024/1234"} •
+            <span className="font-medium">Dosya No:</span> {dosyaNo}
             <span className="font-medium ml-2">Borçlu:</span> {borcluAdi}
           </div>
         </DialogHeader>

@@ -120,11 +120,11 @@ export default function DosyaDetayiTab({
           </div>
           <div>
             <Label className="text-xs font-bold text-gray-600">Takip Yolu</Label>
-            <p className="text-gray-900 text-xs">Genel Haciz</p>
+            <p className="text-gray-900 text-xs">{selectedCase.takipYolu || "Genel Haciz"}</p>
           </div>
           <div>
-            <Label className="text-xs font-bold text-gray-600">Takip Usulü</Label>
-            <p className="text-gray-900 text-xs">İİK m.68</p>
+            <Label className="text-xs font-bold text-gray-600">Takip Şekli</Label>
+            <p className="text-gray-900 text-xs">{selectedCase.takipSekli}</p>
           </div>
           <div>
             <Label className="text-xs font-bold text-gray-600">Dosya Durumu</Label>
@@ -132,7 +132,7 @@ export default function DosyaDetayiTab({
           </div>
           <div>
             <Label className="text-xs font-bold text-gray-600">Dosya No</Label>
-            <p className="text-sm font-bold text-blue-600">{selectedCase.eNo}</p>
+            <p className="text-sm font-bold text-blue-600">{selectedCase.no}</p>
           </div>
           <div>
             <Label className="text-xs font-bold text-gray-600">Takip Tarihi</Label>
@@ -151,7 +151,7 @@ export default function DosyaDetayiTab({
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2 text-xs">
           <div>
             <Label className="text-xs font-bold text-gray-600">Alacaklı Adı</Label>
-            <p className="text-gray-900 font-medium text-xs">{selectedCase.alacakli}</p>
+            <p className="text-gray-900 font-medium text-xs">{selectedCase.alacakliAdi}</p>
           </div>
           <div>
             <Label className="text-xs font-bold text-gray-600">Alacaklı Vekili</Label>
@@ -538,7 +538,7 @@ export default function DosyaDetayiTab({
         onClose={() => setIsAdresModalOpen(false)}
         borcluAdi={selectedBorclu?.ad || ""}
         tcKimlik={selectedBorclu?.tcKimlik || ""}
-        dosyaNo={selectedCase?.eNo}
+        dosyaNo={selectedCase?.no}
         uyapStatus={uyapStatus}
         onUyapToggle={onUyapToggle}
         isConnecting={isConnecting}
@@ -550,7 +550,7 @@ export default function DosyaDetayiTab({
         onClose={() => setIsAracModalOpen(false)}
         borcluAdi={selectedBorclu?.ad || ""}
         tcKimlik={selectedBorclu?.tcKimlik || ""}
-        dosyaNo={selectedCase?.eNo}
+        dosyaNo={selectedCase?.no}
         uyapStatus={uyapStatus}
         onUyapToggle={onUyapToggle}
         isConnecting={isConnecting}
@@ -562,7 +562,7 @@ export default function DosyaDetayiTab({
         onClose={() => setIsGayrimenkulModalOpen(false)}
         borcluAdi={selectedBorclu?.ad || ""}
         tcKimlik={selectedBorclu?.tcKimlik || ""}
-        dosyaNo={selectedCase?.eNo}
+        dosyaNo={selectedCase?.no}
         uyapStatus={uyapStatus}
         onUyapToggle={onUyapToggle}
         isConnecting={isConnecting}
@@ -574,7 +574,7 @@ export default function DosyaDetayiTab({
         onClose={() => setIsAlacakliDosyalariModalOpen(false)}
         borcluAdi={selectedBorclu?.ad || ""}
         tcKimlik={selectedBorclu?.tcKimlik || ""}
-        dosyaNo={selectedCase?.eNo}
+        dosyaNo={selectedCase?.no}
         uyapStatus={uyapStatus}
         onUyapToggle={onUyapToggle}
         isConnecting={isConnecting}
@@ -586,7 +586,7 @@ export default function DosyaDetayiTab({
         onClose={() => setIsBankaModalOpen(false)}
         borcluAdi={selectedBorclu?.ad || ""}
         tcKimlik={selectedBorclu?.tcKimlik || ""}
-        dosyaNo={selectedCase?.eNo}
+        dosyaNo={selectedCase?.no}
         uyapStatus={uyapStatus}
         onUyapToggle={onUyapToggle}
         isConnecting={isConnecting}
@@ -598,7 +598,7 @@ export default function DosyaDetayiTab({
         onClose={() => setIsTelefonModalOpen(false)}
         borcluAdi={selectedBorclu?.ad || ""}
         tcKimlik={selectedBorclu?.tcKimlik || ""}
-        dosyaNo={selectedCase?.eNo}
+        dosyaNo={selectedCase?.no}
         uyapStatus={uyapStatus}
         onUyapToggle={onUyapToggle}
         isConnecting={isConnecting}
@@ -610,7 +610,7 @@ export default function DosyaDetayiTab({
         onClose={() => setIsSgkHacizModalOpen(false)}
         borcluAdi={selectedBorclu?.ad || ""}
         tcKimlik={selectedBorclu?.tcKimlik || ""}
-        dosyaNo={selectedCase?.eNo}
+        dosyaNo={selectedCase?.no}
         uyapStatus={uyapStatus}
         onUyapToggle={onUyapToggle}
         isConnecting={isConnecting}
@@ -622,7 +622,7 @@ export default function DosyaDetayiTab({
         onClose={() => setIsGibModalOpen(false)}
         borcluAdi={selectedBorclu?.ad || ""}
         tcKimlik={selectedBorclu?.tcKimlik || ""}
-        dosyaNo={selectedCase?.eNo}
+        dosyaNo={selectedCase?.no}
         uyapStatus={uyapStatus}
         onUyapToggle={onUyapToggle}
         isConnecting={isConnecting}
@@ -634,7 +634,7 @@ export default function DosyaDetayiTab({
         onClose={() => setIsIskiModalOpen(false)}
         borcluAdi={selectedBorclu?.ad || ""}
         tcKimlik={selectedBorclu?.tcKimlik || ""}
-        dosyaNo={selectedCase?.eNo}
+        dosyaNo={selectedCase?.no}
         uyapStatus={uyapStatus}
         onUyapToggle={onUyapToggle}
         isConnecting={isConnecting}
@@ -646,7 +646,7 @@ export default function DosyaDetayiTab({
         onClose={() => setIsPostaCekiModalOpen(false)}
         borcluAdi={selectedBorclu?.ad || ""}
         tcKimlik={selectedBorclu?.tcKimlik || ""}
-        dosyaNo={selectedCase?.eNo}
+        dosyaNo={selectedCase?.no}
         uyapStatus={uyapStatus}
         onUyapToggle={onUyapToggle}
         isConnecting={isConnecting}
@@ -658,7 +658,7 @@ export default function DosyaDetayiTab({
         onClose={() => setIsDisIsleriModalOpen(false)}
         borcluAdi={selectedBorclu?.ad || ""}
         tcKimlik={selectedBorclu?.tcKimlik || ""}
-        dosyaNo={selectedCase?.eNo}
+        dosyaNo={selectedCase?.no}
         uyapStatus={uyapStatus}
         onUyapToggle={onUyapToggle}
         isConnecting={isConnecting}
@@ -670,7 +670,7 @@ export default function DosyaDetayiTab({
         onClose={() => setIsSgkModalOpen(false)}
         borcluAdi={selectedBorclu?.ad || ""}
         tcKimlik={selectedBorclu?.tcKimlik || ""}
-        dosyaNo={selectedCase?.eNo}
+        dosyaNo={selectedCase?.no}
         uyapStatus={uyapStatus}
         onUyapToggle={onUyapToggle}
         isConnecting={isConnecting}

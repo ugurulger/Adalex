@@ -101,7 +101,7 @@ export default function AlacakliDosyalariModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-6xl w-[95vw] h-[90vh] max-h-[90vh] flex flex-col p-0 gap-0 overflow-hidden">
+      <DialogContent className="max-w-5xl w-[95vw] h-[90vh] max-h-[90vh] flex flex-col p-0 gap-0 overflow-hidden">
         {/* Fixed Header */}
         <DialogHeader className="flex-shrink-0 p-6 pb-4 border-b border-gray-200">
           <DialogTitle className="text-xl font-bold text-gray-900 flex items-center justify-between">
@@ -138,7 +138,7 @@ export default function AlacakliDosyalariModal({
             Borçlu kişinin alacaklı olduğu icra dosyalarını UYAP üzerinden sorgulama sonuçları
           </DialogDescription>
           <div className="text-sm text-gray-600 mt-2">
-            <span className="font-medium">Dosya No:</span> {dosyaNo || "2024/1234"} •
+            <span className="font-medium">Dosya No:</span> {dosyaNo}
             <span className="font-medium ml-2">Borçlu:</span> {borcluAdi}
           </div>
         </DialogHeader>

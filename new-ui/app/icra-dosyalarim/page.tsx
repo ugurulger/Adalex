@@ -42,8 +42,6 @@ export default function IcraDosyalarimPage() {
         item.alacakliAdi.toLowerCase().includes(searchLower) ||
         item.foyTuru.toLowerCase().includes(searchLower) ||
         item.icraMudurlugu.toLowerCase().includes(searchLower) ||
-        item.eYil.includes(searchLower) ||
-        item.eNo.toLowerCase().includes(searchLower) ||
         item.durum.toLowerCase().includes(searchLower) ||
         item.tcKimlik.includes(value)
       )
@@ -399,7 +397,7 @@ export default function IcraDosyalarimPage() {
                                       onClick={() => handleSort("takipTarihi")}
                                       className="h-auto p-0 font-semibold text-gray-700 hover:text-gray-900 text-xs"
                                     >
-                                      Tarih
+                                      Takip Tarihi
                                       <ArrowUpDown className="w-2.5 h-2.5 ml-1" />
                                     </Button>
                                   </TableHead>
@@ -409,30 +407,28 @@ export default function IcraDosyalarimPage() {
                                 {filteredData.map((item) => (
                                   <TableRow
                                     key={item.id}
-                                    className="cursor-pointer transition-colors hover:bg-orange-50 h-8"
+                                    className="cursor-pointer hover:bg-orange-50 h-8"
                                     onClick={() => handleRowClick(item)}
                                   >
-                                    <TableCell className="font-medium py-1 px-1 text-[10px]">{item.klasor}</TableCell>
+                                    <TableCell className="py-1 px-1 text-[10px] font-medium">{item.klasor}</TableCell>
                                     <TableCell className="py-1 px-1 text-[10px]">{item.no}</TableCell>
-                                    <TableCell className="font-medium py-1 px-1 text-[10px]">
-                                      <div className="truncate max-w-[120px]" title={item.borcluAdi}>
+                                    <TableCell className="py-1 px-1 text-[10px]">
+                                      <div className="max-w-[120px] truncate" title={item.borcluAdi}>
                                         {item.borcluAdi}
                                       </div>
                                     </TableCell>
                                     <TableCell className="py-1 px-1 text-[10px]">
-                                      <div className="truncate max-w-[120px]" title={item.alacakliAdi}>
+                                      <div className="max-w-[140px] truncate" title={item.alacakliAdi}>
                                         {item.alacakliAdi}
                                       </div>
                                     </TableCell>
-                                    <TableCell className="py-1 px-1 text-[10px]">
-                                      <div className="truncate" title={item.foyTuru}>
-                                        {item.foyTuru
-                                          .replace("İlamsız İcra", "İlamsız")
-                                          .replace("İlamlı İcra", "İlamlı")}
+                                    <TableCell className="py-1 px-1 text-[9px]">
+                                      <div className="max-w-[80px] truncate" title={item.foyTuru}>
+                                        {item.foyTuru}
                                       </div>
                                     </TableCell>
-                                    <TableCell className="text-[9px] py-1 px-1 hidden lg:table-cell">
-                                      <div className="truncate max-w-[140px]" title={item.icraMudurlugu}>
+                                    <TableCell className="py-1 px-1 text-[9px] hidden lg:table-cell">
+                                      <div className="max-w-[120px] truncate" title={item.icraMudurlugu}>
                                         {item.icraMudurlugu}
                                       </div>
                                     </TableCell>
@@ -444,6 +440,14 @@ export default function IcraDosyalarimPage() {
                             </Table>
                           </div>
                         </div>
+
+                        {filteredData.length === 0 && (
+                          <div className="text-center py-8 text-gray-500">
+                            <Search className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+                            <p className="text-lg font-medium">Arama sonucu bulunamadı</p>
+                            <p className="text-sm mt-2">Farklı arama terimleri deneyebilirsiniz</p>
+                          </div>
+                        )}
                       </div>
                     )}
                   </CardContent>
@@ -453,7 +457,6 @@ export default function IcraDosyalarimPage() {
               {/* Right Sidebar - Reduced width */}
               <div className="w-full lg:w-48 shrink-0">
                 <div className="lg:sticky lg:top-8 space-y-2 sm:space-y-3">
-                  {/* Hızlı İşlemler Card */}
                   <Card>
                     <CardHeader className="pb-2 sm:pb-3">
                       <CardTitle className="text-sm sm:text-base">Hızlı İşlemler</CardTitle>
@@ -484,14 +487,7 @@ export default function IcraDosyalarimPage() {
         </div>
       </div>
 
-      {/* New File Modal */}
-      <YeniIcraFoyuModal
-        isOpen={isNewFileModalOpen}
-        onClose={() => setIsNewFileModalOpen(false)}
-        onSave={handleSaveNewFile}
-      />
-
-      {/* UYAP Detail Modal */}
+      {/* UYAP İcra Detay Modal */}
       <UyapIcraDetayModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
@@ -499,6 +495,13 @@ export default function IcraDosyalarimPage() {
         uyapStatus={uyapStatus}
         onUyapToggle={handleUyapToggle}
         isConnecting={isConnecting}
+      />
+
+      {/* Yeni İcra Föyü Modal */}
+      <YeniIcraFoyuModal
+        isOpen={isNewFileModalOpen}
+        onClose={() => setIsNewFileModalOpen(false)}
+        onSave={handleSaveNewFile}
       />
     </div>
   )
