@@ -1,15 +1,110 @@
 "use client"
 
+import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import { getStatusBadge } from "../utils/status-badges"
+import AdresSorgulamaModal from "../components/adres-sorgulama-modal"
+import AracSorgulamaModal from "../components/arac-sorgulama-modal"
+import GayrimenkulSorgulamaModal from "../components/gayrimenkul-sorgulama-modal"
+import AlacakliDosyalariModal from "../components/alacakli-dosyalari-modal"
+import BankaSorgulamaModal from "../components/banka-sorgulama-modal"
+import TelefonSorgulamaModal from "../components/telefon-sorgulama-modal"
+import SgkHacizSorgulamaModal from "../components/sgk-haciz-sorgulama-modal"
+import GibSorgulamaModal from "../components/gib-sorgulama-modal"
+import IskiSorgulamaModal from "../components/iski-sorgulama-modal"
+import PostaCekiSorgulamaModal from "../components/posta-ceki-sorgulama-modal"
+import DisIsleriSorgulamaModal from "../components/dis-isleri-sorgulama-modal"
+import SgkSorgulamaModal from "../components/sgk-sorgulama-modal"
 
 interface DosyaDetayiTabProps {
   selectedCase: any
+  uyapStatus?: "Bağlı Değil" | "Bağlanıyor" | "Bağlı"
+  onUyapToggle?: () => void
+  isConnecting?: boolean
 }
 
-export default function DosyaDetayiTab({ selectedCase }: DosyaDetayiTabProps) {
+export default function DosyaDetayiTab({
+  selectedCase,
+  uyapStatus = "Bağlı",
+  onUyapToggle,
+  isConnecting = false,
+}: DosyaDetayiTabProps) {
+  const [isAdresModalOpen, setIsAdresModalOpen] = useState(false)
+  const [isAracModalOpen, setIsAracModalOpen] = useState(false)
+  const [isGayrimenkulModalOpen, setIsGayrimenkulModalOpen] = useState(false)
+  const [isAlacakliDosyalariModalOpen, setIsAlacakliDosyalariModalOpen] = useState(false)
+  const [isBankaModalOpen, setIsBankaModalOpen] = useState(false)
+  const [isTelefonModalOpen, setIsTelefonModalOpen] = useState(false)
+  const [isSgkHacizModalOpen, setIsSgkHacizModalOpen] = useState(false)
+  const [isGibModalOpen, setIsGibModalOpen] = useState(false)
+  const [isIskiModalOpen, setIsIskiModalOpen] = useState(false)
+  const [isPostaCekiModalOpen, setIsPostaCekiModalOpen] = useState(false)
+  const [isDisIsleriModalOpen, setIsDisIsleriModalOpen] = useState(false)
+  const [isSgkModalOpen, setIsSgkModalOpen] = useState(false)
+  const [selectedBorclu, setSelectedBorclu] = useState<any>(null)
+
+  const handleAdresClick = (borclu: any) => {
+    setSelectedBorclu(borclu)
+    setIsAdresModalOpen(true)
+  }
+
+  const handleAracClick = (borclu: any) => {
+    setSelectedBorclu(borclu)
+    setIsAracModalOpen(true)
+  }
+
+  const handleGayrimenkulClick = (borclu: any) => {
+    setSelectedBorclu(borclu)
+    setIsGayrimenkulModalOpen(true)
+  }
+
+  const handleAlacakliDosyalariClick = (borclu: any) => {
+    setSelectedBorclu(borclu)
+    setIsAlacakliDosyalariModalOpen(true)
+  }
+
+  const handleBankaClick = (borclu: any) => {
+    setSelectedBorclu(borclu)
+    setIsBankaModalOpen(true)
+  }
+
+  const handleTelefonClick = (borclu: any) => {
+    setSelectedBorclu(borclu)
+    setIsTelefonModalOpen(true)
+  }
+
+  const handleSgkHacizClick = (borclu: any) => {
+    setSelectedBorclu(borclu)
+    setIsSgkHacizModalOpen(true)
+  }
+
+  const handleGibClick = (borclu: any) => {
+    setSelectedBorclu(borclu)
+    setIsGibModalOpen(true)
+  }
+
+  const handleIskiClick = (borclu: any) => {
+    setSelectedBorclu(borclu)
+    setIsIskiModalOpen(true)
+  }
+
+  const handlePostaCekiClick = (borclu: any) => {
+    setSelectedBorclu(borclu)
+    setIsPostaCekiModalOpen(true)
+  }
+
+  const handleDisIsleriClick = (borclu: any) => {
+    setSelectedBorclu(borclu)
+    setIsDisIsleriModalOpen(true)
+  }
+
+  const handleSgkClick = (borclu: any) => {
+    setSelectedBorclu(borclu)
+    setIsSgkModalOpen(true)
+  }
+
   return (
     <div className="space-y-3">
       {/* Genel Dosya Bilgileri */}
@@ -117,87 +212,315 @@ export default function DosyaDetayiTab({ selectedCase }: DosyaDetayiTabProps) {
               {/* Borçlu Sorgulama Araçları - For each debtor */}
               <div className="pt-3 mt-3">
                 <h5 className="text-xs font-semibold text-gray-900 mb-2">🔍 Borçlu Sorgulama Araçları</h5>
-                <div className="grid grid-cols-4 md:grid-cols-7 gap-2">
+
+                {/* Mobile Layout - Grid */}
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 lg:hidden">
                   <Button
                     variant="outline"
                     size="sm"
-                    className="flex flex-col items-center gap-1 h-12 text-xs border-blue-200 hover:bg-blue-50 p-1"
+                    onClick={() => handleAdresClick(borclu)}
+                    className="flex flex-col items-center justify-center gap-1 h-16 text-xs border-blue-200 hover:bg-blue-50 p-2"
+                  >
+                    <div className="flex items-center gap-1">
+                      🏠 <span className="w-1.5 h-1.5 bg-green-500 rounded-full"></span>
+                    </div>
+                    <span className="text-[10px]">Adres</span>
+                  </Button>
+
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleSgkClick(borclu)}
+                    className="flex flex-col items-center justify-center gap-1 h-16 text-xs border-blue-200 hover:bg-blue-50 p-2"
+                  >
+                    <div className="flex items-center gap-1">
+                      🏥 <span className="w-1.5 h-1.5 bg-green-500 rounded-full"></span>
+                    </div>
+                    <span className="text-[10px]">SGK</span>
+                  </Button>
+
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleAracClick(borclu)}
+                    className="flex flex-col items-center justify-center gap-1 h-16 text-xs border-blue-200 hover:bg-blue-50 p-2"
+                  >
+                    <div className="flex items-center gap-1">
+                      🚗 <span className="w-1.5 h-1.5 bg-green-500 rounded-full"></span>
+                    </div>
+                    <span className="text-[10px]">Araç</span>
+                  </Button>
+
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleGayrimenkulClick(borclu)}
+                    className="flex flex-col items-center justify-center gap-1 h-16 text-xs border-blue-200 hover:bg-blue-50 p-2"
+                  >
+                    <div className="flex items-center gap-1">
+                      🏘️ <span className="w-1.5 h-1.5 bg-green-500 rounded-full"></span>
+                    </div>
+                    <span className="text-[10px]">Gayrimenkul</span>
+                  </Button>
+
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleAlacakliDosyalariClick(borclu)}
+                    className="flex flex-col items-center justify-center gap-1 h-16 text-xs border-blue-200 hover:bg-blue-50 p-2"
+                  >
+                    <div className="flex items-center gap-1">
+                      📄 <span className="w-1.5 h-1.5 bg-green-500 rounded-full"></span>
+                    </div>
+                    <span className="text-[10px]">Alacaklı Dosyası</span>
+                  </Button>
+
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleSgkHacizClick(borclu)}
+                    className="flex flex-col items-center justify-center gap-1 h-16 text-xs border-blue-200 hover:bg-blue-50 p-2"
+                  >
+                    <div className="flex items-center gap-1">
+                      ⚖️ <span className="w-1.5 h-1.5 bg-green-500 rounded-full"></span>
+                    </div>
+                    <span className="text-[10px]">SGK Haciz</span>
+                  </Button>
+
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleTelefonClick(borclu)}
+                    className="flex flex-col items-center justify-center gap-1 h-16 text-xs border-blue-200 hover:bg-blue-50 p-2"
+                  >
+                    <div className="flex items-center gap-1">
+                      📞 <span className="w-1.5 h-1.5 bg-green-500 rounded-full"></span>
+                    </div>
+                    <span className="text-[10px]">Telefon</span>
+                  </Button>
+
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleBankaClick(borclu)}
+                    className="flex flex-col items-center justify-center gap-1 h-16 text-xs border-blue-200 hover:bg-blue-50 p-2"
+                  >
+                    <div className="flex items-center gap-1">
+                      🏦 <span className="w-1.5 h-1.5 bg-green-500 rounded-full"></span>
+                    </div>
+                    <span className="text-[10px]">Banka</span>
+                  </Button>
+
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleGibClick(borclu)}
+                    className="flex flex-col items-center justify-center gap-1 h-16 text-xs border-blue-200 hover:bg-blue-50 p-2"
+                  >
+                    <div className="flex items-center gap-1">
+                      💰 <span className="w-1.5 h-1.5 bg-green-500 rounded-full"></span>
+                    </div>
+                    <span className="text-[10px]">GİB</span>
+                  </Button>
+
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleIskiClick(borclu)}
+                    className="flex flex-col items-center justify-center gap-1 h-16 text-xs border-blue-200 hover:bg-blue-50 p-2"
+                  >
+                    <div className="flex items-center gap-1">
+                      💧 <span className="w-1.5 h-1.5 bg-green-500 rounded-full"></span>
+                    </div>
+                    <span className="text-[10px]">İSKİ</span>
+                  </Button>
+
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handlePostaCekiClick(borclu)}
+                    className="flex flex-col items-center justify-center gap-1 h-16 text-xs border-blue-200 hover:bg-blue-50 p-2"
+                  >
+                    <div className="flex items-center gap-1">
+                      📮 <span className="w-1.5 h-1.5 bg-green-500 rounded-full"></span>
+                    </div>
+                    <span className="text-[10px]">Posta Çeki</span>
+                  </Button>
+
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleDisIsleriClick(borclu)}
+                    className="flex flex-col items-center justify-center gap-1 h-16 text-xs border-blue-200 hover:bg-blue-50 p-2"
+                  >
+                    <div className="flex items-center gap-1">
+                      🌍 <span className="w-1.5 h-1.5 bg-green-500 rounded-full"></span>
+                    </div>
+                    <span className="text-[10px]">Dış İşleri</span>
+                  </Button>
+                </div>
+
+                {/* Desktop Layout - Original Complex Layout */}
+                <div className="hidden lg:flex w-full justify-between items-center">
+                  {/* Six standalone buttons - each with flex-1 */}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleAdresClick(borclu)}
+                    className="flex-1 flex flex-row items-center justify-center gap-1 h-12 text-xs border-blue-200 hover:bg-blue-50 p-1 mx-0.5"
                   >
                     <div className="flex items-center gap-1">
                       🏠 <span className="w-1.5 h-1.5 bg-green-500 rounded-full"></span>
                     </div>
                     <span className="text-[8px]">Adres</span>
                   </Button>
+
                   <Button
                     variant="outline"
                     size="sm"
-                    className="flex flex-col items-center gap-1 h-12 text-xs border-blue-200 hover:bg-blue-50 p-1"
+                    onClick={() => handleSgkClick(borclu)}
+                    className="flex-1 flex flex-row items-center justify-center gap-1 h-12 text-xs border-blue-200 hover:bg-blue-50 p-1 mx-0.5"
                   >
                     <div className="flex items-center gap-1">
-                      📞 <span className="w-1.5 h-1.5 bg-green-500 rounded-full"></span>
-                    </div>
-                    <span className="text-[8px]">Telefon</span>
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="flex flex-col items-center gap-1 h-12 text-xs border-blue-200 hover:bg-blue-50 p-1"
-                  >
-                    <div className="flex items-center gap-1">
-                      🏥 <span className="w-1.5 h-1.5 bg-yellow-500 rounded-full"></span>
+                      🏥 <span className="w-1.5 h-1.5 bg-green-500 rounded-full"></span>
                     </div>
                     <span className="text-[8px]">SGK</span>
                   </Button>
+
                   <Button
                     variant="outline"
                     size="sm"
-                    className="flex flex-col items-center gap-1 h-12 text-xs border-blue-200 hover:bg-blue-50 p-1"
+                    onClick={() => handleAracClick(borclu)}
+                    className="flex-1 flex flex-row items-center justify-center gap-1 h-12 text-xs border-blue-200 hover:bg-blue-50 p-1 mx-0.5"
                   >
                     <div className="flex items-center gap-1">
                       🚗 <span className="w-1.5 h-1.5 bg-green-500 rounded-full"></span>
                     </div>
                     <span className="text-[8px]">Araç</span>
                   </Button>
+
                   <Button
                     variant="outline"
                     size="sm"
-                    className="flex flex-col items-center gap-1 h-12 text-xs border-blue-200 hover:bg-blue-50 p-1"
+                    onClick={() => handleGayrimenkulClick(borclu)}
+                    className="flex-1 flex flex-row items-center justify-center gap-1 h-12 text-xs border-blue-200 hover:bg-blue-50 p-1 mx-0.5"
                   >
                     <div className="flex items-center gap-1">
-                      🏘️ <span className="w-1.5 h-1.5 bg-red-500 rounded-full"></span>
+                      🏘️ <span className="w-1.5 h-1.5 bg-green-500 rounded-full"></span>
                     </div>
                     <span className="text-[8px]">Gayrimenkul</span>
                   </Button>
+
                   <Button
                     variant="outline"
                     size="sm"
-                    className="flex flex-col items-center gap-1 h-12 text-xs border-blue-200 hover:bg-blue-50 p-1"
-                  >
-                    <div className="flex items-center gap-1">
-                      🏦 <span className="w-1.5 h-1.5 bg-yellow-500 rounded-full"></span>
-                    </div>
-                    <span className="text-[8px]">Banka</span>
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="flex flex-col items-center gap-1 h-12 text-xs border-blue-200 hover:bg-blue-50 p-1"
+                    onClick={() => handleAlacakliDosyalariClick(borclu)}
+                    className="flex-1 flex flex-row items-center justify-center gap-1 h-12 text-xs border-blue-200 hover:bg-blue-50 p-1 mx-0.5"
                   >
                     <div className="flex items-center gap-1">
                       📄 <span className="w-1.5 h-1.5 bg-green-500 rounded-full"></span>
                     </div>
-                    <span className="text-[8px]">Alacaklı Dosyaları</span>
+                    <span className="text-[8px]">Alacaklı Dosyası</span>
                   </Button>
+
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleSgkHacizClick(borclu)}
+                    className="flex-1 flex flex-row items-center justify-center gap-1 h-12 text-xs border-blue-200 hover:bg-blue-50 p-1 mx-0.5"
+                  >
+                    <div className="flex items-center gap-1">
+                      ⚖️ <span className="w-1.5 h-1.5 bg-green-500 rounded-full"></span>
+                    </div>
+                    <span className="text-[8px]">SGK Haciz</span>
+                  </Button>
+
+                  {/* Three vertical stacks - each with flex-1 */}
+                  <div className="flex-1 flex flex-col gap-1 mx-0.5">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleTelefonClick(borclu)}
+                      className="w-full flex flex-row items-center justify-center gap-1 h-5 text-xs border-blue-200 hover:bg-blue-50 p-1"
+                    >
+                      <div className="flex items-center gap-1">
+                        📞 <span className="w-1 h-1 bg-green-500 rounded-full"></span>
+                      </div>
+                      <span className="text-[7px]">Telefon</span>
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleBankaClick(borclu)}
+                      className="w-full flex flex-row items-center justify-center gap-1 h-5 text-xs border-blue-200 hover:bg-blue-50 p-1"
+                    >
+                      <div className="flex items-center gap-1">
+                        🏦 <span className="w-1 h-1 bg-green-500 rounded-full"></span>
+                      </div>
+                      <span className="text-[7px]">Banka</span>
+                    </Button>
+                  </div>
+
+                  <div className="flex-1 flex flex-col gap-1 mx-0.5">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleGibClick(borclu)}
+                      className="w-full flex flex-row items-center justify-center gap-1 h-5 text-xs border-blue-200 hover:bg-blue-50 p-1"
+                    >
+                      <div className="flex items-center gap-1">
+                        💰 <span className="w-1 h-1 bg-green-500 rounded-full"></span>
+                      </div>
+                      <span className="text-[7px]">GİB</span>
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleIskiClick(borclu)}
+                      className="w-full flex flex-row items-center justify-center gap-1 h-5 text-xs border-blue-200 hover:bg-blue-50 p-1"
+                    >
+                      <div className="flex items-center gap-1">
+                        💧 <span className="w-1 h-1 bg-green-500 rounded-full"></span>
+                      </div>
+                      <span className="text-[7px]">İSKİ</span>
+                    </Button>
+                  </div>
+
+                  <div className="flex-1 flex flex-col gap-1 mx-0.5">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handlePostaCekiClick(borclu)}
+                      className="w-full flex flex-row items-center justify-center gap-1 h-5 text-xs border-blue-200 hover:bg-blue-50 p-1"
+                    >
+                      <div className="flex items-center gap-1">
+                        📮 <span className="w-1 h-1 bg-green-500 rounded-full"></span>
+                      </div>
+                      <span className="text-[7px]">Posta Çeki</span>
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleDisIsleriClick(borclu)}
+                      className="w-full flex flex-row items-center justify-center gap-1 h-5 text-xs border-blue-200 hover:bg-blue-50 p-1"
+                    >
+                      <div className="flex items-center gap-1">
+                        🌍 <span className="w-1 h-1 bg-green-500 rounded-full"></span>
+                      </div>
+                      <span className="text-[7px]">Dış İşleri</span>
+                    </Button>
+                  </div>
                 </div>
-                <div className="mt-2 text-[8px] text-gray-600 flex items-center gap-3">
+
+                <div className="mt-2 text-[7px] text-gray-600 flex items-center gap-3">
                   <span className="flex items-center gap-1">
-                    <span className="w-1.5 h-1.5 bg-green-500 rounded-full"></span> Güncel
+                    <span className="w-1 h-1 bg-green-500 rounded-full"></span> Güncel
                   </span>
                   <span className="flex items-center gap-1">
-                    <span className="w-1.5 h-1.5 bg-yellow-500 rounded-full"></span> Sorgulama Gerekli
+                    <span className="w-1 h-1 bg-yellow-500 rounded-full"></span> Sorgulama Gerekli
                   </span>
                   <span className="flex items-center gap-1">
-                    <span className="w-1.5 h-1.5 bg-red-500 rounded-full"></span> Veri Yok
+                    <span className="w-1 h-1 bg-red-500 rounded-full"></span> Veri Yok
                   </span>
                 </div>
               </div>
@@ -208,6 +531,150 @@ export default function DosyaDetayiTab({ selectedCase }: DosyaDetayiTabProps) {
           ))}
         </div>
       </div>
+
+      {/* Adres Sorgulama Modal */}
+      <AdresSorgulamaModal
+        isOpen={isAdresModalOpen}
+        onClose={() => setIsAdresModalOpen(false)}
+        borcluAdi={selectedBorclu?.ad || ""}
+        tcKimlik={selectedBorclu?.tcKimlik || ""}
+        dosyaNo={selectedCase?.eNo}
+        uyapStatus={uyapStatus}
+        onUyapToggle={onUyapToggle}
+        isConnecting={isConnecting}
+      />
+
+      {/* Araç Sorgulama Modal */}
+      <AracSorgulamaModal
+        isOpen={isAracModalOpen}
+        onClose={() => setIsAracModalOpen(false)}
+        borcluAdi={selectedBorclu?.ad || ""}
+        tcKimlik={selectedBorclu?.tcKimlik || ""}
+        dosyaNo={selectedCase?.eNo}
+        uyapStatus={uyapStatus}
+        onUyapToggle={onUyapToggle}
+        isConnecting={isConnecting}
+      />
+
+      {/* Gayrimenkul Sorgulama Modal */}
+      <GayrimenkulSorgulamaModal
+        isOpen={isGayrimenkulModalOpen}
+        onClose={() => setIsGayrimenkulModalOpen(false)}
+        borcluAdi={selectedBorclu?.ad || ""}
+        tcKimlik={selectedBorclu?.tcKimlik || ""}
+        dosyaNo={selectedCase?.eNo}
+        uyapStatus={uyapStatus}
+        onUyapToggle={onUyapToggle}
+        isConnecting={isConnecting}
+      />
+
+      {/* Alacaklı Dosyaları Modal */}
+      <AlacakliDosyalariModal
+        isOpen={isAlacakliDosyalariModalOpen}
+        onClose={() => setIsAlacakliDosyalariModalOpen(false)}
+        borcluAdi={selectedBorclu?.ad || ""}
+        tcKimlik={selectedBorclu?.tcKimlik || ""}
+        dosyaNo={selectedCase?.eNo}
+        uyapStatus={uyapStatus}
+        onUyapToggle={onUyapToggle}
+        isConnecting={isConnecting}
+      />
+
+      {/* Banka Sorgulama Modal */}
+      <BankaSorgulamaModal
+        isOpen={isBankaModalOpen}
+        onClose={() => setIsBankaModalOpen(false)}
+        borcluAdi={selectedBorclu?.ad || ""}
+        tcKimlik={selectedBorclu?.tcKimlik || ""}
+        dosyaNo={selectedCase?.eNo}
+        uyapStatus={uyapStatus}
+        onUyapToggle={onUyapToggle}
+        isConnecting={isConnecting}
+      />
+
+      {/* Telefon Sorgulama Modal */}
+      <TelefonSorgulamaModal
+        isOpen={isTelefonModalOpen}
+        onClose={() => setIsTelefonModalOpen(false)}
+        borcluAdi={selectedBorclu?.ad || ""}
+        tcKimlik={selectedBorclu?.tcKimlik || ""}
+        dosyaNo={selectedCase?.eNo}
+        uyapStatus={uyapStatus}
+        onUyapToggle={onUyapToggle}
+        isConnecting={isConnecting}
+      />
+
+      {/* SGK Haciz Sorgulama Modal */}
+      <SgkHacizSorgulamaModal
+        isOpen={isSgkHacizModalOpen}
+        onClose={() => setIsSgkHacizModalOpen(false)}
+        borcluAdi={selectedBorclu?.ad || ""}
+        tcKimlik={selectedBorclu?.tcKimlik || ""}
+        dosyaNo={selectedCase?.eNo}
+        uyapStatus={uyapStatus}
+        onUyapToggle={onUyapToggle}
+        isConnecting={isConnecting}
+      />
+
+      {/* GİB Sorgulama Modal */}
+      <GibSorgulamaModal
+        isOpen={isGibModalOpen}
+        onClose={() => setIsGibModalOpen(false)}
+        borcluAdi={selectedBorclu?.ad || ""}
+        tcKimlik={selectedBorclu?.tcKimlik || ""}
+        dosyaNo={selectedCase?.eNo}
+        uyapStatus={uyapStatus}
+        onUyapToggle={onUyapToggle}
+        isConnecting={isConnecting}
+      />
+
+      {/* İSKİ Sorgulama Modal */}
+      <IskiSorgulamaModal
+        isOpen={isIskiModalOpen}
+        onClose={() => setIsIskiModalOpen(false)}
+        borcluAdi={selectedBorclu?.ad || ""}
+        tcKimlik={selectedBorclu?.tcKimlik || ""}
+        dosyaNo={selectedCase?.eNo}
+        uyapStatus={uyapStatus}
+        onUyapToggle={onUyapToggle}
+        isConnecting={isConnecting}
+      />
+
+      {/* Posta Çeki Sorgulama Modal */}
+      <PostaCekiSorgulamaModal
+        isOpen={isPostaCekiModalOpen}
+        onClose={() => setIsPostaCekiModalOpen(false)}
+        borcluAdi={selectedBorclu?.ad || ""}
+        tcKimlik={selectedBorclu?.tcKimlik || ""}
+        dosyaNo={selectedCase?.eNo}
+        uyapStatus={uyapStatus}
+        onUyapToggle={onUyapToggle}
+        isConnecting={isConnecting}
+      />
+
+      {/* Dış İşleri Sorgulama Modal */}
+      <DisIsleriSorgulamaModal
+        isOpen={isDisIsleriModalOpen}
+        onClose={() => setIsDisIsleriModalOpen(false)}
+        borcluAdi={selectedBorclu?.ad || ""}
+        tcKimlik={selectedBorclu?.tcKimlik || ""}
+        dosyaNo={selectedCase?.eNo}
+        uyapStatus={uyapStatus}
+        onUyapToggle={onUyapToggle}
+        isConnecting={isConnecting}
+      />
+
+      {/* SGK Sorgulama Modal */}
+      <SgkSorgulamaModal
+        isOpen={isSgkModalOpen}
+        onClose={() => setIsSgkModalOpen(false)}
+        borcluAdi={selectedBorclu?.ad || ""}
+        tcKimlik={selectedBorclu?.tcKimlik || ""}
+        dosyaNo={selectedCase?.eNo}
+        uyapStatus={uyapStatus}
+        onUyapToggle={onUyapToggle}
+        isConnecting={isConnecting}
+      />
     </div>
   )
 }

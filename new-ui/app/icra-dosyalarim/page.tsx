@@ -12,345 +12,28 @@ import { cn } from "@/lib/utils"
 import UyapIcraDetayModal from "./components/uyap-icra-detay-modal"
 import YeniIcraFoyuModal from "./components/yeni-icra-foyu"
 import type { FormData } from "./components/yeni-icra-foyu/types/form-types"
-
-// Sample execution files data with multiple debtors
-const sampleData = [
-  {
-    id: 1,
-    klasor: "2024/001",
-    no: "001",
-    borcluAdi: "Ahmet Yılmaz",
-    borcluList: [
-      {
-        ad: "Ahmet Yılmaz",
-        tcKimlik: "12345678901",
-        telefon: "0532 123 45 67",
-        adres: "Moda Mahallesi, Bahariye Caddesi No: 45/7",
-        vekil: "Av. Mehmet Özkan",
-      },
-    ],
-    alacakliAdi: "ABC Şirketi Ltd. Şti.",
-    foyTuru: "İlamsız İcra",
-    icraMudurlugu: "İstanbul 1. İcra Müdürlüğü",
-    eYil: "2024",
-    eNo: "2024/1234",
-    durum: "Açık",
-    takipTarihi: "15.01.2024",
-    tcKimlik: "12345678901",
-    telefon: "0532 123 45 67",
-    il: "İstanbul",
-    ilce: "Kadıköy",
-    adres: "Moda Mahallesi, Bahariye Caddesi No: 45/7",
-    borcluVekili: "Av. Mehmet Özkan",
-    borcMiktari: "125.000,00 TL",
-    alacakliVekili: "Av. Fatma Demir",
-    borclu: "Ahmet Yılmaz",
-    alacakli: "ABC Şirketi Ltd. Şti.",
-    email: "ahmet.yilmaz@email.com",
-    tebligDurumu: "Tebliğ Edildi",
-    masraf: "2.500,00 TL",
-    notlar: "Borçlu ile 15.02.2024 tarihinde görüşüldü. Ödeme planı önerisi reddedildi. Haciz işlemine geçilecek.",
-  },
-  {
-    id: 2,
-    klasor: "2024/002",
-    no: "002",
-    borcluAdi: "Ayşe Demir, Mehmet Demir",
-    borcluList: [
-      {
-        ad: "Ayşe Demir",
-        tcKimlik: "98765432109",
-        telefon: "0533 987 65 43",
-        adres: "Kızılay Mahallesi, Atatürk Bulvarı No: 123/5",
-        vekil: "Av. Zeynep Öz",
-      },
-      {
-        ad: "Mehmet Demir",
-        tcKimlik: "11223344556",
-        telefon: "0534 111 22 33",
-        adres: "Kızılay Mahallesi, Atatürk Bulvarı No: 123/5",
-        vekil: "Av. Zeynep Öz",
-      },
-    ],
-    alacakliAdi: "XYZ Holding A.Ş.",
-    foyTuru: "İlamlı İcra",
-    icraMudurlugu: "Ankara 2. İcra Müdürlüğü",
-    eYil: "2024",
-    eNo: "2024/1235",
-    durum: "Derdest",
-    takipTarihi: "10.01.2024",
-    tcKimlik: "98765432109",
-    telefon: "0533 987 65 43",
-    il: "Ankara",
-    ilce: "Çankaya",
-    adres: "Kızılay Mahallesi, Atatürk Bulvarı No: 123/5",
-    borcluVekili: "Av. Zeynep Öz",
-    borcMiktari: "75.500,00 TL",
-    alacakliVekili: "Av. Ali Kaya",
-    borclu: "Ayşe Demir, Mehmet Demir",
-    alacakli: "XYZ Holding A.Ş.",
-    email: "ayse.demir@email.com",
-    tebligDurumu: "Tebliğ Edildi",
-    masraf: "1.800,00 TL",
-    notlar: "İlam tebliğ edildi. Borçlu itiraz sürecinde.",
-  },
-  {
-    id: 3,
-    klasor: "2024/003",
-    no: "003",
-    borcluAdi: "Hasan Çelik, Fatma Çelik, Oğuz Çelik",
-    borcluList: [
-      {
-        ad: "Hasan Çelik",
-        tcKimlik: "11223344556",
-        telefon: "0534 111 22 33",
-        adres: "Alsancak Mahallesi, Cumhuriyet Bulvarı No: 67/2",
-        vekil: "-",
-      },
-      {
-        ad: "Fatma Çelik",
-        tcKimlik: "55667788990",
-        telefon: "0535 555 66 77",
-        adres: "Alsancak Mahallesi, Cumhuriyet Bulvarı No: 67/2",
-        vekil: "Av. Murat Kaya",
-      },
-      {
-        ad: "Oğuz Çelik",
-        tcKimlik: "33445566778",
-        telefon: "0536 333 44 55",
-        adres: "Bornova Mahallesi, İzmir Caddesi No: 89/3",
-        vekil: "-",
-      },
-    ],
-    alacakliAdi: "Emlak Yatırım A.Ş.",
-    foyTuru: "Tahliye Takibi",
-    icraMudurlugu: "İzmir 3. İcra Müdürlüğü",
-    eYil: "2024",
-    eNo: "2024/1236",
-    durum: "İtiraz",
-    takipTarihi: "05.01.2024",
-    tcKimlik: "11223344556",
-    telefon: "0534 111 22 33",
-    il: "İzmir",
-    ilce: "Konak",
-    adres: "Alsancak Mahallesi, Cumhuriyet Bulvarı No: 67/2",
-    borcluVekili: "-",
-    borcMiktari: "25.000,00 TL",
-    alacakliVekili: "Av. Fatma Demir",
-    borclu: "Hasan Çelik, Fatma Çelik, Oğuz Çelik",
-    alacakli: "Emlak Yatırım A.Ş.",
-    email: "hasan.celik@email.com",
-    tebligDurumu: "Tebliğ Edilmedi",
-    masraf: "1.200,00 TL",
-    notlar: "İtiraz süreci devam ediyor. Tahliye işlemi beklemede.",
-  },
-  {
-    id: 4,
-    klasor: "22023/045",
-    no: "045",
-    borcluAdi: "Fatma Kara",
-    borcluList: [
-      {
-        ad: "Fatma Kara",
-        tcKimlik: "55667788990",
-        telefon: "0535 555 66 77",
-        adres: "Görükle Mahallesi, Uludağ Üniversitesi Caddesi No: 89/12",
-        vekil: "-",
-      },
-    ],
-    alacakliAdi: "Teknoloji Ltd. Şti.",
-    foyTuru: "İlamsız İcra",
-    icraMudurlugu: "Bursa 1. İcra Müdürlüğü",
-    eYil: "2023",
-    eNo: "2023/9876",
-    durum: "Sonuçlandı",
-    takipTarihi: "20.12.2023",
-    tcKimlik: "55667788990",
-    telefon: "0535 555 66 77",
-    il: "Bursa",
-    ilce: "Nilüfer",
-    adres: "Görükle Mahallesi, Uludağ Üniversitesi Caddesi No: 89/12",
-    borcluVekili: "-",
-    borcMiktari: "45.250,25 TL",
-    alacakliVekili: "Av. Mehmet Ak",
-    borclu: "Fatma Kara",
-    alacakli: "Teknoloji Ltd. Şti.",
-    email: "fatma.kara@email.com",
-    tebligDurumu: "Tebliğ Edildi",
-    masraf: "2.100,00 TL",
-    notlar: "Tahsilat tamamlandı. Dosya kapatıldı.",
-  },
-  {
-    id: 5,
-    klasor: "2024/004",
-    no: "004",
-    borcluAdi: "Mehmet Özkan, Zeynep Özkan",
-    borcluList: [
-      {
-        ad: "Mehmet Özkan",
-        tcKimlik: "33445566778",
-        telefon: "0536 333 44 55",
-        adres: "Lara Mahallesi, Güzeloba Caddesi No: 156/8",
-        vekil: "Av. Kemal Yurt",
-      },
-      {
-        ad: "Zeynep Özkan",
-        tcKimlik: "77889900112",
-        telefon: "0537 777 88 99",
-        adres: "Lara Mahallesi, Güzeloba Caddesi No: 156/8",
-        vekil: "Av. Kemal Yurt",
-      },
-    ],
-    alacakliAdi: "Finans Bankası A.Ş.",
-    foyTuru: "İlamlı İcra",
-    icraMudurlugu: "Antalya 1. İcra Müdürlüğü",
-    eYil: "2024",
-    eNo: "2024/1237",
-    durum: "Açık",
-    takipTarihi: "22.01.2024",
-    tcKimlik: "33445566778",
-    telefon: "0536 333 44 55",
-    il: "Antalya",
-    ilce: "Muratpaşa",
-    adres: "Lara Mahallesi, Güzeloba Caddesi No: 156/8",
-    borcluVekili: "Av. Kemal Yurt",
-    borcMiktari: "180.000,00 TL",
-    alacakliVekili: "Av. Selin Acar",
-    borclu: "Mehmet Özkan, Zeynep Özkan",
-    alacakli: "Finans Bankası A.Ş.",
-    email: "mehmet.ozkan@email.com",
-    tebligDurumu: "Tebliğ Edildi",
-    masraf: "3.200,00 TL",
-    notlar: "Kredi borcu nedeniyle açılan takip. Haciz işlemi başlatıldı.",
-  },
-  {
-    id: 6,
-    klasor: "2024/005",
-    no: "005",
-    borcluAdi: "Zeynep Şahin",
-    borcluList: [
-      {
-        ad: "Zeynep Şahin",
-        tcKimlik: "77889900112",
-        telefon: "0537 777 88 99",
-        adres: "Reşatbey Mahallesi, İnönü Caddesi No: 234/15",
-        vekil: "-",
-      },
-    ],
-    alacakliAdi: "İnşaat Müteahhitlik Ltd.",
-    foyTuru: "İlamsız İcra",
-    icraMudurlugu: "Adana 2. İcra Müdürlüğü",
-    eYil: "2024",
-    eNo: "2024/1238",
-    durum: "Derdest",
-    takipTarihi: "28.01.2024",
-    tcKimlik: "77889900112",
-    telefon: "0537 777 88 99",
-    il: "Adana",
-    ilce: "Seyhan",
-    adres: "Reşatbey Mahallesi, İnönü Caddesi No: 234/15",
-    borcluVekili: "-",
-    borcMiktari: "95.750,00 TL",
-    alacakliVekili: "Av. Okan Demir",
-    borclu: "Zeynep Şahin",
-    alacakli: "İnşaat Müteahhitlik Ltd.",
-    email: "zeynep.sahin@email.com",
-    tebligDurumu: "Tebliğ Edildi",
-    masraf: "2.800,00 TL",
-    notlar: "Müteahhitlik hizmet bedeli alacağı. Ödeme planı görüşülüyor.",
-  },
-  {
-    id: 7,
-    klasor: "2023/078",
-    no: "078",
-    borcluAdi: "Can Yıldız",
-    borcluList: [
-      {
-        ad: "Can Yıldız",
-        tcKimlik: "44556677889",
-        telefon: "0538 444 55 66",
-        adres: "Yazır Mahallesi, Ankara Caddesi No: 78/3",
-        vekil: "Av. Deniz Kaya",
-      },
-    ],
-    alacakliAdi: "Otomotiv Ticaret A.Ş.",
-    foyTuru: "Rehinli Alacak Takibi",
-    icraMudurlugu: "Konya 1. İcra Müdürlüğü",
-    eYil: "2023",
-    eNo: "2023/8765",
-    durum: "İtiraz",
-    takipTarihi: "15.11.2023",
-    tcKimlik: "44556677889",
-    telefon: "0538 444 55 66",
-    il: "Konya",
-    ilce: "Selçuklu",
-    adres: "Yazır Mahallesi, Ankara Caddesi No: 78/3",
-    borcluVekili: "Av. Deniz Kaya",
-    borcMiktari: "220.000,00 TL",
-    alacakliVekili: "Av. Cem Özgür",
-    borclu: "Can Yıldız",
-    alacakli: "Otomotiv Ticaret A.Ş.",
-    email: "can.yildiz@email.com",
-    tebligDurumu: "Tebliğ Edildi",
-    masraf: "4.500,00 TL",
-    notlar: "Araç kredisi borcu. Rehin konusu araç haczedildi. İtiraz süreci devam ediyor.",
-  },
-  {
-    id: 8,
-    klasor: "2024/006",
-    no: "006",
-    borcluAdi: "Elif Arslan",
-    borcluList: [
-      {
-        ad: "Elif Arslan",
-        tcKimlik: "66778899001",
-        telefon: "0539 666 77 88",
-        adres: "İstasyon Mahallesi, Atatürk Bulvarı No: 345/7",
-        vekil: "-",
-      },
-    ],
-    alacakliAdi: "Tekstil İhracat Ltd. Şti.",
-    foyTuru: "İlamsız İcra",
-    icraMudurlugu: "Gaziantep 1. İcra Müdürlüğü",
-    eYil: "2024",
-    eNo: "2024/1239",
-    durum: "Açık",
-    takipTarihi: "02.02.2024",
-    tcKimlik: "66778899001",
-    telefon: "0539 666 77 88",
-    il: "Gaziantep",
-    ilce: "Şahinbey",
-    adres: "İstasyon Mahallesi, Atatürk Bulvarı No: 345/7",
-    borcluVekili: "-",
-    borcMiktari: "65.400,00 TL",
-    alacakliVekili: "Av. Murat Çelik",
-    borclu: "Elif Arslan",
-    alacakli: "Tekstil İhracat Ltd. Şti.",
-    email: "elif.arslan@email.com",
-    tebligDurumu: "Tebliğ Edilmedi",
-    masraf: "1.950,00 TL",
-    notlar: "Ticari alacak takibi. Borçlu ile iletişim kurulamadı.",
-  },
-]
+import { icraDosyalariSampleData } from "./components/uyap-icra-detay-modal/utils/sample-data"
 
 export default function IcraDosyalarimPage() {
   const [searchTerm, setSearchTerm] = useState("")
   const [sortField, setSortField] = useState<string>("")
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc")
-  const [filteredData, setFilteredData] = useState(sampleData)
+  const [filteredData, setFilteredData] = useState(icraDosyalariSampleData)
   const [selectedCase, setSelectedCase] = useState<any>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [activeView, setActiveView] = useState<"empty" | "list" | "new">("empty")
   const [isNewFileModalOpen, setIsNewFileModalOpen] = useState(false)
+  const [uyapStatus, setUyapStatus] = useState<"Bağlı Değil" | "Bağlanıyor" | "Bağlı">("Bağlı Değil")
+  const [isConnecting, setIsConnecting] = useState(false)
 
   const handleSearch = (value: string) => {
     setSearchTerm(value)
     if (!value.trim()) {
-      setFilteredData(sampleData)
+      setFilteredData(icraDosyalariSampleData)
       return
     }
 
-    const filtered = sampleData.filter((item) => {
+    const filtered = icraDosyalariSampleData.filter((item) => {
       const searchLower = value.toLowerCase()
       return (
         item.klasor.toLowerCase().includes(searchLower) ||
@@ -436,6 +119,24 @@ export default function IcraDosyalarimPage() {
     setActiveView("list")
   }
 
+  const handleUyapToggle = () => {
+    if (uyapStatus === "Bağlı Değil") {
+      // Start connecting
+      setUyapStatus("Bağlanıyor")
+      setIsConnecting(true)
+
+      // Simulate connection process
+      setTimeout(() => {
+        setUyapStatus("Bağlı")
+        setIsConnecting(false)
+      }, 2000)
+    } else {
+      // Disconnect
+      setUyapStatus("Bağlı Değil")
+      setIsConnecting(false)
+    }
+  }
+
   // Left sidebar buttons
   const leftSidebarButtons = [
     {
@@ -481,7 +182,8 @@ export default function IcraDosyalarimPage() {
       {/* Header */}
       <header className="bg-white shadow-sm border-b">
         <div className="w-full px-2 sm:px-4 md:px-6 lg:px-8 py-3 sm:py-4">
-          <div className="flex items-center justify-center">
+          <div className="flex items-center justify-between">
+            {/* Left side - Back button and title */}
             <div className="flex items-center gap-2 sm:gap-4">
               <Link href="/">
                 <Button variant="ghost" size="sm" className="text-xs sm:text-sm">
@@ -490,7 +192,36 @@ export default function IcraDosyalarimPage() {
                   <span className="xs:hidden">Geri</span>
                 </Button>
               </Link>
-              <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 text-center">İcra Dosyalarım</h1>
+              <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900">İcra Dosyalarım</h1>
+            </div>
+
+            {/* Right side - Uyap Status Badge */}
+            <div className="flex items-center">
+              <Badge
+                onClick={handleUyapToggle}
+                disabled={isConnecting}
+                className={cn(
+                  "text-[10px] sm:text-xs px-2 py-1 cursor-pointer transition-all duration-300 hover:scale-105 select-none",
+                  uyapStatus === "Bağlı"
+                    ? "bg-green-100 text-green-800 border-green-200 hover:bg-green-200"
+                    : uyapStatus === "Bağlanıyor"
+                      ? "bg-blue-100 text-blue-800 border-blue-200 cursor-not-allowed"
+                      : "bg-red-100 text-red-800 border-red-200 hover:bg-red-200",
+                  isConnecting && "animate-pulse-slow",
+                )}
+                style={{
+                  animationDuration: isConnecting ? "3s" : undefined,
+                }}
+              >
+                {isConnecting ? (
+                  <div className="flex items-center gap-1">
+                    <div className="animate-spin rounded-full h-2 w-2 border-b-2 border-blue-600"></div>
+                    <span>Uyap: Bağlanıyor...</span>
+                  </div>
+                ) : (
+                  `Uyap: ${uyapStatus}`
+                )}
+              </Badge>
             </div>
           </div>
         </div>
@@ -722,6 +453,7 @@ export default function IcraDosyalarimPage() {
               {/* Right Sidebar - Reduced width */}
               <div className="w-full lg:w-48 shrink-0">
                 <div className="lg:sticky lg:top-8 space-y-2 sm:space-y-3">
+                  {/* Hızlı İşlemler Card */}
                   <Card>
                     <CardHeader className="pb-2 sm:pb-3">
                       <CardTitle className="text-sm sm:text-base">Hızlı İşlemler</CardTitle>
@@ -734,7 +466,7 @@ export default function IcraDosyalarimPage() {
                             <Button
                               key={index}
                               variant="outline"
-                              className="w-full justify-start h-9 sm:h-10 text-[10px] sm:text-xs px-1 sm:px-2"
+                              className="w-full justify-start h-9 sm:h-10 text-[10px] sm:text-xs px-1 sm:px-2 bg-transparent"
                               onClick={button.action}
                             >
                               <Icon className="w-2.5 h-2.5 sm:w-3 sm:h-3 mr-0 flex-shrink-0" />
@@ -760,7 +492,14 @@ export default function IcraDosyalarimPage() {
       />
 
       {/* UYAP Detail Modal */}
-      <UyapIcraDetayModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} selectedCase={selectedCase} />
+      <UyapIcraDetayModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        selectedCase={selectedCase}
+        uyapStatus={uyapStatus}
+        onUyapToggle={handleUyapToggle}
+        isConnecting={isConnecting}
+      />
     </div>
   )
 }

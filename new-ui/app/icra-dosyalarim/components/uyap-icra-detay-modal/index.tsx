@@ -2,9 +2,9 @@
 
 import { useState } from "react"
 import { Badge } from "@/components/ui/badge"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Button } from "@/components/ui/button"
+import { cn } from "@/lib/utils"
 import DosyaDetayiTab from "./tabs/dosya-detayi-tab"
 import EvrakGonderTab from "./tabs/evrak-gonder-tab"
 import OdemeEkraniTab from "./tabs/odeme-ekrani-tab"
@@ -15,9 +15,19 @@ interface UyapIcraDetayModalProps {
   isOpen: boolean
   onClose: () => void
   selectedCase: any
+  uyapStatus: "Bağlı Değil" | "Bağlanıyor" | "Bağlı"
+  onUyapToggle: () => void
+  isConnecting: boolean
 }
 
-export default function UyapIcraDetayModal({ isOpen, onClose, selectedCase }: UyapIcraDetayModalProps) {
+export default function UyapIcraDetayModal({
+  isOpen,
+  onClose,
+  selectedCase,
+  uyapStatus,
+  onUyapToggle,
+  isConnecting,
+}: UyapIcraDetayModalProps) {
   const [activeTab, setActiveTab] = useState("details")
 
   return (
@@ -27,28 +37,56 @@ export default function UyapIcraDetayModal({ isOpen, onClose, selectedCase }: Uy
         <DialogHeader className="flex-shrink-0 p-6 pb-4 border-b border-gray-200">
           <DialogTitle className="text-xl font-bold text-gray-900 flex items-center gap-2">
             🏛️ UYAP İcra Dosyası Detayları
-            <Badge className="bg-green-100 text-green-800 border-green-200">🔄 Canlı Veri</Badge>
+            {/* Uyap Status Badge next to title */}
+            <Badge
+              onClick={onUyapToggle}
+              disabled={isConnecting}
+              className={cn(
+                "text-xs px-2 py-1 cursor-pointer transition-all duration-300 hover:scale-105 select-none",
+                uyapStatus === "Bağlı"
+                  ? "bg-green-100 text-green-800 border-green-200 hover:bg-green-200"
+                  : uyapStatus === "Bağlanıyor"
+                    ? "bg-blue-100 text-blue-800 border-blue-200 cursor-not-allowed"
+                    : "bg-red-100 text-red-800 border-red-200 hover:bg-red-200",
+                isConnecting && "animate-pulse-slow",
+              )}
+              style={{
+                animationDuration: isConnecting ? "3s" : undefined,
+              }}
+            >
+              {isConnecting ? (
+                <div className="flex items-center gap-1">
+                  <div className="animate-spin rounded-full h-2 w-2 border-b-2 border-blue-600"></div>
+                  <span>Uyap: Bağlanıyor...</span>
+                </div>
+              ) : (
+                `Uyap: ${uyapStatus}`
+              )}
+            </Badge>
           </DialogTitle>
+          <DialogDescription className="sr-only">
+            UYAP İcra dosyası detaylarını görüntülemek ve yönetmek için kullanılan modal pencere
+          </DialogDescription>
         </DialogHeader>
 
         {selectedCase && (
           <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col flex-1 min-h-0">
             {/* Fixed Tab Navigation */}
             <div className="flex-shrink-0 px-6 pt-4 pb-2 border-b border-gray-100">
-              <TabsList className="grid w-full grid-cols-5">
-                <TabsTrigger value="details" className="text-sm">
+              <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-1 sm:gap-0 h-auto lg:h-10 py-1 lg:py-1">
+                <TabsTrigger value="details" className="text-xs sm:text-sm px-1 sm:px-3 h-8 lg:h-9">
                   📋 Dosya Detayı
                 </TabsTrigger>
-                <TabsTrigger value="documents" className="text-sm">
+                <TabsTrigger value="documents" className="text-xs sm:text-sm px-1 sm:px-3 h-8 lg:h-9">
                   📤 Evrak Gönder
                 </TabsTrigger>
-                <TabsTrigger value="payment" className="text-sm">
+                <TabsTrigger value="payment" className="text-xs sm:text-sm px-1 sm:px-3 h-8 lg:h-9">
                   💰 Ödeme Ekranı
                 </TabsTrigger>
-                <TabsTrigger value="notes" className="text-sm">
+                <TabsTrigger value="notes" className="text-xs sm:text-sm px-1 sm:px-3 h-8 lg:h-9">
                   📝 Notlar
                 </TabsTrigger>
-                <TabsTrigger value="tasks" className="text-sm">
+                <TabsTrigger value="tasks" className="text-xs sm:text-sm px-1 sm:px-3 h-8 lg:h-9">
                   👥 İş Atama
                 </TabsTrigger>
               </TabsList>
@@ -58,7 +96,12 @@ export default function UyapIcraDetayModal({ isOpen, onClose, selectedCase }: Uy
             <div className="flex-1 overflow-y-auto px-6 py-4 min-h-0">
               {/* Tab Contents */}
               <TabsContent value="details" className="space-y-6 mt-0 data-[state=inactive]:hidden">
-                <DosyaDetayiTab selectedCase={selectedCase} />
+                <DosyaDetayiTab
+                  selectedCase={selectedCase}
+                  uyapStatus={uyapStatus}
+                  onUyapToggle={onUyapToggle}
+                  isConnecting={isConnecting}
+                />
               </TabsContent>
 
               <TabsContent value="documents" className="space-y-6 mt-0 data-[state=inactive]:hidden">
@@ -76,86 +119,6 @@ export default function UyapIcraDetayModal({ isOpen, onClose, selectedCase }: Uy
               <TabsContent value="tasks" className="space-y-6 mt-0 data-[state=inactive]:hidden">
                 <IsAtamaTab />
               </TabsContent>
-
-              {/* İşlem Butonları */}
-              <div className="bg-white p-6 rounded-lg border border-gray-200 mt-8 mb-4">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">🔧 İşlemler</h3>
-                <div className="grid grid-cols-5 sm:grid-cols-10 gap-2">
-                  <Button
-                    variant="outline"
-                    className="border-gray-300 flex items-center justify-center gap-1 text-xs h-8 px-2"
-                  >
-                    🔄 UYAP'tan Yenile
-                  </Button>
-                  <Button
-                    variant="outline"
-                    className="border-gray-300 flex items-center justify-center gap-1 text-xs h-8 px-2"
-                  >
-                    🌐 UYAP'ta Aç
-                  </Button>
-                  <Button
-                    variant="outline"
-                    className="border-gray-300 flex items-center justify-center gap-1 text-xs h-8 px-2"
-                  >
-                    📤 Dışa Aktar
-                  </Button>
-                  <Button
-                    variant="outline"
-                    className="border-gray-300 flex items-center justify-center gap-1 text-xs h-8 px-2"
-                  >
-                    ⏰ Hatırlatıcı
-                  </Button>
-                  <Button
-                    variant="outline"
-                    className="border-gray-300 flex items-center justify-center gap-1 text-xs h-8 px-2"
-                  >
-                    ✅ Tamamlandı
-                  </Button>
-                  <Button
-                    variant="outline"
-                    className="border-gray-300 flex items-center justify-center gap-1 text-xs h-8 px-2"
-                  >
-                    🖨️ Yazdır
-                  </Button>
-                  <Button
-                    variant="outline"
-                    className="border-gray-300 flex items-center justify-center gap-1 text-xs h-8 px-2"
-                  >
-                    📧 E-posta
-                  </Button>
-                  <Button
-                    variant="outline"
-                    className="border-gray-300 flex items-center justify-center gap-1 text-xs h-8 px-2"
-                  >
-                    📊 Rapor
-                  </Button>
-                  <Button
-                    variant="outline"
-                    className="border-gray-300 flex items-center justify-center gap-1 text-xs h-8 px-2"
-                  >
-                    📋 Kopyala
-                  </Button>
-                  <Button
-                    variant="outline"
-                    className="border-gray-300 flex items-center justify-center gap-1 text-xs h-8 px-2"
-                  >
-                    🔗 Paylaş
-                  </Button>
-                </div>
-
-                {/* Son Güncelleme Bilgisi */}
-                <div className="mt-4 pt-4 border-t border-gray-200">
-                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 text-sm text-gray-600">
-                    <span className="flex items-center gap-2">
-                      🕒 Son UYAP Güncellemesi: {new Date().toLocaleDateString("tr-TR")} 14:30
-                    </span>
-                    <span className="flex items-center gap-2">
-                      <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
-                      Canlı Bağlantı Aktif
-                    </span>
-                  </div>
-                </div>
-              </div>
             </div>
           </Tabs>
         )}

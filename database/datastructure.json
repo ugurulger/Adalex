@@ -16,7 +16,7 @@
 
     "alacakliVekili": "Av. Ali Kaya", // extract row*.Taraf Bilgisi.Taraf*.Vekil  (row*.Taraf Bilgisi.Taraf*.Rol= 'Alacaklı' olanlanin ) bilgisi from extracted_data_20250315.json
     "borcMiktari": "75.500,00 TL", // TBD - Simdilik bos birak.
-    "faizOrani": "%24 (Yıllık)", // TBD - Simdilik bos birak.
+    "faizOrani": "%24 (Yıllık)", // TBD - Simdilik bos birak. Manuel giris olacak
     "guncelBorc": TBD!!!, // TBD - Simdilik bos birak.
     "sonOdeme": TBD!!!, // TBD - Simdilik bos birak.
 
@@ -24,9 +24,9 @@
         {
             "ad": "Ayşe Demir",  // extract row*.Taraf Bilgisi.Taraf*.Adi (row*.Taraf Bilgisi.Taraf*.Rol= 'Borçlu' olan) from extracted_data_20250315.json, her bir Borçlu icin Adres, SGK, EGM, Gayrimenkul, Banka, Alacaklı Dosyaları, SGK Haciz, Dış İşleri Bakanlığı, GİB, GSM, İSKİ ve Posta Çeki bilgileri olacak.
             "tcKimlik": "98765432109", // bu bilgi db deki asagida ki "Kimlik Bilgileri" kismindaki "T.C Kimlik No" degerinden alinir.
-            "telefon": "0533 987 65 43", // TBD - Simdilik bos birak.
+            "telefon": "0533 987 65 43", // TBD - Simdilik bos birak.- Manuel giris olacak
             "adres": "DOĞANAY MAH., 9110 SK. No: 16/1 KARABAĞLAR/İZMİR", // Bu bilgi db deki asagida ki "Adres Bilgileri" kismindaki degerlerin ("Mahalle", "Cadde/Sokak No:"Dış Kapı No"/"İç Kapı No" "İl"/"İlçe") seklinde yazdirilir.
-            "vekil": "Av. Zeynep Öz", // extract row*.Taraf Bilgisi.Taraf*.Vekil  (ilgili borclu icin yani row*.Taraf Bilgisi.Taraf*.Adi) bilgisi from extracted_data_20250315.json
+            "vekil": "Av. Zeynep Öz", // extract row*.Taraf Bilgisi.Taraf*.Ve2111kil  (ilgili borclu icin yani row*.Taraf Bilgisi.Taraf*.Adi) bilgisi from extracted_data_20250315.json
             
             // Bu kisimdan sonra ki datalar web scrapping ile cekilecek olan data'larin tutulacagi kisimlar. Burdaki onemli nokta "dosyaNo" ve borclu "ad" ile ilgili jsonlarda arama yapilacak.
             // Aşağıda ki bilgiler ilgili borclu icin mernis_sorgu.json, sgk_sorgu.json, egm_sorgu.json, takbis_sorgu.json, banka_sorgu.json, icra_dosyasi_sorgu.json, sgk_haciz_sorgu.json, dis_isleri_sorgu.json, gib_sorgu.json, gsm_sorgu.json, iski_sorgu.json ve posta_ceki_sorgu.json dosyalarindan cekilecek olan data'lar.
