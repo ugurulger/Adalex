@@ -436,7 +436,7 @@ export default function DavaDosyalarimPage() {
                 <TableBody>
                   {filteredData.map((item, index) => (
                     <TableRow
-                                                      key={item.id}
+                      key={item.id}
                       className={`cursor-pointer transition-colors hover:bg-blue-50 ${
                         index % 2 === 0 ? "bg-white" : "bg-gray-50/50"
                       }`}

@@ -209,7 +209,7 @@ export default function EvrakGonderTab() {
               </div>
             </div>
 
-            {/* Right Column - Açıklama (full height to match left column) */}
+            {/* Right Column - Aç��klama (full height to match left column) */}
             <div className="flex flex-col">
               <Label className="text-xs font-medium text-gray-600">Açıklama</Label>
               <Textarea

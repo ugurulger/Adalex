@@ -7,7 +7,10 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Search } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { gibSorguSonucuData } from "@/app/icra-dosyalarim/components/uyap-icra-detay-modal/utils/sample-data"
+import { gibSorgulamaModalData } from "@/app/icra-dosyalarim/components/uyap-icra-detay-modal/utils/sample-data"
+
+// Convenience exports for backward compatibility
+const gibSorguSonucuData = gibSorgulamaModalData.GİB
 
 interface GibSorgulamaModalProps {
   isOpen: boolean

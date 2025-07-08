@@ -13,7 +13,7 @@ export const icraDosyalariSampleData = [
     durum: "Açık",
     takipTarihi: "15.01.2024",
     icraMudurlugu: "İstanbul 1. İcra Müdürlüğü",
-    
+
     // it will be on detail page (dosya-detayi-tab.tsx)
     takipSekli: "ÖRNEK: 7 İlamsız Takiplerde Ödeme Emri - Eski No: 49",
     alacakliVekili: "Av. Fatma Demir",
@@ -318,7 +318,7 @@ export const adresSorgulamaModalData = {
       },
     },
   },
-};
+}
 
 export const aracSorgulamaModalData = {
   borclu_id: undefined, // tbd
@@ -455,7 +455,7 @@ export const aracSorgulamaModalData = {
       },
     ],
   },
-};
+}
 
 export const gayrimenkulSorgulamaModalData = {
   borclu_id: undefined, // tbd
@@ -550,7 +550,7 @@ export const gayrimenkulSorgulamaModalData = {
       },
     ],
   },
-};
+}
 
 export const bankaSorgulamaModalData = {
   borclu_id: undefined, // tbd
@@ -569,7 +569,7 @@ export const bankaSorgulamaModalData = {
       { no: "9", kurum: "DENİZBANK A.Ş." },
     ],
   },
-};
+}
 
 export const alacakliDosyalariModalData = {
   borclu_id: undefined, // tbd
@@ -581,7 +581,8 @@ export const alacakliDosyalariModalData = {
         No: "1",
         "Birim Adi/Dosya": "İzmir 14. İcra Dairesi 2024/6152 İcra Dosyası",
         "Takip Türü": "İLAMLI",
-        "Takip Yolu/Şekli": "İlamların İcrası, Para ve Teminat Verilmesi Hakkındaki İlamların İcrası ( ÖRNEK: Eski No: 53 - Yeni No: 4-5 ) Para Borcuna Veya Teminat Verilmesine Veya Bir İşin Yapılması Veya Yapılmamasına , İrtifak Hakkının Kaldırılmasına Veya Yükletilmesine Dair İcra Emri",
+        "Takip Yolu/Şekli":
+          "İlamların İcrası, Para ve Teminat Verilmesi Hakkındaki İlamların İcrası ( ÖRNEK: Eski No: 53 - Yeni No: 4-5 ) Para Borcuna Veya Teminat Verilmesine Veya Bir İşin Yapılması Veya Yapılmamasına , İrtifak Hakkının Kaldırılmasına Veya Yükletilmesine Dair İcra Emri",
         Durumu: "Açık",
         Açılış: "02.07.2024\n21:21",
         Kapanış: "",
@@ -590,14 +591,15 @@ export const alacakliDosyalariModalData = {
         No: "2",
         "Birim Adi/Dosya": "İzmir 22. İcra Dairesi 2019/70 İcra Dosyası",
         "Takip Türü": "İLAMLI",
-        "Takip Yolu/Şekli": "İlamların İcrası, Para ve Teminat Verilmesi Hakkındaki İlamların İcrası ( ÖRNEK: Eski No: 53 - Yeni No: 4-5 ) Para Borcuna Veya Teminat Verilmesine Veya Bir İşin Yapılması Veya Yapılmamasına , İrtifak Hakkının Kaldırılmasına Veya Yükletilmesine Dair İcra Emri",
+        "Takip Yolu/Şekli":
+          "İlamların İcrası, Para ve Teminat Verilmesi Hakkındaki İlamların İcrası ( ÖRNEK: Eski No: 53 - Yeni No: 4-5 ) Para Borcuna Veya Teminat Verilmesine Veya Bir İşin Yapılması Veya Yapılmamasına , İrtifak Hakkının Kaldırılmasına Veya Yükletilmesine Dair İcra Emri",
         Durumu: "Açık",
         Açılış: "04.01.2019\n15:16",
         Kapanış: "",
       },
     ],
   },
-};
+}
 
 export const telefonSorgulamaModalData = {
   borclu_id: undefined, // tbd
@@ -619,7 +621,7 @@ export const telefonSorgulamaModalData = {
       { Operatör: "Vodafone", adres: "VATAN MAH. POLAT CADDESİ 9061. SOK. KARABAĞLAR, İZMİR" },
     ],
   },
-};
+}
 
 export const sgkHacizSorgulamaModalData = {
   borclu_id: undefined, // tbd
@@ -631,7 +633,7 @@ export const sgkHacizSorgulamaModalData = {
       { no: "2", kurum: "Diğer - Gerçek", islem: "" },
     ],
   },
-};
+}
 
 export const gibSorgulamaModalData = {
   borclu_id: undefined, // tbd
@@ -640,7 +642,7 @@ export const gibSorgulamaModalData = {
     sonuc: "Kişiye ait GİB kayıtlarına göre adres kaydı var.",
     "GİB Adres": "ADRES: GAZİLER MAH. 604. SK. KAPI NO:6 DAİRE NO: 1 - SALİHLİ",
   },
-};
+}
 
 export const iskiSorgulamaModalData = {
   borclu_id: undefined, // tbd
@@ -649,7 +651,7 @@ export const iskiSorgulamaModalData = {
     sonuc: "Bu işlem 120 dakikada 1 defa yapılabilmektedir.",
     İSKİ: "Adres Adres Adres - TBD",
   },
-};
+}
 
 export const postaCekiSorgulamaModalData = {
   borclu_id: undefined, // tbd
@@ -658,7 +660,7 @@ export const postaCekiSorgulamaModalData = {
     sonuc: "Kişiye ait posta çeki kaydı var.",
     "Posta Çeki": "Adres Adres Adres - TBD",
   },
-};
+}
 
 export const disIsleriSorgulamaModalData = {
   borclu_id: undefined, // tbd
@@ -667,7 +669,7 @@ export const disIsleriSorgulamaModalData = {
     sonuc: "Kişiye ait dış işleri kaydı var.",
     "Dış İşleri": "Adres Adres Adres - TBD",
   },
-};
+}
 
 export const sgkSorgulamaModalData = {
   borclu_id: undefined, // tbd
@@ -818,4 +820,12 @@ export const sgkSorgulamaModalData = {
       ],
     },
   },
-};
+}
+
+
+// Add this at the end of the file to debug the structure
+console.log("SGK Data Structure Debug:", {
+  "SSK Çalışanı": sgkSorgulamaModalData.SGK["SSK Çalışanı"],
+  "Bağkur Çalışanı": sgkSorgulamaModalData.SGK["Bağkur Çalışanı"],
+  "SSK İş Yeri Bilgileri": sgkSorgulamaModalData.SGK["SSK İş Yeri Bilgileri"],
+})

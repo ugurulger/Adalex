@@ -39,7 +39,7 @@ export default function TalepAciklamasiTab({ data, onChange, errors, takipTuru }
   const getDefaultTalepMetni = (takipTuru: string) => {
     switch (takipTuru) {
       case "1":
-        return `Sayın İcra Müdürü,
+        return `Sayın İcra Müd������rü,
 
 Borçlu/borçlulardan alacağımızın tahsili için İcra ve İflas Kanunu'nun 68. maddesi gereğince ilamsız icra takibi başlatılmasını talep ederiz.
 

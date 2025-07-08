@@ -8,7 +8,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Search, FileText } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { aracSorguSonucuData } from "@/app/icra-dosyalarim/components/uyap-icra-detay-modal/utils/sample-data"
+import { aracSorgulamaModalData } from "@/app/icra-dosyalarim/components/uyap-icra-detay-modal/utils/sample-data"
+
+// Convenience exports for backward compatibility
+const aracSorguSonucuData = aracSorgulamaModalData.EGM
 
 interface AracSorgulamaModalProps {
   isOpen: boolean

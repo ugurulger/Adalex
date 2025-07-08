@@ -8,10 +8,11 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Search } from "lucide-react"
 import { cn } from "@/lib/utils"
-import {
-  kisiselBilgilerData,
-  adresBilgileriData,
-} from "@/app/icra-dosyalarim/components/uyap-icra-detay-modal/utils/sample-data"
+import { adresSorgulamaModalData } from "@/app/icra-dosyalarim/components/uyap-icra-detay-modal/utils/sample-data"
+
+// Convenience exports for backward compatibility
+const kisiselBilgilerData = adresSorgulamaModalData.MERNIS.sonuc["Kimlik Bilgileri"]
+const adresBilgileriData = adresSorgulamaModalData.MERNIS.sonuc["Adres Bilgileri"]
 
 interface AdresSorgulamaModalProps {
   isOpen: boolean

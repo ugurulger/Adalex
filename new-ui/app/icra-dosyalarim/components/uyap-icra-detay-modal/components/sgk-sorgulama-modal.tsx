@@ -8,11 +8,13 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Search } from "lucide-react"
 import { cn } from "@/lib/utils"
-import {
-  sskCalisaniData,
-  bagkurCalisaniData,
-  sskIsYeriBilgisiData,
-} from "@/app/icra-dosyalarim/components/uyap-icra-detay-modal/utils/sample-data"
+import { sgkSorgulamaModalData } from "@/app/icra-dosyalarim/components/uyap-icra-detay-modal/utils/sample-data"
+
+// Convenience exports for backward compatibility - using the correct key name
+const sskCalisaniData = sgkSorgulamaModalData?.SGK?.["SSK Çalışanı"]?.sonuc || {}
+const bagkurCalisaniData = sgkSorgulamaModalData?.SGK?.["Bağkur Çalışanı"]?.sonuc || {}
+// The correct key is "SSK İş Yeri Bilgisi" (singular), not "SSK İş Yeri Bilgileri" (plural)
+const sskIsYeriBilgisiData = sgkSorgulamaModalData?.SGK?.["SSK İş Yeri Bilgisi"]?.sonuc || []
 
 interface SgkSorgulamaModalProps {
   isOpen: boolean
@@ -131,28 +133,34 @@ export default function SgkSorgulamaModal({
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow className="bg-gray-50">
-                      <TableHead className="font-semibold text-gray-700 text-xs w-2/5">Bilgi Türü</TableHead>
-                      <TableHead className="font-semibold text-gray-700 text-xs w-3/5">Değer</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {Object.entries(sskCalisani).map(([key, value]) => (
-                      <TableRow key={key} className="hover:bg-gray-50">
-                        <TableCell className="font-medium text-xs text-gray-700 border-r border-gray-200 py-1">
-                          {key}
-                        </TableCell>
-                        <TableCell className="text-xs text-gray-900 py-1">
-                          {value || <span className="text-gray-400 italic">Bilgi Yok</span>}
-                        </TableCell>
+              {Object.keys(sskCalisani).length > 0 ? (
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="bg-gray-50">
+                        <TableHead className="font-semibold text-gray-700 text-xs w-2/5">Bilgi Türü</TableHead>
+                        <TableHead className="font-semibold text-gray-700 text-xs w-3/5">Değer</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
+                    </TableHeader>
+                    <TableBody>
+                      {Object.entries(sskCalisani).map(([key, value]) => (
+                        <TableRow key={key} className="hover:bg-gray-50">
+                          <TableCell className="font-medium text-xs text-gray-700 border-r border-gray-200 py-1">
+                            {key}
+                          </TableCell>
+                          <TableCell className="text-xs text-gray-900 py-1">
+                            {value || <span className="text-gray-400 italic">Bilgi Yok</span>}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              ) : (
+                <div className="text-center text-gray-500 py-4">
+                  <span className="text-sm italic">SSK çalışanı bilgisi bulunamadı</span>
+                </div>
+              )}
             </CardContent>
           </Card>
 
@@ -164,28 +172,34 @@ export default function SgkSorgulamaModal({
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow className="bg-gray-50">
-                      <TableHead className="font-semibold text-gray-700 text-xs w-2/5">Bilgi Türü</TableHead>
-                      <TableHead className="font-semibold text-gray-700 text-xs w-3/5">Değer</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {Object.entries(bagkurCalisani).map(([key, value]) => (
-                      <TableRow key={key} className="hover:bg-gray-50">
-                        <TableCell className="font-medium text-xs text-gray-700 border-r border-gray-200 py-1">
-                          {key}
-                        </TableCell>
-                        <TableCell className="text-xs text-gray-900 py-1">
-                          {value || <span className="text-gray-400 italic">Bilgi Yok</span>}
-                        </TableCell>
+              {Object.keys(bagkurCalisani).length > 0 ? (
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="bg-gray-50">
+                        <TableHead className="font-semibold text-gray-700 text-xs w-2/5">Bilgi Türü</TableHead>
+                        <TableHead className="font-semibold text-gray-700 text-xs w-3/5">Değer</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
+                    </TableHeader>
+                    <TableBody>
+                      {Object.entries(bagkurCalisani).map(([key, value]) => (
+                        <TableRow key={key} className="hover:bg-gray-50">
+                          <TableCell className="font-medium text-xs text-gray-700 border-r border-gray-200 py-1">
+                            {key}
+                          </TableCell>
+                          <TableCell className="text-xs text-gray-900 py-1">
+                            {value || <span className="text-gray-400 italic">Bilgi Yok</span>}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              ) : (
+                <div className="text-center text-gray-500 py-4">
+                  <span className="text-sm italic">Bağkur çalışanı bilgisi bulunamadı</span>
+                </div>
+              )}
             </CardContent>
           </Card>
 
@@ -197,33 +211,50 @@ export default function SgkSorgulamaModal({
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
-              {sskIsYeriBilgisi.map((item, index) => (
-                <div key={index} className="border border-gray-200 rounded-lg p-4">
-                  <h4 className="text-sm font-semibold text-gray-900 mb-3">{item.title}</h4>
-                  <div className="overflow-x-auto">
-                    <Table>
-                      <TableHeader>
-                        <TableRow className="bg-gray-50">
-                          <TableHead className="font-semibold text-gray-700 text-xs w-2/5">Bilgi Türü</TableHead>
-                          <TableHead className="font-semibold text-gray-700 text-xs w-3/5">Değer</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {Object.entries(item.data).map(([key, value]) => (
-                          <TableRow key={key} className="hover:bg-gray-50">
-                            <TableCell className="font-medium text-xs text-gray-700 border-r border-gray-200 py-1">
-                              {key}
-                            </TableCell>
-                            <TableCell className="text-xs text-gray-900 py-1">
-                              {value || <span className="text-gray-400 italic">Bilgi Yok</span>}
-                            </TableCell>
+              {Array.isArray(sskIsYeriBilgisi) && sskIsYeriBilgisi.length > 0 ? (
+                sskIsYeriBilgisi.map((item, index) => (
+                  <div key={index} className="border border-gray-200 rounded-lg p-4">
+                    <h4 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                      {item?.type === "workplace" ? "🏢" : "👤"}
+                      {item?.title || `Kayıt ${index + 1}`}
+                    </h4>
+                    <div className="overflow-x-auto">
+                      <Table>
+                        <TableHeader>
+                          <TableRow className="bg-gray-50">
+                            <TableHead className="font-semibold text-gray-700 text-xs w-2/5">Bilgi Türü</TableHead>
+                            <TableHead className="font-semibold text-gray-700 text-xs w-3/5">Değer</TableHead>
                           </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
+                        </TableHeader>
+                        <TableBody>
+                          {item?.data && typeof item.data === "object" ? (
+                            Object.entries(item.data).map(([key, value]) => (
+                              <TableRow key={key} className="hover:bg-gray-50">
+                                <TableCell className="font-medium text-xs text-gray-700 border-r border-gray-200 py-1">
+                                  {key}
+                                </TableCell>
+                                <TableCell className="text-xs text-gray-900 py-1">
+                                  {value || <span className="text-gray-400 italic">Bilgi Yok</span>}
+                                </TableCell>
+                              </TableRow>
+                            ))
+                          ) : (
+                            <TableRow>
+                              <TableCell colSpan={2} className="text-center text-gray-500 py-4">
+                                <span className="text-sm italic">Bu kayıt için veri bulunamadı</span>
+                              </TableCell>
+                            </TableRow>
+                          )}
+                        </TableBody>
+                      </Table>
+                    </div>
                   </div>
+                ))
+              ) : (
+                <div className="text-center text-gray-500 py-4">
+                  <span className="text-sm italic">İş yeri bilgisi bulunamadı</span>
                 </div>
-              ))}
+              )}
             </CardContent>
           </Card>
         </div>

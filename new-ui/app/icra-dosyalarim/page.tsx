@@ -6,34 +6,57 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
-import { Search, ArrowUpDown, ArrowLeft, Plus, Users, Bell, Calendar, FileText } from "lucide-react"
+import { Search, ArrowUpDown, ArrowLeft, Plus, Users, Bell, Calendar, FileText, Loader2 } from "lucide-react"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
 import UyapIcraDetayModal from "./components/uyap-icra-detay-modal"
 import YeniIcraFoyuModal from "./components/yeni-icra-foyu"
 import type { FormData } from "./components/yeni-icra-foyu/types/form-types"
-import { icraDosyalariSampleData } from "./components/uyap-icra-detay-modal/utils/sample-data"
+import type { IcraDosyasiListItem } from "../../types/api"
 
 export default function IcraDosyalarimPage() {
   const [searchTerm, setSearchTerm] = useState("")
   const [sortField, setSortField] = useState<string>("")
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc")
-  const [filteredData, setFilteredData] = useState(icraDosyalariSampleData)
+  const [allData, setAllData] = useState<IcraDosyasiListItem[]>([])
+  const [filteredData, setFilteredData] = useState<IcraDosyasiListItem[]>([])
   const [selectedCase, setSelectedCase] = useState<any>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [activeView, setActiveView] = useState<"empty" | "list" | "new">("empty")
   const [isNewFileModalOpen, setIsNewFileModalOpen] = useState(false)
   const [uyapStatus, setUyapStatus] = useState<"Bağlı Değil" | "Bağlanıyor" | "Bağlı">("Bağlı Değil")
   const [isConnecting, setIsConnecting] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  // Fetch data from API
+  const fetchData = async () => {
+    setIsLoading(true)
+    setError(null)
+    try {
+      const response = await fetch("/api/icra-dosyalarim")
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+      const data: IcraDosyasiListItem[] = await response.json()
+      setAllData(data)
+      setFilteredData(data)
+    } catch (error) {
+      console.error("Error fetching data:", error)
+      setError("Veri yüklenirken hata oluştu. Lütfen tekrar deneyin.")
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   const handleSearch = (value: string) => {
     setSearchTerm(value)
     if (!value.trim()) {
-      setFilteredData(icraDosyalariSampleData)
+      setFilteredData(allData)
       return
     }
 
-    const filtered = icraDosyalariSampleData.filter((item) => {
+    const filtered = allData.filter((item) => {
       const searchLower = value.toLowerCase()
       return (
         item.klasor.toLowerCase().includes(searchLower) ||
@@ -42,8 +65,7 @@ export default function IcraDosyalarimPage() {
         item.alacakliAdi.toLowerCase().includes(searchLower) ||
         item.foyTuru.toLowerCase().includes(searchLower) ||
         item.icraMudurlugu.toLowerCase().includes(searchLower) ||
-        item.durum.toLowerCase().includes(searchLower) ||
-        item.tcKimlik.includes(value)
+        item.durum.toLowerCase().includes(searchLower)
       )
     })
     setFilteredData(filtered)
@@ -102,9 +124,20 @@ export default function IcraDosyalarimPage() {
     }
   }
 
-  const handleRowClick = (caseData: any) => {
-    setSelectedCase(caseData)
-    setIsModalOpen(true)
+  const handleRowClick = async (caseData: IcraDosyasiListItem) => {
+    try {
+      // Fetch detailed data for the selected case
+      const response = await fetch(`/api/icra-dosyalarim/${caseData.file_id}`)
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+      const detailData = await response.json()
+      setSelectedCase(detailData)
+      setIsModalOpen(true)
+    } catch (error) {
+      console.error("Error fetching case details:", error)
+      setError("Dosya detayları yüklenirken hata oluştu.")
+    }
   }
 
   const handleSaveNewFile = async (formData: FormData) => {
@@ -113,7 +146,8 @@ export default function IcraDosyalarimPage() {
     // For now, we'll just simulate a successful save
     await new Promise((resolve) => setTimeout(resolve, 1000))
 
-    // Add the new file to the list and switch to list view
+    // Refresh the data after adding new file
+    await fetchData()
     setActiveView("list")
   }
 
@@ -135,12 +169,17 @@ export default function IcraDosyalarimPage() {
     }
   }
 
+  const handleFetchFiles = () => {
+    setActiveView("list")
+    fetchData()
+  }
+
   // Left sidebar buttons
   const leftSidebarButtons = [
     {
       label: "Föyleri Getir",
       icon: FileText,
-      action: () => setActiveView("list"),
+      action: handleFetchFiles,
       active: activeView === "list",
     },
     {
@@ -196,14 +235,15 @@ export default function IcraDosyalarimPage() {
             {/* Right side - Uyap Status Badge */}
             <div className="flex items-center">
               <Badge
-                onClick={isConnecting ? undefined : handleUyapToggle}
+                onClick={handleUyapToggle}
+                disabled={isConnecting}
                 className={cn(
-                  "text-[10px] sm:text-xs px-2 py-1 transition-all duration-300 select-none",
+                  "text-[10px] sm:text-xs px-2 py-1 cursor-pointer transition-all duration-300 hover:scale-105 select-none",
                   uyapStatus === "Bağlı"
-                    ? "bg-green-100 text-green-800 border-green-200 hover:bg-green-200 cursor-pointer hover:scale-105"
+                    ? "bg-green-100 text-green-800 border-green-200 hover:bg-green-200"
                     : uyapStatus === "Bağlanıyor"
                       ? "bg-blue-100 text-blue-800 border-blue-200 cursor-not-allowed"
-                      : "bg-red-100 text-red-800 border-red-200 hover:bg-red-200 cursor-pointer hover:scale-105",
+                      : "bg-red-100 text-red-800 border-red-200 hover:bg-red-200",
                   isConnecting && "animate-pulse-slow",
                 )}
                 style={{
@@ -249,8 +289,13 @@ export default function IcraDosyalarimPage() {
                                 button.active && "bg-orange-600 hover:bg-orange-700",
                               )}
                               onClick={button.action}
+                              disabled={isLoading}
                             >
-                              <Icon className="w-2.5 h-2.5 sm:w-3 sm:h-3 mr-0 flex-shrink-0" />
+                              {isLoading && button.active ? (
+                                <Loader2 className="w-2.5 h-2.5 sm:w-3 sm:h-3 mr-0 flex-shrink-0 animate-spin" />
+                              ) : (
+                                <Icon className="w-2.5 h-2.5 sm:w-3 sm:h-3 mr-0 flex-shrink-0" />
+                              )}
                               <span className="truncate text-[10px] sm:text-sm">{button.label}</span>
                             </Button>
                           )
@@ -268,6 +313,24 @@ export default function IcraDosyalarimPage() {
                     <CardTitle className="text-base sm:text-lg">İcra Dosyalarım</CardTitle>
                   </CardHeader>
                   <CardContent>
+                    {/* Error Display */}
+                    {error && (
+                      <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                        <p className="text-red-800 text-sm">{error}</p>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setError(null)
+                            fetchData()
+                          }}
+                          className="mt-2"
+                        >
+                          Tekrar Dene
+                        </Button>
+                      </div>
+                    )}
+
                     {activeView === "empty" && (
                       <div className="text-center py-8 sm:py-12 text-gray-500">
                         <FileText className="w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-3 sm:mb-4 text-gray-300" />
@@ -289,163 +352,179 @@ export default function IcraDosyalarimPage() {
                             value={searchTerm}
                             onChange={(e) => handleSearch(e.target.value)}
                             className="pl-8 sm:pl-10 text-xs sm:text-sm h-8 sm:h-10"
+                            disabled={isLoading}
                           />
                         </div>
 
-                        {/* Mobile Card View */}
-                        <div className="block sm:hidden space-y-2">
-                          {filteredData.map((item) => (
-                            <Card
-                              key={item.file_id}
-                              className="cursor-pointer transition-colors hover:bg-orange-50 border border-gray-200"
-                              onClick={() => handleRowClick(item)}
-                            >
-                              <CardContent className="p-3">
-                                <div className="space-y-2">
-                                  <div className="flex justify-between items-start">
-                                    <div>
-                                      <p className="font-medium text-sm">{item.klasor}</p>
-                                      <p className="text-xs text-gray-600">No: {item.dosyaNo}</p>
+                        {isLoading && (
+                          <div className="text-center py-8">
+                            <Loader2 className="w-8 h-8 mx-auto mb-4 animate-spin text-orange-600" />
+                            <p className="text-sm text-gray-600">Veriler yükleniyor...</p>
+                          </div>
+                        )}
+
+                        {!isLoading && (
+                          <>
+                            {/* Mobile Card View */}
+                            <div className="block sm:hidden space-y-2">
+                              {filteredData.map((item) => (
+                                <Card
+                                  key={item.file_id}
+                                  className="cursor-pointer transition-colors hover:bg-orange-50 border border-gray-200"
+                                  onClick={() => handleRowClick(item)}
+                                >
+                                  <CardContent className="p-3">
+                                    <div className="space-y-2">
+                                      <div className="flex justify-between items-start">
+                                        <div>
+                                          <p className="font-medium text-sm">{item.klasor}</p>
+                                          <p className="text-xs text-gray-600">No: {item.dosyaNo}</p>
+                                        </div>
+                                        {getStatusBadge(item.durum)}
+                                      </div>
+                                      <div>
+                                        <p className="font-medium text-xs">Borçlu: {item.borcluAdi}</p>
+                                        <p className="text-xs text-gray-600">Alacaklı: {item.alacakliAdi}</p>
+                                      </div>
+                                      <div className="flex justify-between items-center text-xs text-gray-500">
+                                        <span>{item.foyTuru}</span>
+                                        <span>{item.takipTarihi}</span>
+                                      </div>
                                     </div>
-                                    {getStatusBadge(item.durum)}
-                                  </div>
-                                  <div>
-                                    <p className="font-medium text-xs">Borçlu: {item.borcluAdi}</p>
-                                    <p className="text-xs text-gray-600">Alacaklı: {item.alacakliAdi}</p>
-                                  </div>
-                                  <div className="flex justify-between items-center text-xs text-gray-500">
-                                    <span>{item.foyTuru}</span>
-                                    <span>{item.takipTarihi}</span>
-                                  </div>
-                                </div>
-                              </CardContent>
-                            </Card>
-                          ))}
-                        </div>
+                                  </CardContent>
+                                </Card>
+                              ))}
+                            </div>
 
-                        {/* Desktop Table View */}
-                        <div className="hidden sm:block">
-                          <div className="overflow-x-auto">
-                            <Table className="text-xs w-full">
-                              <TableHeader>
-                                <TableRow className="bg-gray-50 hover:bg-gray-50">
-                                  <TableHead className="font-semibold text-gray-700 py-1 px-1 w-20">
-                                    <Button
-                                      variant="ghost"
-                                      onClick={() => handleSort("klasor")}
-                                      className="h-auto p-0 font-semibold text-gray-700 hover:text-gray-900 text-xs"
-                                    >
-                                      Klasör
-                                      <ArrowUpDown className="w-2.5 h-2.5 ml-1" />
-                                    </Button>
-                                  </TableHead>
-                                  <TableHead className="font-semibold text-gray-700 py-1 px-1 w-12">
-                                    <Button
-                                      variant="ghost"
-                                      onClick={() => handleSort("dosyaNo")}
-                                      className="h-auto p-0 font-semibold text-gray-700 hover:text-gray-900 text-xs"
-                                    >
-                                      No
-                                      <ArrowUpDown className="w-2.5 h-2.5 ml-1" />
-                                    </Button>
-                                  </TableHead>
-                                  <TableHead className="font-semibold text-gray-700 py-1 px-1">
-                                    <Button
-                                      variant="ghost"
-                                      onClick={() => handleSort("borcluAdi")}
-                                      className="h-auto p-0 font-semibold text-gray-700 hover:text-gray-900 text-xs"
-                                    >
-                                      Borçlu Adı
-                                      <ArrowUpDown className="w-2.5 h-2.5 ml-1" />
-                                    </Button>
-                                  </TableHead>
-                                  <TableHead className="font-semibold text-gray-700 py-1 px-1">
-                                    <Button
-                                      variant="ghost"
-                                      onClick={() => handleSort("alacakliAdi")}
-                                      className="h-auto p-0 font-semibold text-gray-700 hover:text-gray-900 text-xs"
-                                    >
-                                      Alacaklı Adı
-                                      <ArrowUpDown className="w-2.5 h-2.5 ml-1" />
-                                    </Button>
-                                  </TableHead>
-                                  <TableHead className="font-semibold text-gray-700 py-1 px-1 w-24">
-                                    <Button
-                                      variant="ghost"
-                                      onClick={() => handleSort("foyTuru")}
-                                      className="h-auto p-0 font-semibold text-gray-700 hover:text-gray-900 text-xs"
-                                    >
-                                      Föy Türü
-                                      <ArrowUpDown className="w-2.5 h-2.5 ml-1" />
-                                    </Button>
-                                  </TableHead>
-                                  <TableHead className="font-semibold text-gray-700 py-1 px-1 hidden lg:table-cell">
-                                    <Button
-                                      variant="ghost"
-                                      onClick={() => handleSort("icraMudurlugu")}
-                                      className="h-auto p-0 font-semibold text-gray-700 hover:text-gray-900 text-xs"
-                                    >
-                                      İcra Müdürlüğü
-                                      <ArrowUpDown className="w-2.5 h-2.5 ml-1" />
-                                    </Button>
-                                  </TableHead>
-                                  <TableHead className="font-semibold text-gray-700 py-1 px-1 w-16">Durum</TableHead>
-                                  <TableHead className="font-semibold text-gray-700 py-1 px-1 w-20">
-                                    <Button
-                                      variant="ghost"
-                                      onClick={() => handleSort("takipTarihi")}
-                                      className="h-auto p-0 font-semibold text-gray-700 hover:text-gray-900 text-xs"
-                                    >
-                                      Takip Tarihi
-                                      <ArrowUpDown className="w-2.5 h-2.5 ml-1" />
-                                    </Button>
-                                  </TableHead>
-                                </TableRow>
-                              </TableHeader>
-                              <TableBody>
-                                {filteredData.map((item) => (
-                                  <TableRow
-                                    key={item.file_id}
-                                    className="cursor-pointer hover:bg-orange-50 h-8"
-                                    onClick={() => handleRowClick(item)}
-                                  >
-                                    <TableCell className="py-1 px-1 text-[10px] font-medium">{item.klasor}</TableCell>
-                                    <TableCell className="py-1 px-1 text-[10px]">{item.dosyaNo}</TableCell>
-                                    <TableCell className="py-1 px-1 text-[10px]">
-                                      <div className="max-w-[120px] truncate" title={item.borcluAdi}>
-                                        {item.borcluAdi}
-                                      </div>
-                                    </TableCell>
-                                    <TableCell className="py-1 px-1 text-[10px]">
-                                      <div className="max-w-[140px] truncate" title={item.alacakliAdi}>
-                                        {item.alacakliAdi}
-                                      </div>
-                                    </TableCell>
-                                    <TableCell className="py-1 px-1 text-[9px]">
-                                      <div className="max-w-[80px] truncate" title={item.foyTuru}>
-                                        {item.foyTuru}
-                                      </div>
-                                    </TableCell>
-                                    <TableCell className="py-1 px-1 text-[9px] hidden lg:table-cell">
-                                      <div className="max-w-[120px] truncate" title={item.icraMudurlugu}>
-                                        {item.icraMudurlugu}
-                                      </div>
-                                    </TableCell>
-                                    <TableCell className="py-1 px-1">{getStatusBadge(item.durum)}</TableCell>
-                                    <TableCell className="py-1 px-1 text-[10px]">{item.takipTarihi}</TableCell>
-                                  </TableRow>
-                                ))}
-                              </TableBody>
-                            </Table>
-                          </div>
-                        </div>
+                            {/* Desktop Table View */}
+                            <div className="hidden sm:block">
+                              <div className="overflow-x-auto">
+                                <Table className="text-xs w-full">
+                                  <TableHeader>
+                                    <TableRow className="bg-gray-50 hover:bg-gray-50">
+                                      <TableHead className="font-semibold text-gray-700 py-1 px-1 w-20">
+                                        <Button
+                                          variant="ghost"
+                                          onClick={() => handleSort("klasor")}
+                                          className="h-auto p-0 font-semibold text-gray-700 hover:text-gray-900 text-xs"
+                                        >
+                                          Klasör
+                                          <ArrowUpDown className="w-2.5 h-2.5 ml-1" />
+                                        </Button>
+                                      </TableHead>
+                                      <TableHead className="font-semibold text-gray-700 py-1 px-1 w-12">
+                                        <Button
+                                          variant="ghost"
+                                          onClick={() => handleSort("dosyaNo")}
+                                          className="h-auto p-0 font-semibold text-gray-700 hover:text-gray-900 text-xs"
+                                        >
+                                          No
+                                          <ArrowUpDown className="w-2.5 h-2.5 ml-1" />
+                                        </Button>
+                                      </TableHead>
+                                      <TableHead className="font-semibold text-gray-700 py-1 px-1">
+                                        <Button
+                                          variant="ghost"
+                                          onClick={() => handleSort("borcluAdi")}
+                                          className="h-auto p-0 font-semibold text-gray-700 hover:text-gray-900 text-xs"
+                                        >
+                                          Borçlu Adı
+                                          <ArrowUpDown className="w-2.5 h-2.5 ml-1" />
+                                        </Button>
+                                      </TableHead>
+                                      <TableHead className="font-semibold text-gray-700 py-1 px-1">
+                                        <Button
+                                          variant="ghost"
+                                          onClick={() => handleSort("alacakliAdi")}
+                                          className="h-auto p-0 font-semibold text-gray-700 hover:text-gray-900 text-xs"
+                                        >
+                                          Alacaklı Adı
+                                          <ArrowUpDown className="w-2.5 h-2.5 ml-1" />
+                                        </Button>
+                                      </TableHead>
+                                      <TableHead className="font-semibold text-gray-700 py-1 px-1 w-24">
+                                        <Button
+                                          variant="ghost"
+                                          onClick={() => handleSort("foyTuru")}
+                                          className="h-auto p-0 font-semibold text-gray-700 hover:text-gray-900 text-xs"
+                                        >
+                                          Föy Türü
+                                          <ArrowUpDown className="w-2.5 h-2.5 ml-1" />
+                                        </Button>
+                                      </TableHead>
+                                      <TableHead className="font-semibold text-gray-700 py-1 px-1 hidden lg:table-cell">
+                                        <Button
+                                          variant="ghost"
+                                          onClick={() => handleSort("icraMudurlugu")}
+                                          className="h-auto p-0 font-semibold text-gray-700 hover:text-gray-900 text-xs"
+                                        >
+                                          İcra Müdürlüğü
+                                          <ArrowUpDown className="w-2.5 h-2.5 ml-1" />
+                                        </Button>
+                                      </TableHead>
+                                      <TableHead className="font-semibold text-gray-700 py-1 px-1 w-16">
+                                        Durum
+                                      </TableHead>
+                                      <TableHead className="font-semibold text-gray-700 py-1 px-1 w-20">
+                                        <Button
+                                          variant="ghost"
+                                          onClick={() => handleSort("takipTarihi")}
+                                          className="h-auto p-0 font-semibold text-gray-700 hover:text-gray-900 text-xs"
+                                        >
+                                          Takip Tarihi
+                                          <ArrowUpDown className="w-2.5 h-2.5 ml-1" />
+                                        </Button>
+                                      </TableHead>
+                                    </TableRow>
+                                  </TableHeader>
+                                  <TableBody>
+                                    {filteredData.map((item) => (
+                                      <TableRow
+                                        key={item.file_id}
+                                        className="cursor-pointer hover:bg-orange-50 h-8"
+                                        onClick={() => handleRowClick(item)}
+                                      >
+                                        <TableCell className="py-1 px-1 text-[10px] font-medium">
+                                          {item.klasor}
+                                        </TableCell>
+                                        <TableCell className="py-1 px-1 text-[10px]">{item.dosyaNo}</TableCell>
+                                        <TableCell className="py-1 px-1 text-[10px]">
+                                          <div className="max-w-[120px] truncate" title={item.borcluAdi}>
+                                            {item.borcluAdi}
+                                          </div>
+                                        </TableCell>
+                                        <TableCell className="py-1 px-1 text-[10px]">
+                                          <div className="max-w-[140px] truncate" title={item.alacakliAdi}>
+                                            {item.alacakliAdi}
+                                          </div>
+                                        </TableCell>
+                                        <TableCell className="py-1 px-1 text-[9px]">
+                                          <div className="max-w-[80px] truncate" title={item.foyTuru}>
+                                            {item.foyTuru}
+                                          </div>
+                                        </TableCell>
+                                        <TableCell className="py-1 px-1 text-[9px] hidden lg:table-cell">
+                                          <div className="max-w-[120px] truncate" title={item.icraMudurlugu}>
+                                            {item.icraMudurlugu}
+                                          </div>
+                                        </TableCell>
+                                        <TableCell className="py-1 px-1">{getStatusBadge(item.durum)}</TableCell>
+                                        <TableCell className="py-1 px-1 text-[10px]">{item.takipTarihi}</TableCell>
+                                      </TableRow>
+                                    ))}
+                                  </TableBody>
+                                </Table>
+                              </div>
+                            </div>
 
-                        {filteredData.length === 0 && (
-                          <div className="text-center py-8 text-gray-500">
-                            <Search className="w-12 h-12 mx-auto mb-4 text-gray-300" />
-                            <p className="text-lg font-medium">Arama sonucu bulunamadı</p>
-                            <p className="text-sm mt-2">Farklı arama terimleri deneyebilirsiniz</p>
-                          </div>
+                            {filteredData.length === 0 && !isLoading && (
+                              <div className="text-center py-8 text-gray-500">
+                                <Search className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+                                <p className="text-lg font-medium">Arama sonucu bulunamadı</p>
+                                <p className="text-sm mt-2">Farklı arama terimleri deneyebilirsiniz</p>
+                              </div>
+                            )}
+                          </>
                         )}
                       </div>
                     )}

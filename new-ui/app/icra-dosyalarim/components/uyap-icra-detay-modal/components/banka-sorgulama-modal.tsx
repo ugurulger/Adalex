@@ -8,7 +8,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Search } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { bankaSorguSonucuData } from "@/app/icra-dosyalarim/components/uyap-icra-detay-modal/utils/sample-data"
+import { bankaSorgulamaModalData } from "@/app/icra-dosyalarim/components/uyap-icra-detay-modal/utils/sample-data"
+
+// Convenience exports for backward compatibility
+const bankaSorguSonucuData = bankaSorgulamaModalData.Banka
 
 interface BankaSorgulamaModalProps {
   isOpen: boolean
