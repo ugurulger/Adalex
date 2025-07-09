@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { aracSorguSonucuData } from "../../../../../icra-dosyalarim/components/uyap-icra-detay-modal/utils/sample-data"
+import { aracSorgulamaModalData } from "../../../../../icra-dosyalarim/components/uyap-icra-detay-modal/utils/sample-data"
 
 export async function GET(request: Request, context: { params: { file_id: string; borclu_id: string } }) {
   try {
@@ -10,12 +10,12 @@ export async function GET(request: Request, context: { params: { file_id: string
     }
 
     // Simulate API delay
-    await new Promise((resolve) => setTimeout(resolve, 1500))
+    await new Promise((resolve) => setTimeout(resolve, 1000))
 
     const response = {
       file_id: Number.parseInt(file_id),
       borclu_id: Number.parseInt(borclu_id),
-      aracSorguSonucu: aracSorguSonucuData,
+      aracSorguSonucu: aracSorgulamaModalData,
       timestamp: new Date().toISOString(),
     }
 

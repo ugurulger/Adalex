@@ -5,12 +5,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Search } from "lucide-react"
+import { Search, Loader2 } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { disIsleriSorgulamaModalData } from "@/app/icra-dosyalarim/components/uyap-icra-detay-modal/utils/sample-data"
-
-// Convenience exports for backward compatibility
-const disIsleriSorguSonucuData = disIsleriSorgulamaModalData["Dış İşleri"]
 
 interface DisIsleriSorgulamaModalProps {
   isOpen: boolean
@@ -18,9 +14,23 @@ interface DisIsleriSorgulamaModalProps {
   borcluAdi: string
   tcKimlik: string
   dosyaNo?: string
+  fileId: string
+  borcluId: string
   uyapStatus?: "Bağlı Değil" | "Bağlanıyor" | "Bağlı"
   onUyapToggle?: () => void
   isConnecting?: boolean
+}
+
+interface DisIsleriData {
+  file_id: number
+  borclu_id: number
+  disIsleriSorguSonucu: {
+    "Dış İşleri": {
+      sonuc: string
+      "Dış İşleri": string
+    }
+  }
+  timestamp: string
 }
 
 export default function DisIsleriSorgulamaModal({
@@ -29,39 +39,51 @@ export default function DisIsleriSorgulamaModal({
   borcluAdi,
   tcKimlik,
   dosyaNo,
+  fileId,
+  borcluId,
   uyapStatus = "Bağlı",
   onUyapToggle,
   isConnecting = false,
 }: DisIsleriSorgulamaModalProps) {
-  const [isQuerying, setIsQuerying] = useState(false)
+  const [data, setData] = useState<DisIsleriData | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const [lastQueryTime, setLastQueryTime] = useState<Date | null>(null)
   const [showGreenBackground, setShowGreenBackground] = useState(false)
 
-  // Sample data - in real app this would come from API
-  const disIsleriSorguSonucu = disIsleriSorguSonucuData
+  const fetchData = async () => {
+    if (!fileId || !borcluId) return
 
-  const handleSorgula = () => {
-    if (isQuerying) return
+    setLoading(true)
+    setError(null)
 
-    setIsQuerying(true)
+    try {
+      const response = await fetch(`/api/icra-dosyalarim/${fileId}/${borcluId}/dis-isleri-sorgulama`)
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
 
-    // Simulate query process for 3 seconds
-    setTimeout(() => {
-      setIsQuerying(false)
+      const result = await response.json()
+      setData(result)
       setLastQueryTime(new Date())
-      setShowGreenBackground(true)
-
-      // Remove green background after 5 seconds
-      setTimeout(() => {
-        setShowGreenBackground(false)
-      }, 5000)
-    }, 3000)
+    } catch (err) {
+      console.error("Error fetching dis isleri data:", err)
+      setError(err instanceof Error ? err.message : "Veri yüklenirken hata oluştu")
+    } finally {
+      setLoading(false)
+    }
   }
 
-  // Clean up timers when modal closes
+  useEffect(() => {
+    if (isOpen && fileId && borcluId) {
+      fetchData()
+    }
+  }, [isOpen, fileId, borcluId])
+
+  // Clean up when modal closes
   useEffect(() => {
     if (!isOpen) {
-      setIsQuerying(false)
       setShowGreenBackground(false)
     }
   }, [isOpen])
@@ -73,6 +95,8 @@ export default function DisIsleriSorgulamaModal({
     })}`
   }
 
+  const disIsleriSorguSonucu = data?.disIsleriSorguSonucu?.["Dış İşleri"]
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-5xl w-[95vw] h-[90vh] max-h-[90vh] flex flex-col p-0 gap-0 overflow-hidden">
@@ -82,8 +106,7 @@ export default function DisIsleriSorgulamaModal({
             <div className="flex items-center gap-2">
               🌍 Dış İşleri Sorgulama Sonuçları
               <Badge
-                onClick={onUyapToggle}
-                disabled={isConnecting}
+                onClick={isConnecting ? undefined : onUyapToggle}
                 className={cn(
                   "text-xs px-2 py-1 cursor-pointer transition-all duration-300 hover:scale-105 select-none",
                   uyapStatus === "Bağlı"
@@ -119,29 +142,53 @@ export default function DisIsleriSorgulamaModal({
 
         {/* Scrollable Content */}
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
-          {/* Sorgu Sonucu */}
-          <Card>
-            <CardHeader className="pb-4">
-              <CardTitle className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                📊 Sorgu Sonucu
-                <span className="text-sm font-normal text-green-700">✅ Dış işleri kaydı bulundu</span>
-              </CardTitle>
-            </CardHeader>
-          </Card>
-
-          {/* Dış İşleri Bilgisi */}
-          <Card>
-            <CardHeader className="pb-4">
-              <CardTitle className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                🌍 Dış İşleri Bilgisi
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="bg-gray-50 p-4 rounded-lg">
-                <p className="text-sm text-gray-900 font-medium">{disIsleriSorguSonucu["Dış İşleri"]}</p>
+          {loading ? (
+            <div className="flex items-center justify-center h-32">
+              <div className="flex items-center gap-2 text-gray-600">
+                <Loader2 className="h-5 w-5 animate-spin" />
+                <span>Veriler yükleniyor...</span>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          ) : error ? (
+            <div className="flex items-center justify-center h-32">
+              <div className="text-center text-red-600">
+                <p className="font-medium">Hata oluştu</p>
+                <p className="text-sm mt-1">{error}</p>
+              </div>
+            </div>
+          ) : !data ? (
+            <div className="flex items-center justify-center h-32">
+              <div className="text-center text-gray-600">
+                <p>Veri bulunamadı</p>
+              </div>
+            </div>
+          ) : (
+            <>
+              {/* Sorgu Sonucu */}
+              <Card>
+                <CardHeader className="pb-4">
+                  <CardTitle className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                    📊 Sorgu Sonucu
+                    <span className="text-sm font-normal text-green-700">✅ Dış işleri kaydı bulundu</span>
+                  </CardTitle>
+                </CardHeader>
+              </Card>
+
+              {/* Dış İşleri Bilgisi */}
+              <Card>
+                <CardHeader className="pb-4">
+                  <CardTitle className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                    🌍 Dış İşleri Bilgisi
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <p className="text-sm text-gray-900 font-medium">{disIsleriSorguSonucu?.["Dış İşleri"]}</p>
+                  </div>
+                </CardContent>
+              </Card>
+            </>
+          )}
         </div>
 
         {/* Fixed Footer - Minimized Height */}
@@ -157,27 +204,12 @@ export default function DisIsleriSorgulamaModal({
               {lastQueryTime ? formatDateTime(lastQueryTime) : "Henüz sorgu yapılmadı"}
             </div>
             <Button
-              onClick={handleSorgula}
-              disabled={isQuerying}
+              disabled={true}
               size="sm"
-              className={cn(
-                "h-7 px-3 text-xs transition-all duration-300",
-                isQuerying
-                  ? "bg-blue-600 hover:bg-blue-700 text-white cursor-not-allowed"
-                  : "bg-orange-600 hover:bg-orange-700 text-white",
-              )}
+              className="h-7 px-3 text-xs bg-gray-400 text-white cursor-not-allowed"
             >
-              {isQuerying ? (
-                <div className="flex items-center gap-1">
-                  <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white"></div>
-                  <span>UYAP'ta Sorgulanıyor</span>
-                </div>
-              ) : (
-                <>
-                  <Search className="w-3 h-3 mr-1" />
-                  UYAP'ta Sorgula
-                </>
-              )}
+              <Search className="w-3 h-3 mr-1" />
+              UYAP'ta Sorgula
             </Button>
           </div>
         </div>

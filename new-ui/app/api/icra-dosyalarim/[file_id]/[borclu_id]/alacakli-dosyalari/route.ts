@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { alacakliDosyalariSonucuData } from "../../../../../icra-dosyalarim/components/uyap-icra-detay-modal/utils/sample-data"
+import { alacakliDosyalariModalData } from "../../../../../icra-dosyalarim/components/uyap-icra-detay-modal/utils/sample-data"
 
 export async function GET(request: Request, context: { params: { file_id: string; borclu_id: string } }) {
   try {
@@ -10,18 +10,18 @@ export async function GET(request: Request, context: { params: { file_id: string
     }
 
     // Simulate API delay
-    await new Promise((resolve) => setTimeout(resolve, 1000))
+    await new Promise((resolve) => setTimeout(resolve, 600))
 
     const response = {
       file_id: Number.parseInt(file_id),
       borclu_id: Number.parseInt(borclu_id),
-      alacakliDosyalariSonucu: alacakliDosyalariSonucuData,
+      alacakliDosyalariSonucu: alacakliDosyalariModalData,
       timestamp: new Date().toISOString(),
     }
 
     return NextResponse.json(response)
   } catch (error) {
-    console.error("Error fetching creditor files data:", error)
+    console.error("Error fetching alacakli dosyalari data:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }

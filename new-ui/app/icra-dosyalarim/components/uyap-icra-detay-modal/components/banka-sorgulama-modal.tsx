@@ -8,10 +8,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Search } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { bankaSorgulamaModalData } from "@/app/icra-dosyalarim/components/uyap-icra-detay-modal/utils/sample-data"
-
-// Convenience exports for backward compatibility
-const bankaSorguSonucuData = bankaSorgulamaModalData.Banka
 
 interface BankaSorgulamaModalProps {
   isOpen: boolean
@@ -19,9 +15,23 @@ interface BankaSorgulamaModalProps {
   borcluAdi: string
   tcKimlik: string
   dosyaNo?: string
+  fileId?: string
+  borcluId?: string
   uyapStatus?: "Bağlı Değil" | "Bağlanıyor" | "Bağlı"
   onUyapToggle?: () => void
   isConnecting?: boolean
+}
+
+interface BankaData {
+  file_id: number
+  borclu_id: number
+  bankaSorguSonucu: {
+    Banka: {
+      sonuc: string
+      bankalar: Banka[]
+    }
+  }
+  timestamp: string
 }
 
 interface Banka {
@@ -35,6 +45,8 @@ export default function BankaSorgulamaModal({
   borcluAdi,
   tcKimlik,
   dosyaNo,
+  fileId,
+  borcluId,
   uyapStatus = "Bağlı",
   onUyapToggle,
   isConnecting = false,
@@ -42,26 +54,53 @@ export default function BankaSorgulamaModal({
   const [isQuerying, setIsQuerying] = useState(false)
   const [lastQueryTime, setLastQueryTime] = useState<Date | null>(null)
   const [showGreenBackground, setShowGreenBackground] = useState(false)
+  const [queryData, setQueryData] = useState<BankaData | null>(null)
+  const [isLoading, setIsLoading] = useState(false)
 
-  // Sample data - in real app this would come from API
-  const bankaSorguSonucu = bankaSorguSonucuData
+  // Fetch current data from database when modal opens or when data might have changed
+  const fetchCurrentData = async () => {
+    if (!fileId || !borcluId) return
+
+    setIsLoading(true)
+    try {
+      const response = await fetch(`/api/icra-dosyalarim/${fileId}/${borcluId}/banka-sorgulama`)
+      
+      if (response.ok) {
+        const data: BankaData = await response.json()
+        setQueryData(data)
+      }
+    } catch (error) {
+      console.error("Error fetching current banka data:", error)
+      // Don't show error for fetch, just silently fail
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  // Fetch data when modal opens
+  useEffect(() => {
+    if (isOpen && fileId && borcluId) {
+      fetchCurrentData()
+    }
+  }, [isOpen, fileId, borcluId])
+
+  // Disabled polling for now - will be implemented later with proper database integration
+  // useEffect(() => {
+  //   if (!isOpen) return
+
+  //   const interval = setInterval(() => {
+  //     fetchCurrentData()
+  //   }, 5000) // Check every 5 seconds
+
+  //   return () => clearInterval(interval)
+  // }, [isOpen, fileId, borcluId])
+
+  // Use API data if available, otherwise show empty state
+  const bankaSorguSonucu = queryData?.bankaSorguSonucu?.Banka
 
   const handleSorgula = () => {
-    if (isQuerying) return
-
-    setIsQuerying(true)
-
-    // Simulate query process for 3 seconds
-    setTimeout(() => {
-      setIsQuerying(false)
-      setLastQueryTime(new Date())
-      setShowGreenBackground(true)
-
-      // Remove green background after 5 seconds
-      setTimeout(() => {
-        setShowGreenBackground(false)
-      }, 5000)
-    }, 3000)
+    // Disabled for now - will be implemented later with proper database integration
+    console.log("UYAP'ta Sorgula button clicked - functionality disabled for now")
   }
 
   // Clean up timers when modal closes
@@ -87,22 +126,21 @@ export default function BankaSorgulamaModal({
           <DialogTitle className="text-xl font-bold text-gray-900 flex items-center justify-between">
             <div className="flex items-center gap-2">
               🏦 Banka Sorgulama Sonuçları
-              <Badge
-                onClick={onUyapToggle}
-                disabled={isConnecting}
-                className={cn(
-                  "text-xs px-2 py-1 cursor-pointer transition-all duration-300 hover:scale-105 select-none",
-                  uyapStatus === "Bağlı"
-                    ? "bg-green-100 text-green-800 border-green-200 hover:bg-green-200"
-                    : uyapStatus === "Bağlanıyor"
-                      ? "bg-blue-100 text-blue-800 border-blue-200 cursor-not-allowed"
-                      : "bg-red-100 text-red-800 border-red-200 hover:bg-red-200",
-                  isConnecting && "animate-pulse-slow",
-                )}
-                style={{
-                  animationDuration: isConnecting ? "3s" : undefined,
-                }}
-              >
+                              <Badge
+                  onClick={isConnecting ? undefined : onUyapToggle}
+                  className={cn(
+                    "text-xs px-2 py-1 cursor-pointer transition-all duration-300 hover:scale-105 select-none",
+                    uyapStatus === "Bağlı"
+                      ? "bg-green-100 text-green-800 border-green-200 hover:bg-green-200"
+                      : uyapStatus === "Bağlanıyor"
+                        ? "bg-blue-100 text-blue-800 border-blue-200 cursor-not-allowed"
+                        : "bg-red-100 text-red-800 border-red-200 hover:bg-red-200",
+                    isConnecting && "animate-pulse-slow",
+                  )}
+                  style={{
+                    animationDuration: isConnecting ? "3s" : undefined,
+                  }}
+                >
                 {isConnecting ? (
                   <div className="flex items-center gap-1">
                     <div className="animate-spin rounded-full h-2 w-2 border-b-2 border-blue-600"></div>
@@ -125,49 +163,79 @@ export default function BankaSorgulamaModal({
 
         {/* Scrollable Content */}
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
-          {/* Sorgu Sonucu */}
-          <Card>
-            <CardHeader className="pb-4">
-              <CardTitle className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                📊 Sorgu Sonucu
-                <span className="text-sm font-normal text-green-700">
-                  ✅ {bankaSorguSonucu.bankalar.length} Banka Hesabı Bulundu
-                </span>
-              </CardTitle>
-            </CardHeader>
-          </Card>
-
-          {/* Bankalar Tablosu */}
-          {bankaSorguSonucu.sonuc === "Kişiye ait banka hesap kaydı var." && (
+          {/* Loading State */}
+          {isLoading && (
             <Card>
-              <CardHeader className="pb-4">
-                <CardTitle className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                  🏦 Banka Hesap Bilgileri
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow className="bg-gray-50">
-                        <TableHead className="font-semibold text-gray-700 text-xs">No</TableHead>
-                        <TableHead className="font-semibold text-gray-700 text-xs">Banka Adı</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {bankaSorguSonucu.bankalar.map((banka) => (
-                        <TableRow key={banka.no} className="hover:bg-gray-50">
-                          <TableCell className="text-xs py-2 font-medium">{banka.no}</TableCell>
-                          <TableCell className="text-xs py-2">
-                            <span className="text-black">{banka.kurum}</span>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+              <CardContent className="flex items-center justify-center py-8">
+                <div className="flex items-center gap-2">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                  <span className="text-gray-600">Veriler yükleniyor...</span>
                 </div>
               </CardContent>
             </Card>
+          )}
+
+          {/* No Data State */}
+          {!isLoading && !queryData && (
+            <Card>
+              <CardContent className="flex items-center justify-center py-8">
+                <div className="text-center">
+                  <div className="text-gray-400 mb-2">🏦</div>
+                  <p className="text-gray-600">Henüz banka verisi bulunmuyor</p>
+                  <p className="text-sm text-gray-500 mt-1">UYAP'ta sorgula butonuna tıklayarak veri çekebilirsiniz</p>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Banka Data */}
+          {!isLoading && queryData && bankaSorguSonucu && (
+            <>
+              {/* Sorgu Sonucu */}
+              <Card>
+                <CardHeader className="pb-4">
+                  <CardTitle className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                    📊 Sorgu Sonucu
+                    <span className="text-sm font-normal text-green-700">
+                      ✅ {bankaSorguSonucu.bankalar.length} Banka Hesabı Bulundu
+                    </span>
+                  </CardTitle>
+                </CardHeader>
+              </Card>
+
+              {/* Bankalar Tablosu */}
+              {bankaSorguSonucu.sonuc === "Kişiye ait banka hesap kaydı var." && (
+                <Card>
+                  <CardHeader className="pb-4">
+                    <CardTitle className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                      🏦 Banka Hesap Bilgileri
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="overflow-x-auto">
+                      <Table>
+                        <TableHeader>
+                          <TableRow className="bg-gray-50">
+                            <TableHead className="font-semibold text-gray-700 text-xs">No</TableHead>
+                            <TableHead className="font-semibold text-gray-700 text-xs">Banka Adı</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {bankaSorguSonucu.bankalar.map((banka: Banka) => (
+                            <TableRow key={banka.no} className="hover:bg-gray-50">
+                              <TableCell className="text-xs py-2 font-medium">{banka.no}</TableCell>
+                              <TableCell className="text-xs py-2">
+                                <span className="text-black">{banka.kurum}</span>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+            </>
           )}
         </div>
 
@@ -185,26 +253,12 @@ export default function BankaSorgulamaModal({
             </div>
             <Button
               onClick={handleSorgula}
-              disabled={isQuerying}
+              disabled={true}
               size="sm"
-              className={cn(
-                "h-7 px-3 text-xs transition-all duration-300",
-                isQuerying
-                  ? "bg-blue-600 hover:bg-blue-700 text-white cursor-not-allowed"
-                  : "bg-orange-600 hover:bg-orange-700 text-white",
-              )}
+              className="h-7 px-3 text-xs transition-all duration-300 bg-gray-400 hover:bg-gray-500 text-white cursor-not-allowed"
             >
-              {isQuerying ? (
-                <div className="flex items-center gap-1">
-                  <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white"></div>
-                  <span>UYAP'ta Sorgulanıyor</span>
-                </div>
-              ) : (
-                <>
-                  <Search className="w-3 h-3 mr-1" />
-                  UYAP'ta Sorgula
-                </>
-              )}
+              <Search className="w-3 h-3 mr-1" />
+              UYAP'ta Sorgula
             </Button>
           </div>
         </div>

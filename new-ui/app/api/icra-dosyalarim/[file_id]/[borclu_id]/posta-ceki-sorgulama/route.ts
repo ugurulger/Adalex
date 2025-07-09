@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { postaCekiSorguSonucuData } from "../../../../../icra-dosyalarim/components/uyap-icra-detay-modal/utils/sample-data"
+import { postaCekiSorgulamaModalData } from "../../../../../icra-dosyalarim/components/uyap-icra-detay-modal/utils/sample-data"
 
 export async function GET(request: Request, context: { params: { file_id: string; borclu_id: string } }) {
   try {
@@ -10,18 +10,18 @@ export async function GET(request: Request, context: { params: { file_id: string
     }
 
     // Simulate API delay
-    await new Promise((resolve) => setTimeout(resolve, 500))
+    await new Promise((resolve) => setTimeout(resolve, 300))
 
     const response = {
       file_id: Number.parseInt(file_id),
       borclu_id: Number.parseInt(borclu_id),
-      postaCekiSorguSonucu: postaCekiSorguSonucuData,
+      postaCekiSorguSonucu: postaCekiSorgulamaModalData,
       timestamp: new Date().toISOString(),
     }
 
     return NextResponse.json(response)
   } catch (error) {
-    console.error("Error fetching postal check data:", error)
+    console.error("Error fetching posta ceki data:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }

@@ -8,10 +8,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Search, FileText } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { aracSorgulamaModalData } from "@/app/icra-dosyalarim/components/uyap-icra-detay-modal/utils/sample-data"
-
-// Convenience exports for backward compatibility
-const aracSorguSonucuData = aracSorgulamaModalData.EGM
 
 interface AracSorgulamaModalProps {
   isOpen: boolean
@@ -19,6 +15,8 @@ interface AracSorgulamaModalProps {
   borcluAdi: string
   tcKimlik: string
   dosyaNo?: string
+  fileId?: string
+  borcluId?: string
   uyapStatus?: "Bağlı Değil" | "Bağlanıyor" | "Bağlı"
   onUyapToggle?: () => void
   isConnecting?: boolean
@@ -49,35 +47,63 @@ export default function AracSorgulamaModal({
   borcluAdi,
   tcKimlik,
   dosyaNo,
+  fileId,
+  borcluId,
   uyapStatus = "Bağlı",
   onUyapToggle,
   isConnecting = false,
 }: AracSorgulamaModalProps) {
-  const [isQuerying, setIsQuerying] = useState(false)
   const [lastQueryTime, setLastQueryTime] = useState<Date | null>(null)
-  const [showGreenBackground, setShowGreenBackground] = useState(false)
   const [selectedArac, setSelectedArac] = useState<Arac | null>(null)
   const [isMahrumiyetModalOpen, setIsMahrumiyetModalOpen] = useState(false)
+  const [queryData, setQueryData] = useState<any>(null)
+  const [isLoading, setIsLoading] = useState(false)
 
-  // Sample data - in real app this would come from API
-  const aracSorguSonucu = aracSorguSonucuData
+  // Fetch current data from database when modal opens or when data might have changed
+  const fetchCurrentData = async () => {
+    if (!fileId || !borcluId) return
+
+    setIsLoading(true)
+    try {
+      const response = await fetch(`/api/icra-dosyalarim/${fileId}/${borcluId}/arac-sorgulama`)
+      
+      if (response.ok) {
+        const data = await response.json()
+        setQueryData(data)
+      }
+    } catch (error) {
+      console.error("Error fetching current arac data:", error)
+      // Don't show error for fetch, just silently fail
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  // Fetch data when modal opens
+  useEffect(() => {
+    if (isOpen && fileId && borcluId) {
+      fetchCurrentData()
+    }
+  }, [isOpen, fileId, borcluId])
+
+  // Disabled polling for now - will be implemented later with proper database integration
+  // useEffect(() => {
+  //   if (!isOpen) return
+
+  //   const interval = setInterval(() => {
+  //     fetchCurrentData()
+  //   }, 5000) // Check every 5 seconds
+
+  //   return () => clearInterval(interval)
+  // }, [isOpen, fileId, borcluId])
+
+  // Use API data only
+  const aracSorguSonucu = queryData?.aracSorguSonucu?.EGM
 
   const handleSorgula = () => {
-    if (isQuerying) return
-
-    setIsQuerying(true)
-
-    // Simulate query process for 3 seconds
-    setTimeout(() => {
-      setIsQuerying(false)
-      setLastQueryTime(new Date())
-      setShowGreenBackground(true)
-
-      // Remove green background after 5 seconds
-      setTimeout(() => {
-        setShowGreenBackground(false)
-      }, 5000)
-    }, 3000)
+    // This will be implemented later with web scraping
+    console.log('UYAP sorgulama başlatılacak - web scraping ile')
+    setLastQueryTime(new Date())
   }
 
   const handleMahrumiyetClick = (arac: Arac) => {
@@ -85,11 +111,10 @@ export default function AracSorgulamaModal({
     setIsMahrumiyetModalOpen(true)
   }
 
-  // Clean up timers when modal closes
+  // Clean up when modal closes
   useEffect(() => {
     if (!isOpen) {
-      setIsQuerying(false)
-      setShowGreenBackground(false)
+      // Reset any modal-specific state if needed
     }
   }, [isOpen])
 
@@ -110,8 +135,7 @@ export default function AracSorgulamaModal({
               <div className="flex items-center gap-2">
                 🚗 Araç Sorgulama Sonuçları
                 <Badge
-                  onClick={onUyapToggle}
-                  disabled={isConnecting}
+                  onClick={isConnecting ? undefined : onUyapToggle}
                   className={cn(
                     "text-xs px-2 py-1 cursor-pointer transition-all duration-300 hover:scale-105 select-none",
                     uyapStatus === "Bağlı"
@@ -147,20 +171,47 @@ export default function AracSorgulamaModal({
 
           {/* Scrollable Content */}
           <div className="flex-1 overflow-y-auto p-6 space-y-6">
+            {/* Loading State */}
+            {isLoading && (
+              <Card>
+                <CardContent className="flex items-center justify-center py-8">
+                  <div className="flex items-center gap-2">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                    <span className="text-gray-600">Veriler yükleniyor...</span>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* No Data State */}
+            {!isLoading && !aracSorguSonucu && (
+              <Card>
+                <CardContent className="flex items-center justify-center py-8">
+                  <div className="text-center">
+                    <div className="text-gray-400 mb-2">🚗</div>
+                    <p className="text-gray-600">Henüz araç verisi bulunmuyor</p>
+                    <p className="text-sm text-gray-500 mt-1">UYAP'ta sorgula butonuna tıklayarak veri çekebilirsiniz</p>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
             {/* Sorgu Sonucu */}
-            <Card>
-              <CardHeader className="pb-4">
-                <CardTitle className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                  📊 Sorgu Sonucu
-                  <span className="text-sm font-normal text-green-700">
-                    ✅ {aracSorguSonucu.Araclar.length} Araç Bulundu
-                  </span>
-                </CardTitle>
-              </CardHeader>
-            </Card>
+            {!isLoading && aracSorguSonucu && (
+              <Card>
+                <CardHeader className="pb-4">
+                  <CardTitle className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                    📊 Sorgu Sonucu
+                    <span className="text-sm font-normal text-green-700">
+                      ✅ {aracSorguSonucu.Araclar?.length || 0} Araç Bulundu
+                    </span>
+                  </CardTitle>
+                </CardHeader>
+              </Card>
+            )}
 
             {/* Araçlar Tablosu */}
-            {aracSorguSonucu.Sonuc === "bulundu" && (
+            {!isLoading && aracSorguSonucu && aracSorguSonucu.Sonuc === "bulundu" && (
               <Card>
                 <CardHeader className="pb-4">
                   <CardTitle className="text-lg font-semibold text-gray-900 flex items-center gap-2">
@@ -184,7 +235,7 @@ export default function AracSorgulamaModal({
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {aracSorguSonucu.Araclar.map((arac) => (
+                        {aracSorguSonucu.Araclar.map((arac: Arac) => (
                           <TableRow key={arac.No} className="hover:bg-gray-50">
                             <TableCell className="text-xs py-2">{arac.No}</TableCell>
                             <TableCell className="font-medium text-xs py-2">{arac.Plaka}</TableCell>
@@ -226,40 +277,25 @@ export default function AracSorgulamaModal({
             )}
           </div>
 
+          {/* Refresh indicator - disabled for now */}
+          {/* <div className="text-center text-xs text-muted-foreground pb-2">
+            <p>Veriler otomatik olarak güncelleniyor...</p>
+          </div> */}
+
           {/* Fixed Footer - Minimized Height */}
           <div className="flex-shrink-0 px-6 py-2 border-t border-gray-200 bg-gray-50">
             <div className="flex justify-between items-center">
-              <div
-                className={cn(
-                  "text-xs text-gray-600 transition-all duration-300 px-2 py-1 rounded",
-                  showGreenBackground && "bg-green-100 text-green-800",
-                )}
-              >
+              <div className="text-xs text-gray-600 px-2 py-1 rounded">
                 <span className="font-medium">Son Sorgu Tarihi:</span>{" "}
                 {lastQueryTime ? formatDateTime(lastQueryTime) : "Henüz sorgu yapılmadı"}
               </div>
               <Button
                 onClick={handleSorgula}
-                disabled={isQuerying}
                 size="sm"
-                className={cn(
-                  "h-7 px-3 text-xs transition-all duration-300",
-                  isQuerying
-                    ? "bg-blue-600 hover:bg-blue-700 text-white cursor-not-allowed"
-                    : "bg-orange-600 hover:bg-orange-700 text-white",
-                )}
+                className="h-7 px-3 text-xs bg-orange-600 hover:bg-orange-700 text-white transition-all duration-300"
               >
-                {isQuerying ? (
-                  <div className="flex items-center gap-1">
-                    <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white"></div>
-                    <span>UYAP'ta Sorgulanıyor</span>
-                  </div>
-                ) : (
-                  <>
-                    <Search className="w-3 h-3 mr-1" />
-                    UYAP'ta Sorgula
-                  </>
-                )}
+                <Search className="w-3 h-3 mr-1" />
+                UYAP'ta Sorgula
               </Button>
             </div>
           </div>

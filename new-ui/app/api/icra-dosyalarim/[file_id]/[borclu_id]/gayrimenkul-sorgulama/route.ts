@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { gayrimenkulSorguSonucuData } from "../../../../../icra-dosyalarim/components/uyap-icra-detay-modal/utils/sample-data"
+import { gayrimenkulSorgulamaModalData } from "../../../../../icra-dosyalarim/components/uyap-icra-detay-modal/utils/sample-data"
 
 export async function GET(request: Request, context: { params: { file_id: string; borclu_id: string } }) {
   try {
@@ -15,7 +15,7 @@ export async function GET(request: Request, context: { params: { file_id: string
     const response = {
       file_id: Number.parseInt(file_id),
       borclu_id: Number.parseInt(borclu_id),
-      gayrimenkulSorguSonucu: gayrimenkulSorguSonucuData,
+      gayrimenkulSorguSonucu: gayrimenkulSorgulamaModalData,
       timestamp: new Date().toISOString(),
     }
 

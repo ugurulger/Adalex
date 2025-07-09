@@ -8,10 +8,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Search, FileText } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { gayrimenkulSorgulamaModalData } from "@/app/icra-dosyalarim/components/uyap-icra-detay-modal/utils/sample-data"
-
-// Convenience exports for backward compatibility
-const gayrimenkulSorguSonucuData = gayrimenkulSorgulamaModalData.TAKBIS
 
 interface GayrimenkulSorgulamaModalProps {
   isOpen: boolean
@@ -19,9 +15,23 @@ interface GayrimenkulSorgulamaModalProps {
   borcluAdi: string
   tcKimlik: string
   dosyaNo?: string
+  fileId?: string
+  borcluId?: string
   uyapStatus?: "Bağlı Değil" | "Bağlanıyor" | "Bağlı"
   onUyapToggle?: () => void
   isConnecting?: boolean
+}
+
+interface GayrimenkulSorgulamaData {
+  file_id: number
+  borclu_id: number
+  gayrimenkulSorguSonucu: {
+    TAKBIS: {
+      sonuc: string
+      tasinmazlar: Tasinmaz[]
+    }
+  }
+  timestamp: string
 }
 
 interface TakdiyatBilgisi {
@@ -58,6 +68,8 @@ export default function GayrimenkulSorgulamaModal({
   borcluAdi,
   tcKimlik,
   dosyaNo,
+  fileId,
+  borcluId,
   uyapStatus = "Bağlı",
   onUyapToggle,
   isConnecting = false,
@@ -69,26 +81,53 @@ export default function GayrimenkulSorgulamaModal({
   const [isHisseModalOpen, setIsHisseModalOpen] = useState(false)
   const [selectedHisse, setSelectedHisse] = useState<HisseBilgisi | null>(null)
   const [isTakdiyatModalOpen, setIsTakdiyatModalOpen] = useState(false)
+  const [queryData, setQueryData] = useState<GayrimenkulSorgulamaData | null>(null)
+  const [isLoading, setIsLoading] = useState(false)
 
-  // Sample data - in real app this would come from API
-  const gayrimenkulSorguSonucu = gayrimenkulSorguSonucuData
+  // Fetch current data from database when modal opens or when data might have changed
+  const fetchCurrentData = async () => {
+    if (!fileId || !borcluId) return
+
+    setIsLoading(true)
+    try {
+      const response = await fetch(`/api/icra-dosyalarim/${fileId}/${borcluId}/gayrimenkul-sorgulama`)
+      
+      if (response.ok) {
+        const data: GayrimenkulSorgulamaData = await response.json()
+        setQueryData(data)
+      }
+    } catch (error) {
+      console.error("Error fetching current gayrimenkul data:", error)
+      // Don't show error for fetch, just silently fail
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  // Fetch data when modal opens
+  useEffect(() => {
+    if (isOpen && fileId && borcluId) {
+      fetchCurrentData()
+    }
+  }, [isOpen, fileId, borcluId])
+
+  // Disabled polling for now - will be implemented later with proper database integration
+  // useEffect(() => {
+  //   if (!isOpen) return
+
+  //   const interval = setInterval(() => {
+  //     fetchCurrentData()
+  //   }, 5000) // Check every 5 seconds
+
+  //   return () => clearInterval(interval)
+  // }, [isOpen, fileId, borcluId])
+
+  // Use API data if available, otherwise show empty state
+  const gayrimenkulSorguSonucu = queryData?.gayrimenkulSorguSonucu?.TAKBIS
 
   const handleSorgula = () => {
-    if (isQuerying) return
-
-    setIsQuerying(true)
-
-    // Simulate query process for 3 seconds
-    setTimeout(() => {
-      setIsQuerying(false)
-      setLastQueryTime(new Date())
-      setShowGreenBackground(true)
-
-      // Remove green background after 5 seconds
-      setTimeout(() => {
-        setShowGreenBackground(false)
-      }, 5000)
-    }, 3000)
+    // Disabled for now - will be implemented later with proper database integration
+    console.log("UYAP'ta Sorgula button clicked - functionality disabled for now")
   }
 
   const handleHisseClick = (tasinmaz: Tasinmaz) => {
@@ -134,8 +173,7 @@ export default function GayrimenkulSorgulamaModal({
               <div className="flex items-center gap-2">
                 🏘️ Gayrimenkul Sorgulama Sonuçları
                 <Badge
-                  onClick={onUyapToggle}
-                  disabled={isConnecting}
+                  onClick={isConnecting ? undefined : onUyapToggle}
                   className={cn(
                     "text-xs px-2 py-1 cursor-pointer transition-all duration-300 hover:scale-105 select-none",
                     uyapStatus === "Bağlı"
@@ -171,20 +209,48 @@ export default function GayrimenkulSorgulamaModal({
 
           {/* Scrollable Content */}
           <div className="flex-1 overflow-y-auto p-6 space-y-6">
-            {/* Sorgu Sonucu */}
-            <Card>
-              <CardHeader className="pb-4">
-                <CardTitle className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                  📊 Sorgu Sonucu
-                  <span className="text-sm font-normal text-green-700">
-                    ✅ {gayrimenkulSorguSonucu.tasinmazlar.length} Taşınmaz Bulundu
-                  </span>
-                </CardTitle>
-              </CardHeader>
-            </Card>
+            {/* Loading State */}
+            {isLoading && (
+              <Card>
+                <CardContent className="flex items-center justify-center py-8">
+                  <div className="flex items-center gap-2">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                    <span className="text-gray-600">Veriler yükleniyor...</span>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
-            {/* Taşınmazlar Tablosu */}
-            {gayrimenkulSorguSonucu.sonuc === "Kişiye ait taşınmaz kaydı var." && (
+            {/* No Data State */}
+            {!isLoading && !queryData && (
+              <Card>
+                <CardContent className="flex items-center justify-center py-8">
+                  <div className="text-center">
+                    <div className="text-gray-400 mb-2">🏘️</div>
+                    <p className="text-gray-600">Henüz gayrimenkul verisi bulunmuyor</p>
+                    <p className="text-sm text-gray-500 mt-1">UYAP'ta sorgula butonuna tıklayarak veri çekebilirsiniz</p>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Gayrimenkul Data */}
+            {!isLoading && queryData && gayrimenkulSorguSonucu && (
+              <>
+                {/* Sorgu Sonucu */}
+                <Card>
+                  <CardHeader className="pb-4">
+                    <CardTitle className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                      📊 Sorgu Sonucu
+                      <span className="text-sm font-normal text-green-700">
+                        ✅ {gayrimenkulSorguSonucu.tasinmazlar.length} Taşınmaz Bulundu
+                      </span>
+                    </CardTitle>
+                  </CardHeader>
+                </Card>
+
+                {/* Taşınmazlar Tablosu */}
+                {gayrimenkulSorguSonucu.sonuc === "Kişiye ait taşınmaz kaydı var." && (
               <Card>
                 <CardHeader className="pb-4">
                   <CardTitle className="text-lg font-semibold text-gray-900 flex items-center gap-2">
@@ -253,6 +319,8 @@ export default function GayrimenkulSorgulamaModal({
                   </div>
                 </CardContent>
               </Card>
+            )}
+              </>
             )}
           </div>
 

@@ -7,12 +7,6 @@ import { Button } from "@/components/ui/button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Search } from "lucide-react"
-import { cn } from "@/lib/utils"
-import { adresSorgulamaModalData } from "@/app/icra-dosyalarim/components/uyap-icra-detay-modal/utils/sample-data"
-
-// Convenience exports for backward compatibility
-const kisiselBilgilerData = adresSorgulamaModalData.MERNIS.sonuc["Kimlik Bilgileri"]
-const adresBilgileriData = adresSorgulamaModalData.MERNIS.sonuc["Adres Bilgileri"]
 
 interface AdresSorgulamaModalProps {
   isOpen: boolean
@@ -20,9 +14,19 @@ interface AdresSorgulamaModalProps {
   borcluAdi: string
   tcKimlik: string
   dosyaNo?: string
+  fileId?: string
+  borcluId?: string
   uyapStatus?: "Bağlı Değil" | "Bağlanıyor" | "Bağlı"
   onUyapToggle?: () => void
   isConnecting?: boolean
+}
+
+interface AdresSorgulamaData {
+  file_id: number
+  borclu_id: number
+  kisiselBilgiler: Record<string, string>
+  adresBilgileri: Record<string, string>
+  timestamp: string
 }
 
 export default function AdresSorgulamaModal({
@@ -31,41 +35,64 @@ export default function AdresSorgulamaModal({
   borcluAdi,
   tcKimlik,
   dosyaNo,
+  fileId,
+  borcluId,
   uyapStatus = "Bağlı",
   onUyapToggle,
   isConnecting = false,
 }: AdresSorgulamaModalProps) {
-  const [isQuerying, setIsQuerying] = useState(false)
   const [lastQueryTime, setLastQueryTime] = useState<Date | null>(null)
-  const [showGreenBackground, setShowGreenBackground] = useState(false)
+  const [queryData, setQueryData] = useState<AdresSorgulamaData | null>(null)
+  const [isLoading, setIsLoading] = useState(false)
 
-  // Sample data - in real app this would come from API
-  const kisiselBilgiler = kisiselBilgilerData
-  const adresBilgileri = adresBilgileriData
+  // Fetch current data from database when modal opens or when data might have changed
+  const fetchCurrentData = async () => {
+    if (!fileId || !borcluId) return
 
-  const handleSorgula = () => {
-    if (isQuerying) return
-
-    setIsQuerying(true)
-
-    // Simulate query process for 3 seconds
-    setTimeout(() => {
-      setIsQuerying(false)
-      setLastQueryTime(new Date())
-      setShowGreenBackground(true)
-
-      // Remove green background after 5 seconds
-      setTimeout(() => {
-        setShowGreenBackground(false)
-      }, 5000)
-    }, 3000)
+    setIsLoading(true)
+    try {
+      const response = await fetch(`/api/icra-dosyalarim/${fileId}/${borcluId}/adres-sorgulama`)
+      
+      if (response.ok) {
+        const data: AdresSorgulamaData = await response.json()
+        setQueryData(data)
+      }
+    } catch (error) {
+      console.error("Error fetching current adres data:", error)
+      // Don't show error for fetch, just silently fail
+    } finally {
+      setIsLoading(false)
+    }
   }
 
-  // Clean up timers when modal closes
+  // Fetch data when modal opens
+  useEffect(() => {
+    if (isOpen && fileId && borcluId) {
+      fetchCurrentData()
+    }
+  }, [isOpen, fileId, borcluId])
+
+  // Disabled polling for now - will be implemented later with proper database integration
+  // useEffect(() => {
+  //   if (!isOpen) return
+
+  //   const interval = setInterval(() => {
+  //     fetchCurrentData()
+  //   }, 5000) // Check every 5 seconds
+
+  //   return () => clearInterval(interval)
+  // }, [isOpen, fileId, borcluId])
+
+  const handleSorgula = () => {
+    // This will be implemented later with web scraping
+    console.log('UYAP sorgulama başlatılacak - web scraping ile')
+    setLastQueryTime(new Date())
+  }
+
+  // Clean up when modal closes
   useEffect(() => {
     if (!isOpen) {
-      setIsQuerying(false)
-      setShowGreenBackground(false)
+      // Reset any modal-specific state if needed
     }
   }, [isOpen])
 
@@ -76,6 +103,10 @@ export default function AdresSorgulamaModal({
     })}`
   }
 
+  // Use API data if available, otherwise show empty state
+  const kisiselBilgiler = queryData?.kisiselBilgiler || {}
+  const adresBilgileri = queryData?.adresBilgileri || {}
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-5xl w-[95vw] h-[90vh] max-h-[90vh] flex flex-col p-0 gap-0 overflow-hidden">
@@ -85,17 +116,14 @@ export default function AdresSorgulamaModal({
             <div className="flex items-center gap-2">
               🏠 Adres Sorgulama Sonuçları
               <Badge
-                onClick={onUyapToggle}
-                disabled={isConnecting}
-                className={cn(
-                  "text-xs px-2 py-1 cursor-pointer transition-all duration-300 hover:scale-105 select-none",
+                onClick={isConnecting ? undefined : onUyapToggle}
+                className={`text-xs px-2 py-1 cursor-pointer transition-all duration-300 hover:scale-105 select-none ${
                   uyapStatus === "Bağlı"
                     ? "bg-green-100 text-green-800 border-green-200 hover:bg-green-200"
                     : uyapStatus === "Bağlanıyor"
                       ? "bg-blue-100 text-blue-800 border-blue-200 cursor-not-allowed"
-                      : "bg-red-100 text-red-800 border-red-200 hover:bg-red-200",
-                  isConnecting && "animate-pulse-slow",
-                )}
+                      : "bg-red-100 text-red-800 border-red-200 hover:bg-red-200"
+                } ${isConnecting ? "animate-pulse-slow" : ""}`}
                 style={{
                   animationDuration: isConnecting ? "3s" : undefined,
                 }}
@@ -122,8 +150,34 @@ export default function AdresSorgulamaModal({
 
         {/* Scrollable Content */}
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
+          {/* Loading State */}
+          {isLoading && (
+            <Card>
+              <CardContent className="flex items-center justify-center py-8">
+                <div className="flex items-center gap-2">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                  <span className="text-gray-600">Veriler yükleniyor...</span>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* No Data State */}
+          {!isLoading && !queryData && (
+            <Card>
+              <CardContent className="flex items-center justify-center py-8">
+                <div className="text-center">
+                  <div className="text-gray-400 mb-2">🏠</div>
+                  <p className="text-gray-600">Henüz adres verisi bulunmuyor</p>
+                  <p className="text-sm text-gray-500 mt-1">UYAP'ta sorgula butonuna tıklayarak veri çekebilirsiniz</p>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           {/* Kişisel Bilgiler ve Adres Bilgileri - Side by Side */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {!isLoading && queryData && (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Kişisel Bilgiler - Left Side */}
             <Card>
               <CardHeader className="pb-4">
@@ -141,16 +195,24 @@ export default function AdresSorgulamaModal({
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {Object.entries(kisiselBilgiler).map(([key, value]) => (
-                        <TableRow key={key} className="hover:bg-gray-50">
-                          <TableCell className="font-medium text-xs text-gray-700 border-r border-gray-200 py-1">
-                            {key}
-                          </TableCell>
-                          <TableCell className="text-xs text-gray-900 py-1">
-                            {value || <span className="text-gray-400 italic">Bilgi Yok</span>}
+                      {Object.keys(kisiselBilgiler).length > 0 ? (
+                        Object.entries(kisiselBilgiler).map(([key, value]) => (
+                          <TableRow key={key} className="hover:bg-gray-50">
+                            <TableCell className="font-medium text-xs text-gray-700 border-r border-gray-200 py-1">
+                              {key}
+                            </TableCell>
+                            <TableCell className="text-xs text-gray-900 py-1">
+                              {value || <span className="text-gray-400 italic">Bilgi Yok</span>}
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      ) : (
+                        <TableRow>
+                          <TableCell colSpan={2} className="text-center text-gray-500 py-8">
+                            Henüz sorgu yapılmadı
                           </TableCell>
                         </TableRow>
-                      ))}
+                      )}
                     </TableBody>
                   </Table>
                 </div>
@@ -174,58 +236,49 @@ export default function AdresSorgulamaModal({
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {Object.entries(adresBilgileri).map(([key, value]) => (
-                        <TableRow key={key} className="hover:bg-gray-50">
-                          <TableCell className="font-medium text-xs text-gray-700 border-r border-gray-200 py-1">
-                            {key}
-                          </TableCell>
-                          <TableCell className="text-xs text-gray-900 py-1">
-                            {value || <span className="text-gray-400 italic">Bilgi Yok</span>}
+                      {Object.keys(adresBilgileri).length > 0 ? (
+                        Object.entries(adresBilgileri).map(([key, value]) => (
+                          <TableRow key={key} className="hover:bg-gray-50">
+                            <TableCell className="font-medium text-xs text-gray-700 border-r border-gray-200 py-1">
+                              {key}
+                            </TableCell>
+                            <TableCell className="text-xs text-gray-900 py-1">
+                              {value || <span className="text-gray-400 italic">Bilgi Yok</span>}
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      ) : (
+                        <TableRow>
+                          <TableCell colSpan={2} className="text-center text-gray-500 py-8">
+                            Henüz sorgu yapılmadı
                           </TableCell>
                         </TableRow>
-                      ))}
+                      )}
                     </TableBody>
                   </Table>
                 </div>
               </CardContent>
             </Card>
           </div>
+          )}
         </div>
 
         {/* Fixed Footer - Minimized Height */}
         <div className="flex-shrink-0 px-6 py-2 border-t border-gray-200 bg-gray-50">
           <div className="flex justify-between items-center">
-            <div
-              className={cn(
-                "text-xs text-gray-600 transition-all duration-300 px-2 py-1 rounded",
-                showGreenBackground && "bg-green-100 text-green-800",
-              )}
-            >
-              <span className="font-medium">Son Sorgu Tarihi:</span>{" "}
-              {lastQueryTime ? formatDateTime(lastQueryTime) : "Henüz sorgu yapılmadı"}
-            </div>
+                      <div className="text-xs text-gray-600 px-2 py-1 rounded">
+            <span className="font-medium">Son Sorgu Tarihi:</span>{" "}
+            {lastQueryTime ? formatDateTime(lastQueryTime) : "Henüz sorgu yapılmadı"}
+          </div>
             <Button
               onClick={handleSorgula}
-              disabled={isQuerying}
               size="sm"
-              className={cn(
-                "h-7 px-3 text-xs transition-all duration-300",
-                isQuerying
-                  ? "bg-blue-600 hover:bg-blue-700 text-white cursor-not-allowed"
-                  : "bg-orange-600 hover:bg-orange-700 text-white",
-              )}
+              className="h-7 px-3 text-xs bg-orange-600 hover:bg-orange-700 text-white transition-all duration-300"
             >
-              {isQuerying ? (
-                <div className="flex items-center gap-1">
-                  <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white"></div>
-                  <span>UYAP'ta Sorgulanıyor</span>
-                </div>
-              ) : (
-                <>
-                  <Search className="w-3 h-3 mr-1" />
-                  UYAP'ta Sorgula
-                </>
-              )}
+              <div className="flex items-center gap-1">
+                <Search className="h-3 w-3" />
+                <span>UYAP'ta Sorgula</span>
+              </div>
             </Button>
           </div>
         </div>

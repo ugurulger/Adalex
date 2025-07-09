@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { sgkSorguSonucuData } from "../../../../../icra-dosyalarim/components/uyap-icra-detay-modal/utils/sample-data"
+import { sgkHacizSorgulamaModalData } from "../../../../../icra-dosyalarim/components/uyap-icra-detay-modal/utils/sample-data"
 
 export async function GET(request: Request, context: { params: { file_id: string; borclu_id: string } }) {
   try {
@@ -10,18 +10,18 @@ export async function GET(request: Request, context: { params: { file_id: string
     }
 
     // Simulate API delay
-    await new Promise((resolve) => setTimeout(resolve, 1100))
+    await new Promise((resolve) => setTimeout(resolve, 500))
 
     const response = {
       file_id: Number.parseInt(file_id),
       borclu_id: Number.parseInt(borclu_id),
-      sgkSorguSonucu: sgkSorguSonucuData,
+      sgkSorguSonucu: sgkHacizSorgulamaModalData,
       timestamp: new Date().toISOString(),
     }
 
     return NextResponse.json(response)
   } catch (error) {
-    console.error("Error fetching SGK seizure data:", error)
+    console.error("Error fetching SGK haciz data:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }

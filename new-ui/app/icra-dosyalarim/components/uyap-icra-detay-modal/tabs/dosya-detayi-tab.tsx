@@ -537,6 +537,8 @@ export default function DosyaDetayiTab({
         borcluAdi={selectedBorclu?.ad || ""}
         tcKimlik={selectedBorclu?.tcKimlik || ""}
         dosyaNo={selectedCase?.no}
+        fileId={selectedCase?.file_id?.toString()}
+        borcluId={selectedBorclu?.borclu_id}
         uyapStatus={uyapStatus}
         onUyapToggle={onUyapToggle}
         isConnecting={isConnecting}
@@ -549,6 +551,8 @@ export default function DosyaDetayiTab({
         borcluAdi={selectedBorclu?.ad || ""}
         tcKimlik={selectedBorclu?.tcKimlik || ""}
         dosyaNo={selectedCase?.no}
+        fileId={selectedCase?.file_id?.toString()}
+        borcluId={selectedBorclu?.borclu_id}
         uyapStatus={uyapStatus}
         onUyapToggle={onUyapToggle}
         isConnecting={isConnecting}
@@ -561,6 +565,8 @@ export default function DosyaDetayiTab({
         borcluAdi={selectedBorclu?.ad || ""}
         tcKimlik={selectedBorclu?.tcKimlik || ""}
         dosyaNo={selectedCase?.no}
+        fileId={selectedCase?.file_id?.toString()}
+        borcluId={selectedBorclu?.borclu_id}
         uyapStatus={uyapStatus}
         onUyapToggle={onUyapToggle}
         isConnecting={isConnecting}
@@ -573,6 +579,8 @@ export default function DosyaDetayiTab({
         borcluAdi={selectedBorclu?.ad || ""}
         tcKimlik={selectedBorclu?.tcKimlik || ""}
         dosyaNo={selectedCase?.no}
+        fileId={selectedCase?.file_id?.toString()}
+        borcluId={selectedBorclu?.borclu_id}
         uyapStatus={uyapStatus}
         onUyapToggle={onUyapToggle}
         isConnecting={isConnecting}
@@ -585,6 +593,8 @@ export default function DosyaDetayiTab({
         borcluAdi={selectedBorclu?.ad || ""}
         tcKimlik={selectedBorclu?.tcKimlik || ""}
         dosyaNo={selectedCase?.no}
+        fileId={selectedCase?.file_id?.toString()}
+        borcluId={selectedBorclu?.borclu_id}
         uyapStatus={uyapStatus}
         onUyapToggle={onUyapToggle}
         isConnecting={isConnecting}
@@ -597,6 +607,8 @@ export default function DosyaDetayiTab({
         borcluAdi={selectedBorclu?.ad || ""}
         tcKimlik={selectedBorclu?.tcKimlik || ""}
         dosyaNo={selectedCase?.no}
+        fileId={selectedCase?.file_id?.toString()}
+        borcluId={selectedBorclu?.borclu_id}
         uyapStatus={uyapStatus}
         onUyapToggle={onUyapToggle}
         isConnecting={isConnecting}
@@ -609,6 +621,8 @@ export default function DosyaDetayiTab({
         borcluAdi={selectedBorclu?.ad || ""}
         tcKimlik={selectedBorclu?.tcKimlik || ""}
         dosyaNo={selectedCase?.no}
+        fileId={selectedCase?.file_id?.toString()}
+        borcluId={selectedBorclu?.borclu_id}
         uyapStatus={uyapStatus}
         onUyapToggle={onUyapToggle}
         isConnecting={isConnecting}
@@ -621,6 +635,8 @@ export default function DosyaDetayiTab({
         borcluAdi={selectedBorclu?.ad || ""}
         tcKimlik={selectedBorclu?.tcKimlik || ""}
         dosyaNo={selectedCase?.no}
+        fileId={selectedCase?.file_id?.toString()}
+        borcluId={selectedBorclu?.borclu_id}
         uyapStatus={uyapStatus}
         onUyapToggle={onUyapToggle}
         isConnecting={isConnecting}
@@ -633,6 +649,8 @@ export default function DosyaDetayiTab({
         borcluAdi={selectedBorclu?.ad || ""}
         tcKimlik={selectedBorclu?.tcKimlik || ""}
         dosyaNo={selectedCase?.no}
+        fileId={selectedCase?.file_id?.toString()}
+        borcluId={selectedBorclu?.borclu_id}
         uyapStatus={uyapStatus}
         onUyapToggle={onUyapToggle}
         isConnecting={isConnecting}
@@ -645,6 +663,8 @@ export default function DosyaDetayiTab({
         borcluAdi={selectedBorclu?.ad || ""}
         tcKimlik={selectedBorclu?.tcKimlik || ""}
         dosyaNo={selectedCase?.no}
+        fileId={selectedCase?.file_id?.toString()}
+        borcluId={selectedBorclu?.borclu_id}
         uyapStatus={uyapStatus}
         onUyapToggle={onUyapToggle}
         isConnecting={isConnecting}
@@ -657,6 +677,8 @@ export default function DosyaDetayiTab({
         borcluAdi={selectedBorclu?.ad || ""}
         tcKimlik={selectedBorclu?.tcKimlik || ""}
         dosyaNo={selectedCase?.no}
+        fileId={selectedCase?.file_id?.toString()}
+        borcluId={selectedBorclu?.borclu_id}
         uyapStatus={uyapStatus}
         onUyapToggle={onUyapToggle}
         isConnecting={isConnecting}
@@ -669,6 +691,8 @@ export default function DosyaDetayiTab({
         borcluAdi={selectedBorclu?.ad || ""}
         tcKimlik={selectedBorclu?.tcKimlik || ""}
         dosyaNo={selectedCase?.no}
+        fileId={selectedCase?.file_id?.toString()}
+        borcluId={selectedBorclu?.borclu_id}
         uyapStatus={uyapStatus}
         onUyapToggle={onUyapToggle}
         isConnecting={isConnecting}
