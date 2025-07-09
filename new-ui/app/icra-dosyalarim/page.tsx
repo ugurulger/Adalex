@@ -6,7 +6,22 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
-import { Search, ArrowUpDown, ArrowLeft, Plus, Users, Bell, Calendar, FileText, Loader2 } from "lucide-react"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { Label } from "@/components/ui/label"
+import {
+  Search,
+  ArrowUpDown,
+  ArrowLeft,
+  Plus,
+  Users,
+  Bell,
+  Calendar,
+  FileText,
+  Loader2,
+  Settings,
+  ChevronDown,
+  User,
+} from "lucide-react"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
 import UyapIcraDetayModal from "./components/uyap-icra-detay-modal"
@@ -28,6 +43,9 @@ export default function IcraDosyalarimPage() {
   const [isConnecting, setIsConnecting] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [pageCount, setPageCount] = useState<string>("10")
+  const [username, setUsername] = useState<string>("Tuğçe Delibaş")
+  const [pincode, setPincode] = useState<string>("9092")
 
   // Fetch data from API
   const fetchData = async () => {
@@ -174,6 +192,20 @@ export default function IcraDosyalarimPage() {
     fetchData()
   }
 
+  // İlk Kurulum functions (to be implemented later)
+  const handleSearchAllFiles = () => {
+    console.log("Bütün Dosyaları UYAP'ta Ara clicked")
+  }
+
+  const handleFetchFromUyap = () => {
+    console.log("Föyleri UYAP'tan Çek clicked with page count:", pageCount)
+  }
+
+  // Profile functions (to be implemented later)
+  const handleProfileSave = () => {
+    console.log("Profile saved:", { username, pincode })
+  }
+
   // Left sidebar buttons
   const leftSidebarButtons = [
     {
@@ -232,11 +264,122 @@ export default function IcraDosyalarimPage() {
               <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900">İcra Dosyalarım</h1>
             </div>
 
+            {/* Center - Menu Items */}
+            <div className="flex items-center gap-2">
+              {/* İlk Kurulum Menu */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm" className="text-xs sm:text-sm bg-transparent">
+                    <Settings className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                    İlk Kurulum
+                    <ChevronDown className="w-3 h-3 sm:w-4 sm:h-4 ml-1 sm:ml-2" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="center" className="w-80 p-4">
+                  <div className="space-y-4">
+                    <div className="text-sm font-medium text-gray-900 mb-3">İlk Kurulum İşlemleri</div>
+
+                    {/* First button */}
+                    <div>
+                      <Button
+                        onClick={handleSearchAllFiles}
+                        className="w-full justify-start text-xs sm:text-sm bg-transparent"
+                        variant="outline"
+                      >
+                        <Search className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
+                        Bütün Dosyaları UYAP'ta Ara
+                      </Button>
+                    </div>
+
+                    {/* Second button with input */}
+                    <div className="flex items-center gap-2">
+                      <Button
+                        onClick={handleFetchFromUyap}
+                        className="flex-1 justify-start text-xs sm:text-sm bg-transparent"
+                        variant="outline"
+                      >
+                        <FileText className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
+                        Föyleri UYAP'tan Çek
+                      </Button>
+                      <div className="flex items-center gap-1">
+                        <Input
+                          type="number"
+                          value={pageCount}
+                          onChange={(e) => setPageCount(e.target.value)}
+                          placeholder="10"
+                          className="w-16 h-8 text-xs text-center"
+                          min="1"
+                          max="100"
+                        />
+                        <span className="text-xs text-gray-500">sayfa</span>
+                      </div>
+                    </div>
+                  </div>
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              {/* Profile Menu */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm" className="text-xs sm:text-sm bg-transparent">
+                    <User className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                    Profil
+                    <ChevronDown className="w-3 h-3 sm:w-4 sm:h-4 ml-1 sm:ml-2" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="center" className="w-72 p-4">
+                  <div className="space-y-4">
+                    <div className="text-sm font-medium text-gray-900 mb-3">Profil Bilgileri</div>
+
+                    {/* Username field */}
+                    <div className="space-y-2">
+                      <Label htmlFor="username" className="text-xs font-medium text-gray-700">
+                        Kullanıcı Adı
+                      </Label>
+                      <Input
+                        id="username"
+                        type="text"
+                        value={username}
+                        onChange={(e) => setUsername(e.target.value)}
+                        placeholder="Kullanıcı adı"
+                        className="w-full h-8 text-xs"
+                      />
+                    </div>
+
+                    {/* Pincode field */}
+                    <div className="space-y-2">
+                      <Label htmlFor="pincode" className="text-xs font-medium text-gray-700">
+                        Pin Kodu
+                      </Label>
+                      <Input
+                        id="pincode"
+                        type="password"
+                        value={pincode}
+                        onChange={(e) => setPincode(e.target.value)}
+                        placeholder="Pin kodu"
+                        className="w-full h-8 text-xs"
+                      />
+                    </div>
+
+                    {/* Save button */}
+                    <div className="pt-2">
+                      <Button
+                        onClick={handleProfileSave}
+                        className="w-full text-xs bg-orange-600 hover:bg-orange-700"
+                        size="sm"
+                      >
+                        Kaydet
+                      </Button>
+                    </div>
+                  </div>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+
             {/* Right side - Uyap Status Badge */}
             <div className="flex items-center">
               <Badge
                 onClick={handleUyapToggle}
-                disabled={isConnecting}
                 className={cn(
                   "text-[10px] sm:text-xs px-2 py-1 cursor-pointer transition-all duration-300 hover:scale-105 select-none",
                   uyapStatus === "Bağlı"
@@ -378,7 +521,7 @@ export default function IcraDosyalarimPage() {
                                       <div className="flex justify-between items-start">
                                         <div>
                                           <p className="font-medium text-sm">{item.klasor}</p>
-                                          <p className="text-xs text-gray-600">No: {item.dosyaNo}</p>
+                                          <p className="text-xs text-gray-600">Dosya No: {item.dosyaNo}</p>
                                         </div>
                                         {getStatusBadge(item.durum)}
                                       </div>
@@ -418,7 +561,7 @@ export default function IcraDosyalarimPage() {
                                           onClick={() => handleSort("dosyaNo")}
                                           className="h-auto p-0 font-semibold text-gray-700 hover:text-gray-900 text-xs"
                                         >
-                                          No
+                                          Dosya No
                                           <ArrowUpDown className="w-2.5 h-2.5 ml-1" />
                                         </Button>
                                       </TableHead>
