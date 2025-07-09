@@ -65,7 +65,7 @@ def test_nextjs_api():
     
     # Test main endpoint
     try:
-        response = requests.get("http://localhost:3001/api/icra-dosyalarim", timeout=5)
+        response = requests.get("http://localhost:3000/api/icra-dosyalarim", timeout=5)
         if response.status_code == 200:
             data = response.json()
             print(f"✅ Next.js API main endpoint working - {len(data)} files found")
@@ -75,7 +75,7 @@ def test_nextjs_api():
             print(f"❌ Next.js API main endpoint failed: {response.status_code}")
             return False
     except requests.exceptions.ConnectionError:
-        print("❌ Next.js API is not running on port 3001")
+        print("❌ Next.js API is not running on port 3000")
         return False
     except Exception as e:
         print(f"❌ Next.js API main endpoint error: {e}")
@@ -83,7 +83,7 @@ def test_nextjs_api():
     
     # Test detail endpoint
     try:
-        response = requests.get("http://localhost:3001/api/icra-dosyalarim/1", timeout=5)
+        response = requests.get("http://localhost:3000/api/icra-dosyalarim/1", timeout=5)
         if response.status_code == 200:
             data = response.json()
             print(f"✅ Next.js API detail endpoint working")
@@ -104,7 +104,7 @@ def test_data_consistency():
     try:
         # Get data from both APIs
         db_response = requests.get("http://localhost:5001/api/icra-dosyalarim", timeout=5)
-        nextjs_response = requests.get("http://localhost:3001/api/icra-dosyalarim", timeout=5)
+        nextjs_response = requests.get("http://localhost:3000/api/icra-dosyalarim", timeout=5)
         
         if db_response.status_code == 200 and nextjs_response.status_code == 200:
             db_data = db_response.json()
