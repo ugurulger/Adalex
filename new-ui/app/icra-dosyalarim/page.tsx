@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -28,6 +28,7 @@ import UyapIcraDetayModal from "./components/uyap-icra-detay-modal"
 import YeniIcraFoyuModal from "./components/yeni-icra-foyu"
 import type { FormData } from "./components/yeni-icra-foyu/types/form-types"
 import type { IcraDosyasiListItem } from "../../types/api"
+import { uyapService, UYAPResponse } from "@/lib/uyap-service"
 
 export default function IcraDosyalarimPage() {
   const [searchTerm, setSearchTerm] = useState("")
@@ -46,6 +47,27 @@ export default function IcraDosyalarimPage() {
   const [pageCount, setPageCount] = useState<string>("10")
   const [username, setUsername] = useState<string>("Tuğçe Delibaş")
   const [pincode, setPincode] = useState<string>("9092")
+  const [uyapSessionId, setUyapSessionId] = useState<string | null>(null)
+  const [isUyapSearching, setIsUyapSearching] = useState(false)
+  const [isUyapExtracting, setIsUyapExtracting] = useState(false)
+  const [successMessage, setSuccessMessage] = useState<string | null>(null)
+
+  // Check UYAP status on component mount
+  useEffect(() => {
+    const checkUyapStatus = async () => {
+      try {
+        const response: UYAPResponse = await uyapService.getStatus()
+        if (response.success && response.active_sessions && response.active_sessions.length > 0) {
+          setUyapSessionId(response.active_sessions[0])
+          setUyapStatus("Bağlı")
+        }
+      } catch (error) {
+        console.error("Error checking UYAP status:", error)
+      }
+    }
+
+    checkUyapStatus()
+  }, [])
 
   // Fetch data from API
   const fetchData = async () => {
@@ -169,19 +191,41 @@ export default function IcraDosyalarimPage() {
     setActiveView("list")
   }
 
-  const handleUyapToggle = () => {
+  const handleUyapToggle = async () => {
     if (uyapStatus === "Bağlı Değil") {
       // Start connecting
       setUyapStatus("Bağlanıyor")
       setIsConnecting(true)
 
-      // Simulate connection process
-      setTimeout(() => {
+      try {
+        // Login to UYAP
+        const response: UYAPResponse = await uyapService.login(pincode)
+        
+        if (response.success && response.session_id) {
+          setUyapSessionId(response.session_id)
         setUyapStatus("Bağlı")
+        } else {
+          setError(response.message || "UYAP'a bağlanılamadı")
+          setUyapStatus("Bağlı Değil")
+        }
+      } catch (error) {
+        console.error("UYAP login error:", error)
+        setError("UYAP'a bağlanırken hata oluştu")
+        setUyapStatus("Bağlı Değil")
+      } finally {
         setIsConnecting(false)
-      }, 2000)
+      }
     } else {
       // Disconnect
+      try {
+        if (uyapSessionId) {
+          await uyapService.logout(uyapSessionId)
+        }
+      } catch (error) {
+        console.error("UYAP logout error:", error)
+      }
+      
+      setUyapSessionId(null)
       setUyapStatus("Bağlı Değil")
       setIsConnecting(false)
     }
@@ -192,13 +236,59 @@ export default function IcraDosyalarimPage() {
     fetchData()
   }
 
-  // İlk Kurulum functions (to be implemented later)
-  const handleSearchAllFiles = () => {
-    console.log("Bütün Dosyaları UYAP'ta Ara clicked")
+  // İlk Kurulum functions
+  const handleSearchAllFiles = async () => {
+    if (!uyapSessionId) {
+      setError("Önce UYAP'a bağlanın")
+      return
+    }
+
+    try {
+      setIsUyapSearching(true)
+      setError(null)
+      const response: UYAPResponse = await uyapService.searchFiles(uyapSessionId)
+      
+      if (response.success) {
+        console.log("UYAP search completed successfully")
+        setSuccessMessage("UYAP arama işlemi başarıyla tamamlandı")
+        // Clear success message after 3 seconds
+        setTimeout(() => setSuccessMessage(null), 3000)
+      } else {
+        setError(response.message || "UYAP arama işlemi başarısız")
+      }
+    } catch (error) {
+      console.error("UYAP search error:", error)
+      setError("UYAP arama işlemi sırasında hata oluştu")
+    } finally {
+      setIsUyapSearching(false)
+    }
   }
 
-  const handleFetchFromUyap = () => {
-    console.log("Föyleri UYAP'tan Çek clicked with page count:", pageCount)
+  const handleFetchFromUyap = async () => {
+    if (!uyapSessionId) {
+      setError("Önce UYAP'a bağlanın")
+      return
+    }
+
+    try {
+      setIsUyapExtracting(true)
+      setError(null)
+      const response: UYAPResponse = await uyapService.extractData(uyapSessionId)
+      
+      if (response.success) {
+        console.log("UYAP data extraction completed successfully")
+        setSuccessMessage("UYAP veri çekme işlemi başarıyla tamamlandı")
+        // Clear success message after 3 seconds
+        setTimeout(() => setSuccessMessage(null), 3000)
+      } else {
+        setError(response.message || "UYAP veri çekme işlemi başarısız")
+      }
+    } catch (error) {
+      console.error("UYAP extract error:", error)
+      setError("UYAP veri çekme işlemi sırasında hata oluştu")
+    } finally {
+      setIsUyapExtracting(false)
+    }
   }
 
   // Profile functions (to be implemented later)
@@ -285,8 +375,13 @@ export default function IcraDosyalarimPage() {
                         onClick={handleSearchAllFiles}
                         className="w-full justify-start text-xs sm:text-sm bg-transparent"
                         variant="outline"
+                        disabled={isUyapSearching || isUyapExtracting || !uyapSessionId}
                       >
+                        {isUyapSearching ? (
+                          <Loader2 className="w-3 h-3 sm:w-4 sm:h-4 mr-2 animate-spin" />
+                        ) : (
                         <Search className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
+                        )}
                         Bütün Dosyaları UYAP'ta Ara
                       </Button>
                     </div>
@@ -297,8 +392,13 @@ export default function IcraDosyalarimPage() {
                         onClick={handleFetchFromUyap}
                         className="flex-1 justify-start text-xs sm:text-sm bg-transparent"
                         variant="outline"
+                        disabled={isUyapSearching || isUyapExtracting || !uyapSessionId}
                       >
+                        {isUyapExtracting ? (
+                          <Loader2 className="w-3 h-3 sm:w-4 sm:h-4 mr-2 animate-spin" />
+                        ) : (
                         <FileText className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
+                        )}
                         Föyleri UYAP'tan Çek
                       </Button>
                       <div className="flex items-center gap-1">
@@ -310,6 +410,7 @@ export default function IcraDosyalarimPage() {
                           className="w-16 h-8 text-xs text-center"
                           min="1"
                           max="100"
+                          disabled={isUyapSearching || isUyapExtracting}
                         />
                         <span className="text-xs text-gray-500">sayfa</span>
                       </div>
@@ -471,6 +572,13 @@ export default function IcraDosyalarimPage() {
                         >
                           Tekrar Dene
                         </Button>
+                      </div>
+                    )}
+
+                    {/* Success Display */}
+                    {successMessage && (
+                      <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+                        <p className="text-green-800 text-sm">{successMessage}</p>
                       </div>
                     )}
 
