@@ -1,27 +1,26 @@
 import { NextResponse } from "next/server"
-import { iskiSorgulamaModalData } from "../../../../../icra-dosyalarim/components/uyap-icra-detay-modal/utils/sample-data"
 
-export async function GET(request: Request, context: { params: { file_id: string; borclu_id: string } }) {
+export async function GET(request: Request, context: { params: Promise<{ file_id: string; borclu_id: string }> }) {
   try {
-    const { file_id, borclu_id } = context.params
+    const { file_id, borclu_id } = await context.params
 
     if (!file_id || !borclu_id) {
       return NextResponse.json({ error: "file_id and borclu_id parameters are required" }, { status: 400 })
     }
 
-    // Simulate API delay
-    await new Promise((resolve) => setTimeout(resolve, 400))
+    // Proxy to Flask API
+    const flaskApiUrl = process.env.FLASK_API_URL || "http://localhost:5001"
+    const response = await fetch(`${flaskApiUrl}/api/icra-dosyalarim/${file_id}/${borclu_id}/iski-sorgulama`)
 
-    const response = {
-      file_id: Number.parseInt(file_id),
-      borclu_id: Number.parseInt(borclu_id),
-      iskiSorguSonucu: iskiSorgulamaModalData,
-      timestamp: new Date().toISOString(),
+    if (!response.ok) {
+      const errorData = await response.json()
+      return NextResponse.json(errorData, { status: response.status })
     }
 
-    return NextResponse.json(response)
+    const data = await response.json()
+    return NextResponse.json(data)
   } catch (error) {
-    console.error("Error fetching ISKI data:", error)
+    console.error("Error fetching iski-sorgulama data:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }

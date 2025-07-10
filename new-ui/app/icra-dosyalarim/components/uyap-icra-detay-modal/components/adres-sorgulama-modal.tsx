@@ -54,8 +54,20 @@ export default function AdresSorgulamaModal({
       const response = await fetch(`/api/icra-dosyalarim/${fileId}/${borcluId}/adres-sorgulama`)
       
       if (response.ok) {
-        const data: AdresSorgulamaData = await response.json()
-        setQueryData(data)
+        const rawData = await response.json()
+        
+        // Transform the data to match the expected format
+        const transformedData: AdresSorgulamaData = {
+          file_id: rawData.file_id,
+          borclu_id: rawData.borclu_id,
+          kisiselBilgiler: rawData.adresSorguSonucu?.sonuc?.['Kimlik Bilgileri'] || {},
+          adresBilgileri: rawData.adresSorguSonucu?.sonuc?.['Adres Bilgileri'] || {},
+          timestamp: rawData.timestamp
+        }
+        
+        console.log('Raw API data:', rawData)
+        console.log('Transformed data:', transformedData)
+        setQueryData(transformedData)
       }
     } catch (error) {
       console.error("Error fetching current adres data:", error)
@@ -83,10 +95,62 @@ export default function AdresSorgulamaModal({
   //   return () => clearInterval(interval)
   // }, [isOpen, fileId, borcluId])
 
-  const handleSorgula = () => {
-    // This will be implemented later with web scraping
-    console.log('UYAP sorgulama başlatılacak - web scraping ile')
-    setLastQueryTime(new Date())
+  const handleSorgula = async () => {
+    if (!dosyaNo || !borcluId) {
+      console.error('Dosya No veya Borçlu ID eksik')
+      return
+    }
+
+    if (uyapStatus !== "Bağlı") {
+      console.error('UYAP bağlantısı yok')
+      return
+    }
+
+    setIsLoading(true)
+    try {
+      const response = await fetch('/api/uyap/trigger-sorgulama', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          dosya_no: dosyaNo,
+          sorgu_tipi: 'MERNİS',
+          borclu_id: borcluId,
+        }),
+      })
+
+      const result = await response.json()
+
+      if (result.success) {
+        setLastQueryTime(new Date())
+        // Refresh the data
+        await fetchCurrentData()
+      } else {
+        console.error('Sorgulama hatası:', result.message)
+        // Show user-friendly error message
+        alert(`Sorgulama başarısız: ${result.message}`)
+      }
+    } catch (error) {
+      console.error('Sorgulama sırasında hata:', error)
+      
+      // Handle specific connection errors
+      let errorMessage = 'Bilinmeyen bir hata oluştu'
+      
+      if (error instanceof Error) {
+        if (error.message.includes('Connection refused') || error.message.includes('Max retries exceeded')) {
+          errorMessage = 'UYAP bağlantısı kesildi. Lütfen UYAP\'ı yeniden bağlayın ve tekrar deneyin.'
+        } else if (error.message.includes('fetch failed')) {
+          errorMessage = 'Sunucu bağlantısı kurulamadı. Lütfen internet bağlantınızı kontrol edin.'
+        } else {
+          errorMessage = error.message
+        }
+      }
+      
+      alert(`Sorgulama hatası: ${errorMessage}`)
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   // Clean up when modal closes
@@ -272,12 +336,17 @@ export default function AdresSorgulamaModal({
           </div>
             <Button
               onClick={handleSorgula}
+              disabled={isLoading || uyapStatus !== "Bağlı"}
               size="sm"
-              className="h-7 px-3 text-xs bg-orange-600 hover:bg-orange-700 text-white transition-all duration-300"
+              className="h-7 px-3 text-xs bg-orange-600 hover:bg-orange-700 text-white transition-all duration-300 disabled:bg-gray-400 disabled:cursor-not-allowed"
             >
               <div className="flex items-center gap-1">
-                <Search className="h-3 w-3" />
-                <span>UYAP'ta Sorgula</span>
+                {isLoading ? (
+                  <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white"></div>
+                ) : (
+                  <Search className="h-3 w-3" />
+                )}
+                <span>{isLoading ? "Sorgulanıyor..." : "UYAP'ta Sorgula"}</span>
               </div>
             </Button>
           </div>

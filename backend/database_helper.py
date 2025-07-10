@@ -66,11 +66,14 @@ def save_scraping_result_to_db(dosya_no, borclu_adi, sorgu_tipi, sorgu_verisi):
         
         file_id = file_result['file_id']
         
+        # Extract just the name part before the TC number (before the "-" character)
+        borclu_name_only = borclu_adi.split(' - ')[0] if ' - ' in borclu_adi else borclu_adi
+        
         # Then, find the borclu_id from file_id and borclu_adi
         cursor.execute("""
             SELECT borclu_id FROM borclular 
             WHERE file_id = ? AND ad LIKE ?
-        """, (file_id, f"%{borclu_adi}%"))
+        """, (file_id, f"%{borclu_name_only}%"))
         
         borclu_result = cursor.fetchone()
         if not borclu_result:

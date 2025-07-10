@@ -352,12 +352,12 @@ def perform_sorgulama(driver, dosya_no, selected_options, result_label=None):
         if not click_element_merged(driver, By.CSS_SELECTOR, CLOSE_BUTTON_CSS, action_name="Close popup"):
             status("Failed to close popup window.")
             return
-        # Adım 11: Arama çubuğunu temizle
-        status("Clearing search bar...")
-        if not click_element_merged(driver, By.CSS_SELECTOR, CLEAR_SEARCH_CSS, action_name="Clear search bar"):
-            status("Failed to clear search bar.")
-            return
-        else:
-            status("Search bar cleared successfully.")
+        # # Adım 11: Arama çubuğunu temizle
+        # status("Clearing search bar...")
+        # if not click_element_merged(driver, By.CSS_SELECTOR, CLEAR_SEARCH_CSS, action_name="Clear search bar"):
+        #     status("Failed to clear search bar.")
+        #     return
+        # else:
+        #     status("Search bar cleared successfully.")
     except TimeoutException:
         status("No dropdown items found.")

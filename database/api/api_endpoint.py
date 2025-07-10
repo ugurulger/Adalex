@@ -109,11 +109,23 @@ def api_icra_dosyalarim():
         for file_row in files:
             file_dict = get_file_dict(file_row)
             if file_dict:
+                # Get all borclular for this file to show complete list
+                borclular = get_borclular_by_file_id(file_dict['file_id'])
+                
+                # Create borclu names list
+                if borclular and len(borclular) > 1:
+                    # Multiple borclular - show all names in correct order
+                    borclu_names = [borclu.get('ad', '') for borclu in sorted(borclular, key=lambda x: x.get('borclu_id', '')) if borclu.get('ad')]
+                    borcluAdi = ', '.join(borclu_names)
+                else:
+                    # Single borclu or no borclular - use the original field
+                    borcluAdi = file_dict['borcluAdi']
+                
                 transformed_item = {
                     "file_id": file_dict['file_id'],
                     "klasor": file_dict['klasor'],
                     "dosyaNo": file_dict['dosyaNo'],
-                    "borcluAdi": file_dict['borcluAdi'],
+                    "borcluAdi": borcluAdi,
                     "alacakliAdi": file_dict['alacakliAdi'],
                     "foyTuru": file_dict['foyTuru'],
                     "durum": file_dict['durum'],
@@ -222,10 +234,499 @@ def api_borclu_detail(file_id, borclu_id):
         print(f"Error in api_borclu_detail: {error}")
         return jsonify({"error": "Internal server error"}), 500
 
+def get_borclu_sorgu_by_tipi(borclu_id, sorgu_tipi):
+    """Get specific query result for a borclu by query type"""
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        cur = conn.cursor()
+        cur.execute("SELECT sorgu_verisi FROM borclu_sorgular WHERE borclu_id = ? AND sorgu_tipi = ?", (borclu_id, sorgu_tipi))
+        row = cur.fetchone()
+        conn.close()
+        
+        if row:
+            return json.loads(row[0])
+        return None
+    except Exception as e:
+        print(f"Error getting sorgu for borclu {borclu_id}, tipi {sorgu_tipi}: {e}")
+        return None
+
+@app.route('/api/icra-dosyalarim/<file_id>/<borclu_id>/banka-sorgulama', methods=['GET'])
+def api_banka_sorgulama(file_id, borclu_id):
+    """Get bank query results for a specific borclu"""
+    try:
+        print(f"API: Fetching banka sorgulama for file_id: {file_id}, borclu_id: {borclu_id}")
+        
+        sorgu_data = get_borclu_sorgu_by_tipi(borclu_id, 'banka_sorgulama')
+        
+        if sorgu_data is None:
+            return jsonify({"error": "Bank query data not found"}), 404
+        
+        response_data = {
+            "file_id": int(file_id),
+            "borclu_id": int(borclu_id),
+            "bankaSorguSonucu": sorgu_data,
+            "timestamp": datetime.now().isoformat()
+        }
+        
+        print(f"Successfully retrieved banka sorgulama for borclu_id: {borclu_id}")
+        return jsonify(response_data)
+        
+    except Exception as error:
+        print(f"Error in api_banka_sorgulama: {error}")
+        return jsonify({"error": "Internal server error"}), 500
+
+@app.route('/api/icra-dosyalarim/<file_id>/<borclu_id>/gib-sorgulama', methods=['GET'])
+def api_gib_sorgulama(file_id, borclu_id):
+    """Get GIB query results for a specific borclu"""
+    try:
+        print(f"API: Fetching GIB sorgulama for file_id: {file_id}, borclu_id: {borclu_id}")
+        
+        sorgu_data = get_borclu_sorgu_by_tipi(borclu_id, 'gib_sorgulama')
+        
+        if sorgu_data is None:
+            return jsonify({"error": "GIB query data not found"}), 404
+        
+        response_data = {
+            "file_id": int(file_id),
+            "borclu_id": int(borclu_id),
+            "gibSorguSonucu": sorgu_data,
+            "timestamp": datetime.now().isoformat()
+        }
+        
+        print(f"Successfully retrieved GIB sorgulama for borclu_id: {borclu_id}")
+        return jsonify(response_data)
+        
+    except Exception as error:
+        print(f"Error in api_gib_sorgulama: {error}")
+        return jsonify({"error": "Internal server error"}), 500
+
+@app.route('/api/icra-dosyalarim/<file_id>/<borclu_id>/sgk-sorgulama', methods=['GET'])
+def api_sgk_sorgulama(file_id, borclu_id):
+    """Get SGK query results for a specific borclu"""
+    try:
+        print(f"API: Fetching SGK sorgulama for file_id: {file_id}, borclu_id: {borclu_id}")
+        
+        sorgu_data = get_borclu_sorgu_by_tipi(borclu_id, 'sgk_sorgulama')
+        
+        if sorgu_data is None:
+            return jsonify({"error": "SGK query data not found"}), 404
+        
+        response_data = {
+            "file_id": int(file_id),
+            "borclu_id": int(borclu_id),
+            "sgkSorguSonucu": sorgu_data,
+            "timestamp": datetime.now().isoformat()
+        }
+        
+        print(f"Successfully retrieved SGK sorgulama for borclu_id: {borclu_id}")
+        return jsonify(response_data)
+        
+    except Exception as error:
+        print(f"Error in api_sgk_sorgulama: {error}")
+        return jsonify({"error": "Internal server error"}), 500
+
+@app.route('/api/icra-dosyalarim/<file_id>/<borclu_id>/sgk-haciz-sorgulama', methods=['GET'])
+def api_sgk_haciz_sorgulama(file_id, borclu_id):
+    """Get SGK haciz query results for a specific borclu"""
+    try:
+        print(f"API: Fetching SGK haciz sorgulama for file_id: {file_id}, borclu_id: {borclu_id}")
+        
+        sorgu_data = get_borclu_sorgu_by_tipi(borclu_id, 'sgk_haciz_sorgulama')
+        
+        if sorgu_data is None:
+            return jsonify({"error": "SGK haciz query data not found"}), 404
+        
+        response_data = {
+            "file_id": int(file_id),
+            "borclu_id": int(borclu_id),
+            "sgkHacizSorguSonucu": sorgu_data,
+            "timestamp": datetime.now().isoformat()
+        }
+        
+        print(f"Successfully retrieved SGK haciz sorgulama for borclu_id: {borclu_id}")
+        return jsonify(response_data)
+        
+    except Exception as error:
+        print(f"Error in api_sgk_haciz_sorgulama: {error}")
+        return jsonify({"error": "Internal server error"}), 500
+
+@app.route('/api/icra-dosyalarim/<file_id>/<borclu_id>/egm-sorgulama', methods=['GET'])
+def api_egm_sorgulama(file_id, borclu_id):
+    """Get EGM query results for a specific borclu"""
+    try:
+        print(f"API: Fetching EGM sorgulama for file_id: {file_id}, borclu_id: {borclu_id}")
+        
+        sorgu_data = get_borclu_sorgu_by_tipi(borclu_id, 'egm_sorgulama')
+        
+        if sorgu_data is None:
+            return jsonify({"error": "EGM query data not found"}), 404
+        
+        response_data = {
+            "file_id": int(file_id),
+            "borclu_id": int(borclu_id),
+            "egmSorguSonucu": sorgu_data,
+            "timestamp": datetime.now().isoformat()
+        }
+        
+        print(f"Successfully retrieved EGM sorgulama for borclu_id: {borclu_id}")
+        return jsonify(response_data)
+        
+    except Exception as error:
+        print(f"Error in api_egm_sorgulama: {error}")
+        return jsonify({"error": "Internal server error"}), 500
+
+@app.route('/api/icra-dosyalarim/<file_id>/<borclu_id>/takbis-sorgulama', methods=['GET'])
+def api_takbis_sorgulama(file_id, borclu_id):
+    """Get TAKBIS query results for a specific borclu"""
+    try:
+        print(f"API: Fetching TAKBIS sorgulama for file_id: {file_id}, borclu_id: {borclu_id}")
+        
+        sorgu_data = get_borclu_sorgu_by_tipi(borclu_id, 'takbis_sorgulama')
+        
+        if sorgu_data is None:
+            return jsonify({"error": "TAKBIS query data not found"}), 404
+        
+        response_data = {
+            "file_id": int(file_id),
+            "borclu_id": int(borclu_id),
+            "takbisSorguSonucu": sorgu_data,
+            "timestamp": datetime.now().isoformat()
+        }
+        
+        print(f"Successfully retrieved TAKBIS sorgulama for borclu_id: {borclu_id}")
+        return jsonify(response_data)
+        
+    except Exception as error:
+        print(f"Error in api_takbis_sorgulama: {error}")
+        return jsonify({"error": "Internal server error"}), 500
+
+@app.route('/api/icra-dosyalarim/<file_id>/<borclu_id>/icra-dosyasi-sorgulama', methods=['GET'])
+def api_icra_dosyasi_sorgulama(file_id, borclu_id):
+    """Get icra dosyasi query results for a specific borclu"""
+    try:
+        print(f"API: Fetching icra dosyasi sorgulama for file_id: {file_id}, borclu_id: {borclu_id}")
+        
+        sorgu_data = get_borclu_sorgu_by_tipi(borclu_id, 'icra_dosyasi_sorgulama')
+        
+        if sorgu_data is None:
+            return jsonify({"error": "İcra dosyasi query data not found"}), 404
+        
+        response_data = {
+            "file_id": int(file_id),
+            "borclu_id": int(borclu_id),
+            "icraDosyasiSorguSonucu": sorgu_data,
+            "timestamp": datetime.now().isoformat()
+        }
+        
+        print(f"Successfully retrieved icra dosyasi sorgulama for borclu_id: {borclu_id}")
+        return jsonify(response_data)
+        
+    except Exception as error:
+        print(f"Error in api_icra_dosyasi_sorgulama: {error}")
+        return jsonify({"error": "Internal server error"}), 500
+
+@app.route('/api/icra-dosyalarim/<file_id>/<borclu_id>/adres-sorgulama', methods=['GET'])
+def api_adres_sorgulama(file_id, borclu_id):
+    """Get address query results for a specific borclu"""
+    try:
+        print(f"API: Fetching adres sorgulama for file_id: {file_id}, borclu_id: {borclu_id}")
+        
+        # For adres sorgulama, we look for MERNİS data which contains address information
+        sorgu_data = get_borclu_sorgu_by_tipi(borclu_id, 'MERNİS')
+        
+        if sorgu_data is None:
+            return jsonify({"error": "Address query data not found"}), 404
+        
+        response_data = {
+            "file_id": int(file_id),
+            "borclu_id": int(borclu_id),
+            "adresSorguSonucu": sorgu_data,
+            "timestamp": datetime.now().isoformat()
+        }
+        
+        print(f"Successfully retrieved adres sorgulama for borclu_id: {borclu_id}")
+        return jsonify(response_data)
+        
+    except Exception as error:
+        print(f"Error in api_adres_sorgulama: {error}")
+        return jsonify({"error": "Internal server error"}), 500
+
+@app.route('/api/icra-dosyalarim/<file_id>/<borclu_id>/telefon-sorgulama', methods=['GET'])
+def api_telefon_sorgulama(file_id, borclu_id):
+    """Get phone query results for a specific borclu"""
+    try:
+        print(f"API: Fetching telefon sorgulama for file_id: {file_id}, borclu_id: {borclu_id}")
+        
+        sorgu_data = get_borclu_sorgu_by_tipi(borclu_id, 'telefon_sorgulama')
+        
+        if sorgu_data is None:
+            return jsonify({"error": "Phone query data not found"}), 404
+        
+        response_data = {
+            "file_id": int(file_id),
+            "borclu_id": int(borclu_id),
+            "telefonSorguSonucu": sorgu_data,
+            "timestamp": datetime.now().isoformat()
+        }
+        
+        print(f"Successfully retrieved telefon sorgulama for borclu_id: {borclu_id}")
+        return jsonify(response_data)
+        
+    except Exception as error:
+        print(f"Error in api_telefon_sorgulama: {error}")
+        return jsonify({"error": "Internal server error"}), 500
+
+@app.route('/api/icra-dosyalarim/<file_id>/<borclu_id>/arac-sorgulama', methods=['GET'])
+def api_arac_sorgulama(file_id, borclu_id):
+    """Get vehicle query results for a specific borclu"""
+    try:
+        print(f"API: Fetching arac sorgulama for file_id: {file_id}, borclu_id: {borclu_id}")
+        
+        sorgu_data = get_borclu_sorgu_by_tipi(borclu_id, 'arac_sorgulama')
+        
+        if sorgu_data is None:
+            return jsonify({"error": "Vehicle query data not found"}), 404
+        
+        response_data = {
+            "file_id": int(file_id),
+            "borclu_id": int(borclu_id),
+            "aracSorguSonucu": sorgu_data,
+            "timestamp": datetime.now().isoformat()
+        }
+        
+        print(f"Successfully retrieved arac sorgulama for borclu_id: {borclu_id}")
+        return jsonify(response_data)
+        
+    except Exception as error:
+        print(f"Error in api_arac_sorgulama: {error}")
+        return jsonify({"error": "Internal server error"}), 500
+
+@app.route('/api/icra-dosyalarim/<file_id>/<borclu_id>/gayrimenkul-sorgulama', methods=['GET'])
+def api_gayrimenkul_sorgulama(file_id, borclu_id):
+    """Get real estate query results for a specific borclu"""
+    try:
+        print(f"API: Fetching gayrimenkul sorgulama for file_id: {file_id}, borclu_id: {borclu_id}")
+        
+        sorgu_data = get_borclu_sorgu_by_tipi(borclu_id, 'gayrimenkul_sorgulama')
+        
+        if sorgu_data is None:
+            return jsonify({"error": "Real estate query data not found"}), 404
+        
+        response_data = {
+            "file_id": int(file_id),
+            "borclu_id": int(borclu_id),
+            "gayrimenkulSorguSonucu": sorgu_data,
+            "timestamp": datetime.now().isoformat()
+        }
+        
+        print(f"Successfully retrieved gayrimenkul sorgulama for borclu_id: {borclu_id}")
+        return jsonify(response_data)
+        
+    except Exception as error:
+        print(f"Error in api_gayrimenkul_sorgulama: {error}")
+        return jsonify({"error": "Internal server error"}), 500
+
+@app.route('/api/icra-dosyalarim/<file_id>/<borclu_id>/dis-isleri-sorgulama', methods=['GET'])
+def api_dis_isleri_sorgulama(file_id, borclu_id):
+    """Get foreign affairs query results for a specific borclu"""
+    try:
+        print(f"API: Fetching dis isleri sorgulama for file_id: {file_id}, borclu_id: {borclu_id}")
+        
+        sorgu_data = get_borclu_sorgu_by_tipi(borclu_id, 'dis_isleri_sorgulama')
+        
+        if sorgu_data is None:
+            return jsonify({"error": "Foreign affairs query data not found"}), 404
+        
+        response_data = {
+            "file_id": int(file_id),
+            "borclu_id": int(borclu_id),
+            "disIsleriSorguSonucu": sorgu_data,
+            "timestamp": datetime.now().isoformat()
+        }
+        
+        print(f"Successfully retrieved dis isleri sorgulama for borclu_id: {borclu_id}")
+        return jsonify(response_data)
+        
+    except Exception as error:
+        print(f"Error in api_dis_isleri_sorgulama: {error}")
+        return jsonify({"error": "Internal server error"}), 500
+
+@app.route('/api/icra-dosyalarim/<file_id>/<borclu_id>/iski-sorgulama', methods=['GET'])
+def api_iski_sorgulama(file_id, borclu_id):
+    """Get ISKI query results for a specific borclu"""
+    try:
+        print(f"API: Fetching ISKI sorgulama for file_id: {file_id}, borclu_id: {borclu_id}")
+        
+        sorgu_data = get_borclu_sorgu_by_tipi(borclu_id, 'iski_sorgulama')
+        
+        if sorgu_data is None:
+            return jsonify({"error": "ISKI query data not found"}), 404
+        
+        response_data = {
+            "file_id": int(file_id),
+            "borclu_id": int(borclu_id),
+            "iskiSorguSonucu": sorgu_data,
+            "timestamp": datetime.now().isoformat()
+        }
+        
+        print(f"Successfully retrieved ISKI sorgulama for borclu_id: {borclu_id}")
+        return jsonify(response_data)
+        
+    except Exception as error:
+        print(f"Error in api_iski_sorgulama: {error}")
+        return jsonify({"error": "Internal server error"}), 500
+
+@app.route('/api/icra-dosyalarim/<file_id>/<borclu_id>/posta-ceki-sorgulama', methods=['GET'])
+def api_posta_ceki_sorgulama(file_id, borclu_id):
+    """Get post office check query results for a specific borclu"""
+    try:
+        print(f"API: Fetching posta ceki sorgulama for file_id: {file_id}, borclu_id: {borclu_id}")
+        
+        sorgu_data = get_borclu_sorgu_by_tipi(borclu_id, 'posta_ceki_sorgulama')
+        
+        if sorgu_data is None:
+            return jsonify({"error": "Post office check query data not found"}), 404
+        
+        response_data = {
+            "file_id": int(file_id),
+            "borclu_id": int(borclu_id),
+            "postaCekiSorguSonucu": sorgu_data,
+            "timestamp": datetime.now().isoformat()
+        }
+        
+        print(f"Successfully retrieved posta ceki sorgulama for borclu_id: {borclu_id}")
+        return jsonify(response_data)
+        
+    except Exception as error:
+        print(f"Error in api_posta_ceki_sorgulama: {error}")
+        return jsonify({"error": "Internal server error"}), 500
+
+@app.route('/api/icra-dosyalarim/<file_id>/<borclu_id>/alacakli-dosyalari', methods=['GET'])
+def api_alacakli_dosyalari(file_id, borclu_id):
+    """Get creditor files query results for a specific borclu"""
+    try:
+        print(f"API: Fetching alacakli dosyalari for file_id: {file_id}, borclu_id: {borclu_id}")
+        
+        sorgu_data = get_borclu_sorgu_by_tipi(borclu_id, 'alacakli_dosyalari')
+        
+        if sorgu_data is None:
+            return jsonify({"error": "Creditor files query data not found"}), 404
+        
+        response_data = {
+            "file_id": int(file_id),
+            "borclu_id": int(borclu_id),
+            "alacakliDosyalariSonucu": sorgu_data,
+            "timestamp": datetime.now().isoformat()
+        }
+        
+        print(f"Successfully retrieved alacakli dosyalari for borclu_id: {borclu_id}")
+        return jsonify(response_data)
+        
+    except Exception as error:
+        print(f"Error in api_alacakli_dosyalari: {error}")
+        return jsonify({"error": "Internal server error"}), 500
+
 @app.route('/health', methods=['GET'])
 def health_check():
     """Health check endpoint"""
     return jsonify({"status": "healthy", "message": "Database API is running"})
+
+@app.route('/api/uyap/trigger-sorgulama', methods=['POST'])
+def trigger_sorgulama():
+    """Trigger UYAP sorgulama for a specific dosya and query type"""
+    try:
+        data = request.get_json()
+        dosya_no = data.get('dosya_no')
+        sorgu_tipi = data.get('sorgu_tipi')
+        borclu_id = data.get('borclu_id')
+        
+        if not all([dosya_no, sorgu_tipi, borclu_id]):
+            return jsonify({
+                'success': False,
+                'message': 'dosya_no, sorgu_tipi ve borclu_id parametreleri gerekli'
+            }), 400
+        
+        print(f"Triggering sorgulama: dosya_no={dosya_no}, sorgu_tipi={sorgu_tipi}, borclu_id={borclu_id}")
+        
+        # Check if UYAP session exists and is valid
+        with uyap_session_lock:
+            if not uyap_sessions:
+                return jsonify({
+                    'success': False,
+                    'message': 'UYAP bağlantısı bulunamadı. Lütfen önce UYAP\'a giriş yapın.'
+                }), 400
+            
+            # Get the first available session
+            session_id = list(uyap_sessions.keys())[0]
+            driver = uyap_sessions[session_id]
+            
+            # Validate that the driver is still active
+            try:
+                # Test if driver is still responsive
+                driver.current_url
+            except Exception as e:
+                # Driver is dead, remove it and return error
+                del uyap_sessions[session_id]
+                return jsonify({
+                    'success': False,
+                    'message': 'UYAP bağlantısı kesildi. Lütfen yeniden giriş yapın.'
+                }), 400
+        
+        # Map sorgu_tipi to selected_options format
+        selected_options = {sorgu_tipi: True}
+        
+        # Import and run sorgulama_common
+        import sys
+        import os
+        sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', 'backend'))
+        
+        from sorgulama_common import perform_sorgulama
+        
+        # Run the sorgulama
+        perform_sorgulama(driver, dosya_no, selected_options)
+        
+        # Get the latest result from database
+        # Map sorgu_tipi to database format
+        db_sorgu_tipi = sorgu_tipi
+        if sorgu_tipi == 'MERNİS':
+            db_sorgu_tipi = 'Mernis'
+        elif sorgu_tipi == 'SGK':
+            db_sorgu_tipi = 'Sgk'
+        elif sorgu_tipi == 'EGM':
+            db_sorgu_tipi = 'Egm'
+        elif sorgu_tipi == 'TAKBİS':
+            db_sorgu_tipi = 'Takbis'
+        elif sorgu_tipi == 'Banka':
+            db_sorgu_tipi = 'Banka'
+        
+        sorgu_data = get_borclu_sorgu_by_tipi(borclu_id, db_sorgu_tipi)
+        
+        return jsonify({
+            'success': True,
+            'message': f'{sorgu_tipi} sorgulaması başarıyla tamamlandı',
+            'data': sorgu_data,
+            'timestamp': datetime.now().isoformat()
+        })
+        
+    except Exception as e:
+        print(f"Trigger sorgulama error: {e}")
+        
+        # Provide user-friendly error messages
+        error_message = str(e)
+        
+        if 'Connection refused' in error_message or 'Max retries exceeded' in error_message:
+            error_message = 'UYAP bağlantısı kesildi. Lütfen UYAP\'ı yeniden bağlayın.'
+        elif 'session' in error_message.lower() and 'not found' in error_message.lower():
+            error_message = 'UYAP oturumu bulunamadı. Lütfen yeniden giriş yapın.'
+        elif 'timeout' in error_message.lower():
+            error_message = 'Sorgulama zaman aşımına uğradı. Lütfen tekrar deneyin.'
+        elif 'element' in error_message.lower() and 'not found' in error_message.lower():
+            error_message = 'UYAP sayfasında beklenen element bulunamadı. Sayfa yapısı değişmiş olabilir.'
+        
+        return jsonify({
+            'success': False,
+            'message': f'Sorgulama hatası: {error_message}'
+        }), 500
 
 # ============================================================================
 # UYAP API ENDPOINTS
