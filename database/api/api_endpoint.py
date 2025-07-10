@@ -8,7 +8,7 @@ import threading
 from datetime import datetime
 
 # Add backend folder to path to import UYAP functions
-sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'backend'))
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', 'backend'))
 
 app = Flask(__name__)
 
@@ -17,7 +17,7 @@ uyap_sessions = {}
 uyap_session_lock = threading.Lock()
 CORS(app)  # Enable CORS for cross-origin requests
 
-DB_PATH = "files.db"
+DB_PATH = os.path.join(os.path.dirname(__file__), '..', 'files.db')
 
 # Column names for better data handling
 COLUMNS = ['file_id', 'klasor', 'dosyaNo', 'borcluAdi', 'alacakliAdi', 'foyTuru', 'durum', 'takipTarihi', 'icraMudurlugu']

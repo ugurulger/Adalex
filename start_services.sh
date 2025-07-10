@@ -16,7 +16,7 @@ trap cleanup SIGINT SIGTERM
 # Start Database API
 echo "Starting Database API on port 5001..."
 cd database
-source venv/bin/activate && python api_endpoint.py &
+source venv/bin/activate && python api/api_endpoint.py &
 DATABASE_API_PID=$!
 cd ..
 
