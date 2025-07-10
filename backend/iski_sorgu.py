@@ -12,6 +12,7 @@ from selenium.common.exceptions import (
     NoSuchElementException
 )
 from sorgulama_common import handle_popup_if_present, click_element_merged, save_to_json, get_logger, check_result_or_popup
+from database_helper import save_scraping_data_to_db_and_json
 
 # Global Sabitler
 TIMEOUT = 15
@@ -56,7 +57,7 @@ def perform_iski_sorgu(driver, item_text, dosya_no, result_label=None):
             result_label.config(text=f"Performing İSKİ sorgu for {item_text} - Clicking İSKİ button...")
         if not click_element_merged(driver, By.CSS_SELECTOR, ISKI_BUTTON_CSS,
                                    action_name="İSKİ button", item_text=item_text, result_label=result_label):
-            save_to_json(extracted_data)
+            save_scraping_data_to_db_and_json(extracted_data, os.path.join(DESKTOP_PATH, "iski_sorgu.json"))
             return False, extracted_data
 
         # Adım 2: "Sorgula" butonuna tıkla
@@ -64,7 +65,7 @@ def perform_iski_sorgu(driver, item_text, dosya_no, result_label=None):
             result_label.config(text=f"Performing İSKİ sorgu for {item_text} - Clicking Sorgula button...")
         if not click_element_merged(driver, By.CSS_SELECTOR, SORGULA_BUTTON_CSS,
                                    action_name="Sorgula button", item_text=item_text, result_label=result_label):
-            save_to_json(extracted_data)
+            save_scraping_data_to_db_and_json(extracted_data, os.path.join(DESKTOP_PATH, "iski_sorgu.json"))
             return False, extracted_data
 
         # Adım 3: Veri çıkarma işlemi
@@ -76,7 +77,7 @@ def perform_iski_sorgu(driver, item_text, dosya_no, result_label=None):
             result = wait.until(lambda d: check_result_or_popup(d, (By.XPATH, SONUC_XPATH), item_text, result_label))
             if isinstance(result, str):  # Pop-up mesajı
                 extracted_data[dosya_no][item_text]["İSKİ"]["sonuc"] = result
-                save_to_json(extracted_data)
+                save_scraping_data_to_db_and_json(extracted_data, os.path.join(DESKTOP_PATH, "iski_sorgu.json"))
                 return False, extracted_data
             else:  # SONUC_XPATH elementi
                 sonuc_element = result
@@ -91,14 +92,14 @@ def perform_iski_sorgu(driver, item_text, dosya_no, result_label=None):
                 result_label.config(text=error_msg)
             logger.error(error_msg)
             extracted_data[dosya_no][item_text]["İSKİ"]["sonuc"] = ""
-            save_to_json(extracted_data)
+            save_scraping_data_to_db_and_json(extracted_data, os.path.join(DESKTOP_PATH, "iski_sorgu.json"))
             return False, extracted_data
 
         if result_label:
             result_label.config(text=f"İSKİ sorgu completed for {item_text}")
         logger.info(f"Successfully extracted data for {item_text}: {extracted_data}")
 
-        save_to_json(extracted_data)
+        save_scraping_data_to_db_and_json(extracted_data, os.path.join(DESKTOP_PATH, "iski_sorgu.json"))
         return True, extracted_data
 
     except Exception as e:
@@ -106,5 +107,5 @@ def perform_iski_sorgu(driver, item_text, dosya_no, result_label=None):
         if result_label:
             result_label.config(text=error_msg)
         logger.error(error_msg)
-        save_to_json(extracted_data)
+        save_scraping_data_to_db_and_json(extracted_data, os.path.join(DESKTOP_PATH, "iski_sorgu.json"))
         return False, extracted_data

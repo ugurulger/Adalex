@@ -703,7 +703,7 @@ export default function IcraDosyalarimPage() {
                                           <ArrowUpDown className="w-2.5 h-2.5 ml-1" />
                                         </Button>
                                       </TableHead>
-                                      <TableHead className="font-semibold text-gray-700 py-1 px-1 hidden lg:table-cell">
+                                      <TableHead className="font-semibold text-gray-700 py-1 px-1">
                                         <Button
                                           variant="ghost"
                                           onClick={() => handleSort("icraMudurlugu")}
@@ -754,7 +754,7 @@ export default function IcraDosyalarimPage() {
                                             {item.foyTuru}
                                           </div>
                                         </TableCell>
-                                        <TableCell className="py-1 px-1 text-[9px] hidden lg:table-cell">
+                                        <TableCell className="py-1 px-1 text-[9px]">
                                           <div className="max-w-[120px] truncate" title={item.icraMudurlugu}>
                                             {item.icraMudurlugu}
                                           </div>

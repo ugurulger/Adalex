@@ -7,6 +7,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException, NoSuchElementException, ElementClickInterceptedException, StaleElementReferenceException
+from database_helper import save_scraping_data_to_db_and_json
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -14,9 +15,9 @@ logger = logging.getLogger(__name__)
 def extract_data_from_table(driver, ui_callback=None):
     try:
         wait, short_wait = WebDriverWait(driver, 15), WebDriverWait(driver, 2)
-        all_data = {}  # Dictionary to store row data with keys like 'row1', 'row2', etc.
+        all_data = []  # Array to store file data matching database structure
         processed_dosya_nos = set()  # Track processed rows across all pages
-        max_pages_to_process = 3  # Limit to first 3 pages
+        max_pages_to_process = 1  # Limit to first 3 pages
         row_counter = 1  # Global counter for row numbering across all pages
 
         # Define output directory and daily JSON filename
@@ -76,6 +77,7 @@ def extract_data_from_table(driver, ui_callback=None):
                     # Extract 'Genel' data
                     cells = row.find_elements(By.TAG_NAME, "td")
 
+                    icra_mudurlugu = cells[0].text.strip()  # First column is İcra Müdürlüğü
                     dosya_no = cells[1].text.strip()
                     if not dosya_no or "/" not in dosya_no:
                         logger.debug(f"Row {row_index + 1} on Page {page} skipped: No valid 'Dosya No' found ({dosya_no}).")
@@ -85,17 +87,23 @@ def extract_data_from_table(driver, ui_callback=None):
 
                     dosya_durumu = cells[3].find_element(By.CSS_SELECTOR, "div.label-light").text.strip() if cells[3].find_elements(By.CSS_SELECTOR, "div.label-light") else cells[3].text.strip()
 
-                    row_data = {
-                        "Genel": {
-                            "Birim": cells[0].text.strip(),
-                            "Dosya No": dosya_no,
-                            "Dosya Türü": cells[2].text.strip(),
-                            "Dosya Durumu": dosya_durumu,
-                            "Dosya Açılış Tarihi": cells[4].text.strip()
-                        },
-                        "Dosya Bilgileri": {},
-                        "Dosya Hesabı": {},
-                        "Taraf Bilgileri": {}
+                    # Create file data structure matching database
+                    file_data = {
+                        "file_id": str(row_counter),
+                        "klasor": str(row_counter),  # Same as file_id for UI display
+                        "dosyaNo": dosya_no,
+                        "borcluAdi": "",  # Will be populated from Taraf Bilgileri
+                        "alacakliAdi": "",  # Will be populated from Taraf Bilgileri
+                        "foyTuru": cells[2].text.strip(),
+                        "durum": dosya_durumu,
+                        "takipTarihi": cells[4].text.strip(),
+                        "icraMudurlugu": icra_mudurlugu,  # Correct İcra Müdürlüğü from first column
+                        "takipSekli": "",
+                        "alacakliVekili": "",
+                        "borcMiktari": "",
+                        "faizOrani": "",
+                        "guncelBorc": "",
+                        "borcluList": []
                     }
 
                     # Click to open popup for this specific row
@@ -194,8 +202,11 @@ def extract_data_from_table(driver, ui_callback=None):
                             if sekli_label == "Şekli":
                                 dosya_bilgileri["Şekli"] = driver.find_element(By.XPATH, sekli_value_xpath).text.strip() if driver.find_elements(By.XPATH, sekli_value_xpath) else "Not found"
 
-                        row_data["Dosya Bilgileri"] = dosya_bilgileri
-                        logger.info(f"Dosya Bilgileri extracted for Row {row_index + 1} on Page {page}: {row_data['Dosya Bilgileri']}")
+                        # Update takipSekli from Dosya Bilgileri
+                        if dosya_bilgileri["Türü"] != "Not found":
+                            file_data["takipSekli"] = f"{dosya_bilgileri['Türü']} - {dosya_bilgileri['Yolu']} - {dosya_bilgileri['Şekli']}"
+                        
+                        logger.info(f"Dosya Bilgileri extracted for Row {row_index + 1} on Page {page}: {dosya_bilgileri}")
                     else:
                         logger.warning(f"Skipping 'Dosya Bilgileri' extraction due to missing tab on Page {page}.")
 
@@ -214,17 +225,21 @@ def extract_data_from_table(driver, ui_callback=None):
                         yatan_para = driver.find_element(By.XPATH, f"{base_xpath}/tr[7]/td[2]").text.strip() if driver.find_elements(By.XPATH, f"{base_xpath}/tr[7]/td[2]") else ""
                         bakiye_borc_miktari = driver.find_element(By.XPATH, f"{base_xpath}/tr[8]/td[2]").text.strip() if driver.find_elements(By.XPATH, f"{base_xpath}/tr[8]/td[2]") else ""
 
-                        row_data["Dosya Hesabı"] = {
-                            "Takipte Kesinleşen Miktar": takipte_kesinlesen_miktar,
-                            "Toplam Faiz Miktarı": toplam_faiz_miktari,
-                            "Vekalet Ücreti": vekalet_ucreti,
-                            "Masraf Miktarı": masraf_miktari,
-                            "Tahsil Harcı": tahsil_harci,
-                            "Toplam Alacak": toplam_alacak,
-                            "Yatan Para": yatan_para,
-                            "Bakiye Borç Miktarı": bakiye_borc_miktari
-                        }
-                        logger.info(f"Dosya Hesabı extracted for Row {row_index + 1} on Page {page}: {row_data['Dosya Hesabı']}")
+                        # Update financial fields in file_data
+                        file_data["borcMiktari"] = takipte_kesinlesen_miktar
+                        file_data["guncelBorc"] = bakiye_borc_miktari
+                        # Calculate faiz orani if possible
+                        if toplam_faiz_miktari and takipte_kesinlesen_miktar:
+                            try:
+                                faiz_miktar = float(toplam_faiz_miktari.replace("TL", "").replace(",", "").strip())
+                                ana_para = float(takipte_kesinlesen_miktar.replace("TL", "").replace(",", "").strip())
+                                if ana_para > 0:
+                                    faiz_orani = (faiz_miktar / ana_para) * 100
+                                    file_data["faizOrani"] = f"{faiz_orani:.1f}%"
+                            except:
+                                file_data["faizOrani"] = "10%"  # Default
+                        
+                        logger.info(f"Dosya Hesabı extracted for Row {row_index + 1} on Page {page}")
                     else:
                         logger.warning(f"Skipping 'Dosya Hesabı' extraction due to missing tab on Page {page}.")
 
@@ -279,8 +294,34 @@ def extract_data_from_table(driver, ui_callback=None):
                             if not taraf_data:
                                 logger.warning(f"No rows found in 'Taraf Bilgileri' table for Row {row_index + 1} on Page {page}")
 
-                            row_data["Taraf Bilgileri"] = taraf_data
-                            logger.info(f"Taraf Bilgileri extracted for Row {row_index + 1} on Page {page}: {row_data['Taraf Bilgileri']}")
+                            # Populate borcluList and other fields from Taraf Bilgileri
+                            borclu_names = []
+                            alacakli_names = []
+                            
+                            for taraf_key, taraf_info in taraf_data.items():
+                                if taraf_info["Rol"].lower() == "borçlu":
+                                    borclu_names.append(taraf_info["Adi"])
+                                    # Add to borcluList
+                                    borclu_data = {
+                                        "borclu_id": f"{row_counter}_{len(file_data['borcluList']) + 1}",
+                                        "file_id": str(row_counter),
+                                        "ad": taraf_info["Adi"],
+                                        "tcKimlik": "",
+                                        "telefon": "",
+                                        "adres": "",
+                                        "vekil": taraf_info["Vekil"]
+                                    }
+                                    file_data["borcluList"].append(borclu_data)
+                                elif taraf_info["Rol"].lower() == "alacaklı":
+                                    alacakli_names.append(taraf_info["Adi"])
+                                    if not file_data["alacakliVekili"] and taraf_info["Vekil"]:
+                                        file_data["alacakliVekili"] = taraf_info["Vekil"]
+                            
+                            # Update borcluAdi and alacakliAdi
+                            file_data["borcluAdi"] = ", ".join(borclu_names)
+                            file_data["alacakliAdi"] = ", ".join(alacakli_names)
+                            
+                            logger.info(f"Taraf Bilgileri extracted for Row {row_index + 1} on Page {page}: {taraf_data}")
 
                         except Exception as e:
                             logger.error(f"Error extracting 'Taraf Bilgileri' for Row {row_index + 1} on Page {page}: {e}")
@@ -288,14 +329,13 @@ def extract_data_from_table(driver, ui_callback=None):
                         logger.warning(f"Skipping 'Taraf Bilgileri' extraction for Row {row_index + 1} on Page {page}")
 
 
-                    # Store the row data in all_data with rowN key
-                    all_data[f"row{row_counter}"] = row_data
+                    # Add the file data to all_data array
+                    all_data.append(file_data)
                     row_counter += 1
 
-                    # Update UI with the new row's Genel data
+                    # Update UI with the new row's data
                     if ui_callback:
-                        genel_data = row_data["Genel"]
-                        ui_callback(row_counter - 1, genel_data)
+                        ui_callback(row_counter - 1, file_data)
 
                     # Close the popup
                     wait = WebDriverWait(driver, 10)
@@ -356,32 +396,31 @@ def extract_data_from_table(driver, ui_callback=None):
                         logger.warning(f"Could not find Page {next_page_num} after Page {page}. Assuming end of pagination.")
                         break
 
-        # Save all extracted data to JSON (overwrite if exists)
-        with open(output_file, 'w', encoding='utf-8') as f:
-            json.dump(all_data, f, ensure_ascii=False, indent=4)
-        logger.info(f"Saved all data to {output_file} (overwritten if existed)")
+        # Save all extracted data to both database and JSON (backup)
+        save_scraping_data_to_db_and_json(all_data, output_file)
+        logger.info(f"Saved all data to database and {output_file} (backup)")
 
         # Print all extracted data at the end
-        logger.info(f"Finished processing {len(all_data)} rows across {min(page, max_pages)} pages. Printing all data now:")
-        for row_key, row_data in all_data.items():
-            print(f"\n{row_key}:")
-            print("  Genel:")
-            for key, value in row_data["Genel"].items():
-                print(f"    {key}: {value}")
-            if row_data["Dosya Bilgileri"]:
-                print("  Dosya Bilgileri:")
-                for key, value in row_data["Dosya Bilgileri"].items():
-                    print(f"    {key}: {value}")
-            if row_data["Dosya Hesabı"]:
-                print("  Dosya Hesabı:")
-                for key, value in row_data["Dosya Hesabı"].items():
-                    print(f"    {key}: {value}")
-            if row_data["Taraf Bilgileri"]:
-                print("  Taraf Bilgileri:")
-                for taraf, details in row_data["Taraf Bilgileri"].items():
-                    print(f"    {taraf}:")
-                    for detail_key, detail_value in details.items():
-                        print(f"      {detail_key}: {detail_value}")
+        logger.info(f"Finished processing {len(all_data)} files across {min(page, max_pages)} pages. Printing all data now:")
+        for i, file_data in enumerate(all_data, 1):
+            print(f"\nFile {i}:")
+            print(f"  file_id: {file_data['file_id']}")
+            print(f"  klasor: {file_data['klasor']}")
+            print(f"  dosyaNo: {file_data['dosyaNo']}")
+            print(f"  borcluAdi: {file_data['borcluAdi']}")
+            print(f"  alacakliAdi: {file_data['alacakliAdi']}")
+            print(f"  foyTuru: {file_data['foyTuru']}")
+            print(f"  durum: {file_data['durum']}")
+            print(f"  takipTarihi: {file_data['takipTarihi']}")
+            print(f"  icraMudurlugu: {file_data['icraMudurlugu']}")
+            print(f"  takipSekli: {file_data['takipSekli']}")
+            print(f"  alacakliVekili: {file_data['alacakliVekili']}")
+            print(f"  borcMiktari: {file_data['borcMiktari']}")
+            print(f"  faizOrani: {file_data['faizOrani']}")
+            print(f"  guncelBorc: {file_data['guncelBorc']}")
+            print(f"  borcluList: {len(file_data['borcluList'])} debtors")
+            for borclu in file_data['borcluList']:
+                print(f"    - {borclu['ad']} (ID: {borclu['borclu_id']})")
 
         return all_data
 

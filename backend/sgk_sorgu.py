@@ -11,6 +11,7 @@ from selenium.common.exceptions import (
     NoSuchElementException
 )
 from sorgulama_common import handle_popup_if_present, click_element_merged, save_to_json
+from database_helper import save_scraping_data_to_db_and_json
 
 # Global Constants
 TIMEOUT = 15
@@ -184,7 +185,7 @@ def perform_sgk_sorgu(driver, item_text, dosya_no, result_label=None):
         result_label.config(text=f"SGK sorgu için {item_text} - SGK butonuna tıklanıyor...")
     time.sleep(SLEEP_INTERVAL)
     if not click_element_merged(driver, By.CSS_SELECTOR, SGK_BUTTON_CSS, "SGK button", item_text, result_label):
-        save_to_json(extracted_data)
+        save_scraping_data_to_db_and_json(extracted_data, os.path.join(DESKTOP_PATH, "sgk_sorgu.json"))
         return False, extracted_data
 
     if not click_element_merged(driver, By.CSS_SELECTOR, ACTIVE_SUBPANEL_SELECTOR, "Active subpanel focus", item_text, result_label):
@@ -215,5 +216,5 @@ def perform_sgk_sorgu(driver, item_text, dosya_no, result_label=None):
         extracted_data[dosya_no][item_text][current_item] = {"sonuc": sonuc}
         logger.info(f"Extracted data for '{current_item}': {sonuc}")
     
-    save_to_json(extracted_data)
+    save_scraping_data_to_db_and_json(extracted_data, os.path.join(DESKTOP_PATH, "sgk_sorgu.json"))
     return True, extracted_data
