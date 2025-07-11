@@ -24,12 +24,10 @@ interface AlacakliDosyalariModalProps {
 
 interface AlacakliDosyalariData {
   file_id: number
-  borclu_id: number
+  borclu_id: string
   alacakliDosyalariSonucu: {
-    "İcra Dosyası": {
-      sonuc: string
-      icra_dosyalari: IcraDosyasi[]
-    }
+    sonuc: string
+    icra_dosyalari: IcraDosyasi[]
   }
   timestamp: string
 }
@@ -56,9 +54,6 @@ export default function AlacakliDosyalariModal({
   onUyapToggle,
   isConnecting = false,
 }: AlacakliDosyalariModalProps) {
-  const [isQuerying, setIsQuerying] = useState(false)
-  const [lastQueryTime, setLastQueryTime] = useState<Date | null>(null)
-  const [showGreenBackground, setShowGreenBackground] = useState(false)
   const [queryData, setQueryData] = useState<AlacakliDosyalariData | null>(null)
   const [isLoading, setIsLoading] = useState(false)
 
@@ -89,30 +84,70 @@ export default function AlacakliDosyalariModal({
     }
   }, [isOpen, fileId, borcluId])
 
-  // Disabled polling for now - will be implemented later with proper database integration
-  // useEffect(() => {
-  //   if (!isOpen) return
-
-  //   const interval = setInterval(() => {
-  //     fetchCurrentData()
-  //   }, 5000) // Check every 5 seconds
-
-  //   return () => clearInterval(interval)
-  // }, [isOpen, fileId, borcluId])
-
   // Use API data if available, otherwise show empty state
-  const alacakliDosyalariSonucu = queryData?.alacakliDosyalariSonucu?.["İcra Dosyası"]
+  const alacakliDosyalariSonucu = queryData?.alacakliDosyalariSonucu
 
-  const handleSorgula = () => {
-    // Disabled for now - will be implemented later with proper database integration
-    console.log("UYAP'ta Sorgula button clicked - functionality disabled for now")
+  const handleSorgula = async () => {
+    if (!dosyaNo || !borcluId) {
+      console.error('Dosya No veya Borçlu ID eksik')
+      return
+    }
+
+    if (uyapStatus !== "Bağlı") {
+      console.error('UYAP bağlantısı yok')
+      return
+    }
+
+    setIsLoading(true)
+    try {
+      const response = await fetch('/api/uyap/trigger-sorgulama', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          dosya_no: dosyaNo,
+          sorgu_tipi: 'İcra Dosyası',
+          borclu_id: borcluId,
+        }),
+      })
+
+      const result = await response.json()
+
+      if (result.success) {
+        // Refresh the data
+        await fetchCurrentData()
+      } else {
+        console.error('Sorgulama hatası:', result.message)
+        // Show user-friendly error message
+        alert(`Sorgulama başarısız: ${result.message}`)
+      }
+    } catch (error) {
+      console.error('Sorgulama sırasında hata:', error)
+      
+      // Handle specific connection errors
+      let errorMessage = 'Bilinmeyen bir hata oluştu'
+      
+      if (error instanceof Error) {
+        if (error.message.includes('Connection refused') || error.message.includes('Max retries exceeded')) {
+          errorMessage = 'UYAP bağlantısı kesildi. Lütfen UYAP\'ı yeniden bağlayın ve tekrar deneyin.'
+        } else if (error.message.includes('fetch failed')) {
+          errorMessage = 'Sunucu bağlantısı kurulamadı. Lütfen internet bağlantınızı kontrol edin.'
+        } else {
+          errorMessage = error.message
+        }
+      }
+      
+      alert(`Sorgulama hatası: ${errorMessage}`)
+    } finally {
+      setIsLoading(false)
+    }
   }
 
-  // Clean up timers when modal closes
+  // Clean up when modal closes
   useEffect(() => {
     if (!isOpen) {
-      setIsQuerying(false)
-      setShowGreenBackground(false)
+      // Reset any modal-specific state if needed
     }
   }, [isOpen])
 
@@ -149,21 +184,21 @@ export default function AlacakliDosyalariModal({
           <DialogTitle className="text-xl font-bold text-gray-900 flex items-center justify-between">
             <div className="flex items-center gap-2">
               📄 Alacaklı Dosyaları Sorgulama Sonuçları
-                              <Badge
-                  onClick={isConnecting ? undefined : onUyapToggle}
-                  className={cn(
-                    "text-xs px-2 py-1 cursor-pointer transition-all duration-300 hover:scale-105 select-none",
-                    uyapStatus === "Bağlı"
-                      ? "bg-green-100 text-green-800 border-green-200 hover:bg-green-200"
-                      : uyapStatus === "Bağlanıyor"
-                        ? "bg-blue-100 text-blue-800 border-blue-200 cursor-not-allowed"
-                        : "bg-red-100 text-red-800 border-red-200 hover:bg-red-200",
-                    isConnecting && "animate-pulse-slow",
-                  )}
-                  style={{
-                    animationDuration: isConnecting ? "3s" : undefined,
-                  }}
-                >
+              <Badge
+                onClick={isConnecting ? undefined : onUyapToggle}
+                className={cn(
+                  "text-xs px-2 py-1 cursor-pointer transition-all duration-300 hover:scale-105 select-none",
+                  uyapStatus === "Bağlı"
+                    ? "bg-green-100 text-green-800 border-green-200 hover:bg-green-200"
+                    : uyapStatus === "Bağlanıyor"
+                      ? "bg-blue-100 text-blue-800 border-blue-200 cursor-not-allowed"
+                      : "bg-red-100 text-red-800 border-red-200 hover:bg-red-200",
+                  isConnecting && "animate-pulse-slow",
+                )}
+                style={{
+                  animationDuration: isConnecting ? "3s" : undefined,
+                }}
+              >
                 {isConnecting ? (
                   <div className="flex items-center gap-1">
                     <div className="animate-spin rounded-full h-2 w-2 border-b-2 border-blue-600"></div>
@@ -283,23 +318,24 @@ export default function AlacakliDosyalariModal({
         {/* Fixed Footer - Minimized Height */}
         <div className="flex-shrink-0 px-6 py-2 border-t border-gray-200 bg-gray-50">
           <div className="flex justify-between items-center">
-            <div
-              className={cn(
-                "text-xs text-gray-600 transition-all duration-300 px-2 py-1 rounded",
-                showGreenBackground && "bg-green-100 text-green-800",
-              )}
-            >
+            <div className="text-xs text-gray-600 px-2 py-1 rounded">
               <span className="font-medium">Son Sorgu Tarihi:</span>{" "}
-              {lastQueryTime ? formatDateTime(lastQueryTime) : "Henüz sorgu yapılmadı"}
+              {queryData?.timestamp ? formatDateTime(new Date(queryData.timestamp)) : "Henüz sorgu yapılmadı"}
             </div>
             <Button
               onClick={handleSorgula}
-              disabled={true}
+              disabled={isLoading || uyapStatus !== "Bağlı"}
               size="sm"
-              className="h-7 px-3 text-xs bg-gray-400 hover:bg-gray-400 text-white cursor-not-allowed"
+              className="h-7 px-3 text-xs bg-orange-600 hover:bg-orange-700 text-white transition-all duration-300 disabled:bg-gray-400 disabled:cursor-not-allowed"
             >
-              <Search className="w-3 h-3 mr-1" />
-              UYAP'ta Sorgula (Devre Dışı)
+              <div className="flex items-center gap-1">
+                {isLoading ? (
+                  <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white"></div>
+                ) : (
+                  <Search className="h-3 w-3" />
+                )}
+                <span>{isLoading ? "Sorgulanıyor..." : "UYAP'ta Sorgula"}</span>
+              </div>
             </Button>
           </div>
         </div>

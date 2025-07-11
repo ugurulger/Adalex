@@ -609,7 +609,7 @@ def api_alacakli_dosyalari(file_id, borclu_id):
     try:
         print(f"API: Fetching alacakli dosyalari for file_id: {file_id}, borclu_id: {borclu_id}")
         
-        sorgu_data = get_borclu_sorgu_by_tipi(borclu_id, 'alacakli_dosyalari')
+        sorgu_data = get_borclu_sorgu_by_tipi(borclu_id, 'İcra Dosyası')
         
         if sorgu_data is None:
             return jsonify({"error": "Creditor files query data not found"}), 404
@@ -700,6 +700,8 @@ def trigger_sorgulama():
             db_sorgu_tipi = 'TAKBİS'  # Keep as TAKBİS for consistency
         elif sorgu_tipi == 'Banka':
             db_sorgu_tipi = 'Banka'
+        elif sorgu_tipi == 'İcra Dosyası':
+            db_sorgu_tipi = 'icra_dosyasi_sorgulama'
         
         sorgu_data = get_borclu_sorgu_by_tipi(borclu_id, db_sorgu_tipi)
         
