@@ -54,7 +54,6 @@ export default function AracSorgulamaModal({
   onUyapToggle,
   isConnecting = false,
 }: AracSorgulamaModalProps) {
-  const [lastQueryTime, setLastQueryTime] = useState<Date | null>(null)
   const [selectedArac, setSelectedArac] = useState<Arac | null>(null)
   const [isMahrumiyetModalOpen, setIsMahrumiyetModalOpen] = useState(false)
   const [queryData, setQueryData] = useState<AracSorgulamaResponse | null>(null)
@@ -129,7 +128,6 @@ export default function AracSorgulamaModal({
       const result = await response.json()
 
       if (result.success) {
-        setLastQueryTime(new Date())
         // Refresh the data
         await fetchCurrentData()
       } else {
@@ -340,7 +338,7 @@ export default function AracSorgulamaModal({
             <div className="flex justify-between items-center">
               <div className="text-xs text-gray-600 px-2 py-1 rounded">
                 <span className="font-medium">Son Sorgu Tarihi:</span>{" "}
-                {lastQueryTime ? formatDateTime(lastQueryTime) : "Henüz sorgu yapılmadı"}
+                {queryData?.timestamp ? formatDateTime(new Date(queryData.timestamp)) : "Henüz sorgu yapılmadı"}
               </div>
               <Button
                 onClick={handleSorgula}

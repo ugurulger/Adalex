@@ -42,7 +42,6 @@ export default function AdresSorgulamaModal({
   onUyapToggle,
   isConnecting = false,
 }: AdresSorgulamaModalProps) {
-  const [lastQueryTime, setLastQueryTime] = useState<Date | null>(null)
   const [queryData, setQueryData] = useState<AdresSorgulamaData | null>(null)
   const [isLoading, setIsLoading] = useState(false)
 
@@ -124,7 +123,6 @@ export default function AdresSorgulamaModal({
       const result = await response.json()
 
       if (result.success) {
-        setLastQueryTime(new Date())
         // Refresh the data
         await fetchCurrentData()
       } else {
@@ -337,7 +335,7 @@ export default function AdresSorgulamaModal({
           <div className="flex justify-between items-center">
                       <div className="text-xs text-gray-600 px-2 py-1 rounded">
             <span className="font-medium">Son Sorgu Tarihi:</span>{" "}
-            {lastQueryTime ? formatDateTime(lastQueryTime) : "Henüz sorgu yapılmadı"}
+            {queryData?.timestamp ? formatDateTime(new Date(queryData.timestamp)) : "Henüz sorgu yapılmadı"}
           </div>
             <Button
               onClick={handleSorgula}

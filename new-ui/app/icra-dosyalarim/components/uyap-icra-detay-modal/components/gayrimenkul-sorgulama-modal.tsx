@@ -24,12 +24,10 @@ interface GayrimenkulSorgulamaModalProps {
 
 interface GayrimenkulSorgulamaData {
   file_id: number
-  borclu_id: number
+  borclu_id: string
   gayrimenkulSorguSonucu: {
-    TAKBIS: {
-      sonuc: string
-      tasinmazlar: Tasinmaz[]
-    }
+    sonuc: string
+    tasinmazlar: Tasinmaz[]
   }
   timestamp: string
 }
@@ -74,9 +72,6 @@ export default function GayrimenkulSorgulamaModal({
   onUyapToggle,
   isConnecting = false,
 }: GayrimenkulSorgulamaModalProps) {
-  const [isQuerying, setIsQuerying] = useState(false)
-  const [lastQueryTime, setLastQueryTime] = useState<Date | null>(null)
-  const [showGreenBackground, setShowGreenBackground] = useState(false)
   const [selectedTasinmaz, setSelectedTasinmaz] = useState<Tasinmaz | null>(null)
   const [isHisseModalOpen, setIsHisseModalOpen] = useState(false)
   const [selectedHisse, setSelectedHisse] = useState<HisseBilgisi | null>(null)
@@ -111,23 +106,64 @@ export default function GayrimenkulSorgulamaModal({
     }
   }, [isOpen, fileId, borcluId])
 
-  // Disabled polling for now - will be implemented later with proper database integration
-  // useEffect(() => {
-  //   if (!isOpen) return
-
-  //   const interval = setInterval(() => {
-  //     fetchCurrentData()
-  //   }, 5000) // Check every 5 seconds
-
-  //   return () => clearInterval(interval)
-  // }, [isOpen, fileId, borcluId])
-
   // Use API data if available, otherwise show empty state
-  const gayrimenkulSorguSonucu = queryData?.gayrimenkulSorguSonucu?.TAKBIS
+  const gayrimenkulSorguSonucu = queryData?.gayrimenkulSorguSonucu
 
-  const handleSorgula = () => {
-    // Disabled for now - will be implemented later with proper database integration
-    console.log("UYAP'ta Sorgula button clicked - functionality disabled for now")
+  const handleSorgula = async () => {
+    if (!dosyaNo || !borcluId) {
+      console.error('Dosya No veya Borçlu ID eksik')
+      return
+    }
+
+    if (uyapStatus !== "Bağlı") {
+      console.error('UYAP bağlantısı yok')
+      return
+    }
+
+    setIsLoading(true)
+    try {
+      const response = await fetch('/api/uyap/trigger-sorgulama', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          dosya_no: dosyaNo,
+          sorgu_tipi: 'TAKBİS',
+          borclu_id: borcluId,
+        }),
+      })
+
+      const result = await response.json()
+
+      if (result.success) {
+        // Refresh the data
+        await fetchCurrentData()
+      } else {
+        console.error('Sorgulama hatası:', result.message)
+        // Show user-friendly error message
+        alert(`Sorgulama başarısız: ${result.message}`)
+      }
+    } catch (error) {
+      console.error('Sorgulama sırasında hata:', error)
+      
+      // Handle specific connection errors
+      let errorMessage = 'Bilinmeyen bir hata oluştu'
+      
+      if (error instanceof Error) {
+        if (error.message.includes('Connection refused') || error.message.includes('Max retries exceeded')) {
+          errorMessage = 'UYAP bağlantısı kesildi. Lütfen UYAP\'ı yeniden bağlayın ve tekrar deneyin.'
+        } else if (error.message.includes('fetch failed')) {
+          errorMessage = 'Sunucu bağlantısı kurulamadı. Lütfen internet bağlantınızı kontrol edin.'
+        } else {
+          errorMessage = error.message
+        }
+      }
+      
+      alert(`Sorgulama hatası: ${errorMessage}`)
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   const handleHisseClick = (tasinmaz: Tasinmaz) => {
@@ -140,11 +176,10 @@ export default function GayrimenkulSorgulamaModal({
     setIsTakdiyatModalOpen(true)
   }
 
-  // Clean up timers when modal closes
+  // Clean up when modal closes
   useEffect(() => {
     if (!isOpen) {
-      setIsQuerying(false)
-      setShowGreenBackground(false)
+      // Reset any modal-specific state if needed
     }
   }, [isOpen])
 
@@ -275,7 +310,7 @@ export default function GayrimenkulSorgulamaModal({
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {gayrimenkulSorguSonucu.tasinmazlar.map((tasinmaz) => (
+                        {gayrimenkulSorguSonucu.tasinmazlar.map((tasinmaz: Tasinmaz) => (
                           <TableRow key={tasinmaz.no} className="hover:bg-gray-50">
                             <TableCell className="text-xs py-2">{tasinmaz.no}</TableCell>
                             <TableCell className="font-medium text-xs py-2">{tasinmaz.tapu_mudurlugu}</TableCell>
@@ -327,37 +362,24 @@ export default function GayrimenkulSorgulamaModal({
           {/* Fixed Footer - Minimized Height */}
           <div className="flex-shrink-0 px-6 py-2 border-t border-gray-200 bg-gray-50">
             <div className="flex justify-between items-center">
-              <div
-                className={cn(
-                  "text-xs text-gray-600 transition-all duration-300 px-2 py-1 rounded",
-                  showGreenBackground && "bg-green-100 text-green-800",
-                )}
-              >
+              <div className="text-xs text-gray-600 px-2 py-1 rounded">
                 <span className="font-medium">Son Sorgu Tarihi:</span>{" "}
-                {lastQueryTime ? formatDateTime(lastQueryTime) : "Henüz sorgu yapılmadı"}
+                {queryData?.timestamp ? formatDateTime(new Date(queryData.timestamp)) : "Henüz sorgu yapılmadı"}
               </div>
               <Button
                 onClick={handleSorgula}
-                disabled={isQuerying}
+                disabled={isLoading || uyapStatus !== "Bağlı"}
                 size="sm"
-                className={cn(
-                  "h-7 px-3 text-xs transition-all duration-300",
-                  isQuerying
-                    ? "bg-blue-600 hover:bg-blue-700 text-white cursor-not-allowed"
-                    : "bg-orange-600 hover:bg-orange-700 text-white",
-                )}
+                className="h-7 px-3 text-xs bg-orange-600 hover:bg-orange-700 text-white transition-all duration-300 disabled:bg-gray-400 disabled:cursor-not-allowed"
               >
-                {isQuerying ? (
-                  <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1">
+                  {isLoading ? (
                     <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white"></div>
-                    <span>UYAP'ta Sorgulanıyor</span>
-                  </div>
-                ) : (
-                  <>
-                    <Search className="w-3 h-3 mr-1" />
-                    UYAP'ta Sorgula
-                  </>
-                )}
+                  ) : (
+                    <Search className="h-3 w-3" />
+                  )}
+                  <span>{isLoading ? "Sorgulanıyor..." : "UYAP'ta Sorgula"}</span>
+                </div>
               </Button>
             </div>
           </div>

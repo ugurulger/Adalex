@@ -263,7 +263,7 @@ def api_banka_sorgulama(file_id, borclu_id):
         
         response_data = {
             "file_id": int(file_id),
-            "borclu_id": int(borclu_id),
+            "borclu_id": borclu_id,  # Keep as string to match frontend expectation
             "bankaSorguSonucu": sorgu_data,
             "timestamp": datetime.now().isoformat()
         }
@@ -288,7 +288,7 @@ def api_gib_sorgulama(file_id, borclu_id):
         
         response_data = {
             "file_id": int(file_id),
-            "borclu_id": int(borclu_id),
+            "borclu_id": borclu_id,  # Keep as string to match frontend expectation
             "gibSorguSonucu": sorgu_data,
             "timestamp": datetime.now().isoformat()
         }
@@ -313,7 +313,7 @@ def api_sgk_sorgulama(file_id, borclu_id):
         
         response_data = {
             "file_id": int(file_id),
-            "borclu_id": int(borclu_id),
+            "borclu_id": borclu_id,  # Keep as string to match frontend expectation
             "sgkSorguSonucu": sorgu_data,
             "timestamp": datetime.now().isoformat()
         }
@@ -338,7 +338,7 @@ def api_sgk_haciz_sorgulama(file_id, borclu_id):
         
         response_data = {
             "file_id": int(file_id),
-            "borclu_id": int(borclu_id),
+            "borclu_id": borclu_id,  # Keep as string to match frontend expectation
             "sgkHacizSorguSonucu": sorgu_data,
             "timestamp": datetime.now().isoformat()
         }
@@ -363,7 +363,7 @@ def api_egm_sorgulama(file_id, borclu_id):
         
         response_data = {
             "file_id": int(file_id),
-            "borclu_id": int(borclu_id),
+            "borclu_id": borclu_id,  # Keep as string to match frontend expectation
             "egmSorguSonucu": sorgu_data,
             "timestamp": datetime.now().isoformat()
         }
@@ -388,7 +388,7 @@ def api_takbis_sorgulama(file_id, borclu_id):
         
         response_data = {
             "file_id": int(file_id),
-            "borclu_id": int(borclu_id),
+            "borclu_id": borclu_id,  # Keep as string to match frontend expectation
             "takbisSorguSonucu": sorgu_data,
             "timestamp": datetime.now().isoformat()
         }
@@ -413,7 +413,7 @@ def api_icra_dosyasi_sorgulama(file_id, borclu_id):
         
         response_data = {
             "file_id": int(file_id),
-            "borclu_id": int(borclu_id),
+            "borclu_id": borclu_id,  # Keep as string to match frontend expectation
             "icraDosyasiSorguSonucu": sorgu_data,
             "timestamp": datetime.now().isoformat()
         }
@@ -439,7 +439,7 @@ def api_adres_sorgulama(file_id, borclu_id):
         
         response_data = {
             "file_id": int(file_id),
-            "borclu_id": int(borclu_id),
+            "borclu_id": borclu_id,  # Keep as string to match frontend expectation
             "adresSorguSonucu": sorgu_data,
             "timestamp": datetime.now().isoformat()
         }
@@ -464,7 +464,7 @@ def api_telefon_sorgulama(file_id, borclu_id):
         
         response_data = {
             "file_id": int(file_id),
-            "borclu_id": int(borclu_id),
+            "borclu_id": borclu_id,  # Keep as string to match frontend expectation
             "telefonSorguSonucu": sorgu_data,
             "timestamp": datetime.now().isoformat()
         }
@@ -490,7 +490,7 @@ def api_arac_sorgulama(file_id, borclu_id):
         
         response_data = {
             "file_id": int(file_id),
-            "borclu_id": int(borclu_id),
+            "borclu_id": borclu_id,  # Keep as string to match frontend expectation
             "aracSorguSonucu": sorgu_data,
             "timestamp": datetime.now().isoformat()
         }
@@ -508,14 +508,15 @@ def api_gayrimenkul_sorgulama(file_id, borclu_id):
     try:
         print(f"API: Fetching gayrimenkul sorgulama for file_id: {file_id}, borclu_id: {borclu_id}")
         
-        sorgu_data = get_borclu_sorgu_by_tipi(borclu_id, 'gayrimenkul_sorgulama')
+        # For gayrimenkul sorgulama, we look for TAKBIS data which contains real estate information
+        sorgu_data = get_borclu_sorgu_by_tipi(borclu_id, 'TAKBIS')
         
         if sorgu_data is None:
             return jsonify({"error": "Real estate query data not found"}), 404
         
         response_data = {
             "file_id": int(file_id),
-            "borclu_id": int(borclu_id),
+            "borclu_id": borclu_id,  # Keep as string to match frontend expectation
             "gayrimenkulSorguSonucu": sorgu_data,
             "timestamp": datetime.now().isoformat()
         }
@@ -540,7 +541,7 @@ def api_dis_isleri_sorgulama(file_id, borclu_id):
         
         response_data = {
             "file_id": int(file_id),
-            "borclu_id": int(borclu_id),
+            "borclu_id": borclu_id,  # Keep as string to match frontend expectation
             "disIsleriSorguSonucu": sorgu_data,
             "timestamp": datetime.now().isoformat()
         }
@@ -565,7 +566,7 @@ def api_iski_sorgulama(file_id, borclu_id):
         
         response_data = {
             "file_id": int(file_id),
-            "borclu_id": int(borclu_id),
+            "borclu_id": borclu_id,  # Keep as string to match frontend expectation
             "iskiSorguSonucu": sorgu_data,
             "timestamp": datetime.now().isoformat()
         }
@@ -590,7 +591,7 @@ def api_posta_ceki_sorgulama(file_id, borclu_id):
         
         response_data = {
             "file_id": int(file_id),
-            "borclu_id": int(borclu_id),
+            "borclu_id": borclu_id,  # Keep as string to match frontend expectation
             "postaCekiSorguSonucu": sorgu_data,
             "timestamp": datetime.now().isoformat()
         }
@@ -615,7 +616,7 @@ def api_alacakli_dosyalari(file_id, borclu_id):
         
         response_data = {
             "file_id": int(file_id),
-            "borclu_id": int(borclu_id),
+            "borclu_id": borclu_id,  # Keep as string to match frontend expectation
             "alacakliDosyalariSonucu": sorgu_data,
             "timestamp": datetime.now().isoformat()
         }
@@ -696,7 +697,7 @@ def trigger_sorgulama():
         elif sorgu_tipi == 'EGM':
             db_sorgu_tipi = 'EGM'  # Keep as EGM for consistency
         elif sorgu_tipi == 'TAKBİS':
-            db_sorgu_tipi = 'Takbis'
+            db_sorgu_tipi = 'TAKBİS'  # Keep as TAKBİS for consistency
         elif sorgu_tipi == 'Banka':
             db_sorgu_tipi = 'Banka'
         
