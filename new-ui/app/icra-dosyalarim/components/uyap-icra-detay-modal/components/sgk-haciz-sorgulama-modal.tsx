@@ -26,10 +26,8 @@ interface SgkHacizData {
   file_id: number
   borclu_id: number
   sgkSorguSonucu: {
-    "SGK Haciz": {
-      sonuc: string
-      "SGK kayit": SgkKayit[]
-    }
+    sonuc: string
+    "SGK kayit": SgkKayit[]
   }
   timestamp: string
 }
@@ -53,7 +51,6 @@ export default function SgkHacizSorgulamaModal({
   isConnecting = false,
 }: SgkHacizSorgulamaModalProps) {
   const [isQuerying, setIsQuerying] = useState(false)
-  const [lastQueryTime, setLastQueryTime] = useState<Date | null>(null)
   const [showGreenBackground, setShowGreenBackground] = useState(false)
   const [queryData, setQueryData] = useState<SgkHacizData | null>(null)
   const [isLoading, setIsLoading] = useState(false)
@@ -97,11 +94,47 @@ export default function SgkHacizSorgulamaModal({
   // }, [isOpen, fileId, borcluId])
 
   // Use API data if available, otherwise show empty state
-  const sgkSorguSonucu = queryData?.sgkSorguSonucu?.["SGK Haciz"]
+  const sgkSorguSonucu = queryData?.sgkSorguSonucu
 
-  const handleSorgula = () => {
-    // Disabled for now - will be implemented later with proper database integration
-    console.log("UYAP'ta Sorgula button clicked - functionality disabled for now")
+  const handleSorgula = async () => {
+    if (!fileId || !borcluId || !dosyaNo) {
+      console.error("Missing required data for SGK haciz query")
+      return
+    }
+
+    setIsQuerying(true)
+    setShowGreenBackground(true)
+
+    try {
+      const response = await fetch('/api/uyap/trigger-sorgulama', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          dosya_no: dosyaNo,
+          sorgu_tipi: 'SGK Haciz',
+          borclu_id: borcluId,
+        }),
+      })
+
+      const result = await response.json()
+
+      if (result.success) {
+        // Fetch updated data after successful query
+        await fetchCurrentData()
+      } else {
+        console.error('SGK haciz query failed:', result.message)
+        // You might want to show an error toast here
+      }
+    } catch (error) {
+      console.error('Error triggering SGK haciz query:', error)
+      // You might want to show an error toast here
+    } finally {
+      setIsQuerying(false)
+      // Keep green background for a moment to show success
+      setTimeout(() => setShowGreenBackground(false), 2000)
+    }
   }
 
   // Clean up timers when modal closes
@@ -250,16 +283,30 @@ export default function SgkHacizSorgulamaModal({
               )}
             >
               <span className="font-medium">Son Sorgu Tarihi:</span>{" "}
-              {lastQueryTime ? formatDateTime(lastQueryTime) : "Henüz sorgu yapılmadı"}
+              {queryData?.timestamp ? formatDateTime(new Date(queryData.timestamp)) : "Henüz sorgu yapılmadı"}
             </div>
             <Button
               onClick={handleSorgula}
-              disabled={true}
+              disabled={isQuerying || uyapStatus !== "Bağlı"}
               size="sm"
-              className="h-7 px-3 text-xs bg-gray-400 hover:bg-gray-400 text-white cursor-not-allowed"
+              className={cn(
+                "h-7 px-3 text-xs",
+                isQuerying || uyapStatus !== "Bağlı"
+                  ? "bg-gray-400 hover:bg-gray-400 text-white cursor-not-allowed"
+                  : "bg-orange-600 hover:bg-orange-700 text-white"
+              )}
             >
-              <Search className="w-3 h-3 mr-1" />
-              UYAP'ta Sorgula (Devre Dışı)
+              {isQuerying ? (
+                <>
+                  <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white mr-1"></div>
+                  Sorgulanıyor...
+                </>
+              ) : (
+                <>
+                  <Search className="w-3 h-3 mr-1" />
+                  UYAP'ta Sorgula
+                </>
+              )}
             </Button>
           </div>
         </div>

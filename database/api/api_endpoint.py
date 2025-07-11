@@ -331,7 +331,7 @@ def api_sgk_haciz_sorgulama(file_id, borclu_id):
     try:
         print(f"API: Fetching SGK haciz sorgulama for file_id: {file_id}, borclu_id: {borclu_id}")
         
-        sorgu_data = get_borclu_sorgu_by_tipi(borclu_id, 'sgk_haciz_sorgulama')
+        sorgu_data = get_borclu_sorgu_by_tipi(borclu_id, 'SGK Haciz')
         
         if sorgu_data is None:
             return jsonify({"error": "SGK haciz query data not found"}), 404
@@ -339,7 +339,7 @@ def api_sgk_haciz_sorgulama(file_id, borclu_id):
         response_data = {
             "file_id": int(file_id),
             "borclu_id": borclu_id,  # Keep as string to match frontend expectation
-            "sgkHacizSorguSonucu": sorgu_data,
+            "sgkSorguSonucu": sorgu_data,
             "timestamp": datetime.now().isoformat()
         }
         
@@ -694,6 +694,8 @@ def trigger_sorgulama():
             db_sorgu_tipi = 'Mernis'
         elif sorgu_tipi == 'SGK':
             db_sorgu_tipi = 'Sgk'
+        elif sorgu_tipi == 'SGK Haciz':
+            db_sorgu_tipi = 'SGK Haciz'  # Keep as SGK Haciz for consistency
         elif sorgu_tipi == 'EGM':
             db_sorgu_tipi = 'EGM'  # Keep as EGM for consistency
         elif sorgu_tipi == 'TAKBİS':
