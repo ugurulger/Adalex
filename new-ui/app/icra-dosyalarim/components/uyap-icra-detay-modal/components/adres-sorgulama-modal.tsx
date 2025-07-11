@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Search } from "lucide-react"
+import { sortObjectEntries, FIELD_ORDERS } from "../utils/field-ordering"
 
 interface AdresSorgulamaModalProps {
   isOpen: boolean
@@ -171,6 +172,10 @@ export default function AdresSorgulamaModal({
   const kisiselBilgiler = queryData?.kisiselBilgiler || {}
   const adresBilgileri = queryData?.adresBilgileri || {}
 
+  // Sort data according to predefined field orders
+  const sortedKisiselBilgiler = sortObjectEntries(kisiselBilgiler, FIELD_ORDERS.kisiselBilgiler)
+  const sortedAdresBilgileri = sortObjectEntries(adresBilgileri, FIELD_ORDERS.adresBilgileri)
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-5xl w-[95vw] h-[90vh] max-h-[90vh] flex flex-col p-0 gap-0 overflow-hidden">
@@ -259,8 +264,8 @@ export default function AdresSorgulamaModal({
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {Object.keys(kisiselBilgiler).length > 0 ? (
-                        Object.entries(kisiselBilgiler).map(([key, value]) => (
+                      {sortedKisiselBilgiler.length > 0 ? (
+                        sortedKisiselBilgiler.map(([key, value]) => (
                           <TableRow key={key} className="hover:bg-gray-50">
                             <TableCell className="font-medium text-xs text-gray-700 border-r border-gray-200 py-1">
                               {key}
@@ -300,8 +305,8 @@ export default function AdresSorgulamaModal({
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {Object.keys(adresBilgileri).length > 0 ? (
-                        Object.entries(adresBilgileri).map(([key, value]) => (
+                      {sortedAdresBilgileri.length > 0 ? (
+                        sortedAdresBilgileri.map(([key, value]) => (
                           <TableRow key={key} className="hover:bg-gray-50">
                             <TableCell className="font-medium text-xs text-gray-700 border-r border-gray-200 py-1">
                               {key}
