@@ -482,7 +482,8 @@ def api_arac_sorgulama(file_id, borclu_id):
     try:
         print(f"API: Fetching arac sorgulama for file_id: {file_id}, borclu_id: {borclu_id}")
         
-        sorgu_data = get_borclu_sorgu_by_tipi(borclu_id, 'arac_sorgulama')
+        # For arac sorgulama, we look for EGM data which contains vehicle information
+        sorgu_data = get_borclu_sorgu_by_tipi(borclu_id, 'EGM')
         
         if sorgu_data is None:
             return jsonify({"error": "Vehicle query data not found"}), 404
@@ -693,7 +694,7 @@ def trigger_sorgulama():
         elif sorgu_tipi == 'SGK':
             db_sorgu_tipi = 'Sgk'
         elif sorgu_tipi == 'EGM':
-            db_sorgu_tipi = 'Egm'
+            db_sorgu_tipi = 'EGM'  # Keep as EGM for consistency
         elif sorgu_tipi == 'TAKBİS':
             db_sorgu_tipi = 'Takbis'
         elif sorgu_tipi == 'Banka':

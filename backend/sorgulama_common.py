@@ -315,7 +315,7 @@ def perform_sorgulama(driver, dosya_no, selected_options, result_label=None):
             for opt, enabled in selected_options.items():
                 if enabled:
                     try:
-                        if opt == "EGM-TNB":
+                        if opt == "EGM" or opt == "EGM-TNB":
                             from egm_sorgu import perform_egm_sorgu; perform_egm_sorgu(driver, current, dosya_no, result_label)
                         elif opt == "Banka":
                             from banka_sorgu import perform_banka_sorgu; perform_banka_sorgu(driver, current, dosya_no, result_label)

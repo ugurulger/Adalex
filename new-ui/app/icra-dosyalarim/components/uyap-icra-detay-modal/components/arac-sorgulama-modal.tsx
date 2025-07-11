@@ -8,6 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Search, FileText } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { AracSorgulamaResponse } from "@/types/api"
 
 interface AracSorgulamaModalProps {
   isOpen: boolean
@@ -56,7 +57,7 @@ export default function AracSorgulamaModal({
   const [lastQueryTime, setLastQueryTime] = useState<Date | null>(null)
   const [selectedArac, setSelectedArac] = useState<Arac | null>(null)
   const [isMahrumiyetModalOpen, setIsMahrumiyetModalOpen] = useState(false)
-  const [queryData, setQueryData] = useState<any>(null)
+  const [queryData, setQueryData] = useState<AracSorgulamaResponse | null>(null)
   const [isLoading, setIsLoading] = useState(false)
 
   // Fetch current data from database when modal opens or when data might have changed
@@ -68,7 +69,7 @@ export default function AracSorgulamaModal({
       const response = await fetch(`/api/icra-dosyalarim/${fileId}/${borcluId}/arac-sorgulama`)
       
       if (response.ok) {
-        const data = await response.json()
+        const data: AracSorgulamaResponse = await response.json()
         setQueryData(data)
       }
     } catch (error) {
@@ -98,12 +99,64 @@ export default function AracSorgulamaModal({
   // }, [isOpen, fileId, borcluId])
 
   // Use API data only
-  const aracSorguSonucu = queryData?.aracSorguSonucu?.EGM
+  const aracSorguSonucu = queryData?.aracSorguSonucu
 
-  const handleSorgula = () => {
-    // This will be implemented later with web scraping
-    console.log('UYAP sorgulama başlatılacak - web scraping ile')
-    setLastQueryTime(new Date())
+  const handleSorgula = async () => {
+    if (!dosyaNo || !borcluId) {
+      console.error('Dosya No veya Borçlu ID eksik')
+      return
+    }
+
+    if (uyapStatus !== "Bağlı") {
+      console.error('UYAP bağlantısı yok')
+      return
+    }
+
+    setIsLoading(true)
+    try {
+      const response = await fetch('/api/uyap/trigger-sorgulama', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          dosya_no: dosyaNo,
+          sorgu_tipi: 'EGM',
+          borclu_id: borcluId,
+        }),
+      })
+
+      const result = await response.json()
+
+      if (result.success) {
+        setLastQueryTime(new Date())
+        // Refresh the data
+        await fetchCurrentData()
+      } else {
+        console.error('Sorgulama hatası:', result.message)
+        // Show user-friendly error message
+        alert(`Sorgulama başarısız: ${result.message}`)
+      }
+    } catch (error) {
+      console.error('Sorgulama sırasında hata:', error)
+      
+      // Handle specific connection errors
+      let errorMessage = 'Bilinmeyen bir hata oluştu'
+      
+      if (error instanceof Error) {
+        if (error.message.includes('Connection refused') || error.message.includes('Max retries exceeded')) {
+          errorMessage = 'UYAP bağlantısı kesildi. Lütfen UYAP\'ı yeniden bağlayın ve tekrar deneyin.'
+        } else if (error.message.includes('fetch failed')) {
+          errorMessage = 'Sunucu bağlantısı kurulamadı. Lütfen internet bağlantınızı kontrol edin.'
+        } else {
+          errorMessage = error.message
+        }
+      }
+      
+      alert(`Sorgulama hatası: ${errorMessage}`)
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   const handleMahrumiyetClick = (arac: Arac) => {
@@ -291,11 +344,18 @@ export default function AracSorgulamaModal({
               </div>
               <Button
                 onClick={handleSorgula}
+                disabled={isLoading || uyapStatus !== "Bağlı"}
                 size="sm"
-                className="h-7 px-3 text-xs bg-orange-600 hover:bg-orange-700 text-white transition-all duration-300"
+                className="h-7 px-3 text-xs bg-orange-600 hover:bg-orange-700 text-white transition-all duration-300 disabled:bg-gray-400 disabled:cursor-not-allowed"
               >
-                <Search className="w-3 h-3 mr-1" />
-                UYAP'ta Sorgula
+                <div className="flex items-center gap-1">
+                  {isLoading ? (
+                    <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white"></div>
+                  ) : (
+                    <Search className="h-3 w-3" />
+                  )}
+                  <span>{isLoading ? "Sorgulanıyor..." : "UYAP'ta Sorgula"}</span>
+                </div>
               </Button>
             </div>
           </div>

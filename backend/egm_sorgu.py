@@ -6,7 +6,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException, StaleElementReferenceException, ElementNotInteractableException
-from sorgulama_common import click_element_merged, save_to_json, get_logger, check_result_or_popup
+from sorgulama_common import click_element_merged, save_to_json, get_logger, check_result_or_popup, DESKTOP_PATH
 from database_helper import save_scraping_data_to_db_and_json
 
 # Constants
@@ -175,6 +175,7 @@ def perform_egm_sorgu(driver, item_text, dosya_no, result_label=None):
                                   item_text=item_text, 
                                   result_label=result_label):
             save_to_json(extracted_data)
+            save_scraping_data_to_db_and_json(extracted_data, os.path.join(DESKTOP_PATH, "egm_sorgu.json"))
             return False, extracted_data
 
         # Step 2: Click the "Sorgula" button
@@ -185,6 +186,7 @@ def perform_egm_sorgu(driver, item_text, dosya_no, result_label=None):
                                   item_text=item_text, 
                                   result_label=result_label):
             save_to_json(extracted_data)
+            save_scraping_data_to_db_and_json(extracted_data, os.path.join(DESKTOP_PATH, "egm_sorgu.json"))
             return False, extracted_data
 
         # Step 3: Extract data from the specified XPath
@@ -196,6 +198,7 @@ def perform_egm_sorgu(driver, item_text, dosya_no, result_label=None):
             if isinstance(result, str):  # Pop-up mesajı
                 extracted_data[dosya_no][item_text]["EGM"]["Sonuc"] = result
                 save_to_json(extracted_data)
+                save_scraping_data_to_db_and_json(extracted_data, os.path.join(DESKTOP_PATH, "egm_sorgu.json"))
                 logger.info(f"Popup detected for {item_text}: {result}")
                 return False, extracted_data
             else:  # DATA_XPATH elementi
@@ -313,6 +316,7 @@ def perform_egm_sorgu(driver, item_text, dosya_no, result_label=None):
                 result_label.config(text=error_msg)
             logger.error(error_msg)
             save_to_json(extracted_data)
+            save_scraping_data_to_db_and_json(extracted_data, os.path.join(DESKTOP_PATH, "egm_sorgu.json"))
             return False, extracted_data
         except Exception as e:
             error_msg = f"Error extracting data for {item_text}: {e}"
@@ -320,6 +324,7 @@ def perform_egm_sorgu(driver, item_text, dosya_no, result_label=None):
                 result_label.config(text=error_msg)
             logger.error(error_msg)
             save_to_json(extracted_data)
+            save_scraping_data_to_db_and_json(extracted_data, os.path.join(DESKTOP_PATH, "egm_sorgu.json"))
             return False, extracted_data
 
         if result_label:
@@ -327,7 +332,9 @@ def perform_egm_sorgu(driver, item_text, dosya_no, result_label=None):
         logger.info(f"Waiting 3 seconds after processing {item_text}")
         time.sleep(3)
         
+        # Save to both JSON file and database
         save_to_json(extracted_data)
+        save_scraping_data_to_db_and_json(extracted_data, os.path.join(DESKTOP_PATH, "egm_sorgu.json"))
         return True, extracted_data
 
     except Exception as e:
@@ -336,4 +343,5 @@ def perform_egm_sorgu(driver, item_text, dosya_no, result_label=None):
             result_label.config(text=error_msg)
         logger.error(error_msg)
         save_to_json(extracted_data)
+        save_scraping_data_to_db_and_json(extracted_data, os.path.join(DESKTOP_PATH, "egm_sorgu.json"))
         return False, extracted_data
