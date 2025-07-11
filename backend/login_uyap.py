@@ -41,7 +41,10 @@ def open_browser_and_login(pinkodu, result_label=None):
         chrome_options.add_argument(f"--user-data-dir={USER_DATA_DIR}")
         chrome_options.add_argument(f"--profile-directory={PROFILE_DIRECTORY}")
         chrome_options.add_argument(f"--load-extension={ARKSIGNER_EXTENSION_PATH}")
-        driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=chrome_options)
+        chromedriver_dir = ChromeDriverManager().install()
+        if chromedriver_dir.endswith("THIRD_PARTY_NOTICES.chromedriver"):
+            chromedriver_dir = chromedriver_dir.replace("THIRD_PARTY_NOTICES.chromedriver", "chromedriver")
+        driver = webdriver.Chrome(service=Service(chromedriver_dir), options=chrome_options)
         wait = WebDriverWait(driver, 15)
 
         # 1. Open the page
