@@ -18,9 +18,89 @@ def get_logger():
         logger.setLevel(logging.INFO)
     return logger
 
+def create_database_if_not_exists():
+    """Create database and tables if they don't exist"""
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        cur = conn.cursor()
+        
+        # Create files table
+        cur.execute("""
+        CREATE TABLE IF NOT EXISTS files (
+            file_id TEXT PRIMARY KEY,
+            klasor TEXT,
+            dosyaNo TEXT,
+            borcluAdi TEXT,
+            alacakliAdi TEXT,
+            foyTuru TEXT,
+            durum TEXT,
+            takipTarihi TEXT,
+            icraMudurlugu TEXT
+        );
+        """)
+        
+        # Create file_details table
+        cur.execute("""
+        CREATE TABLE IF NOT EXISTS file_details (
+            file_id TEXT PRIMARY KEY,
+            takipSekli TEXT,
+            alacakliVekili TEXT,
+            borcMiktari TEXT,
+            faizOrani TEXT,
+            guncelBorc TEXT,
+            sonOdeme TEXT,
+            FOREIGN KEY (file_id) REFERENCES files(file_id)
+        );
+        """)
+        
+        # Create borclular table
+        cur.execute("""
+        CREATE TABLE IF NOT EXISTS borclular (
+            borclu_id TEXT PRIMARY KEY,
+            file_id TEXT,
+            ad TEXT,
+            tcKimlik TEXT,
+            telefon TEXT,
+            adres TEXT,
+            vekil TEXT,
+            FOREIGN KEY (file_id) REFERENCES files(file_id)
+        );
+        """)
+        
+        # Create borclu_sorgular table with timestamp column
+        cur.execute("""
+        CREATE TABLE IF NOT EXISTS borclu_sorgular (
+            borclu_id TEXT,
+            sorgu_tipi TEXT,
+            sorgu_verisi TEXT,
+            timestamp TEXT,
+            PRIMARY KEY (borclu_id, sorgu_tipi),
+            FOREIGN KEY (borclu_id) REFERENCES borclular(borclu_id)
+        );
+        """)
+        
+        # Create indexes
+        cur.execute("CREATE INDEX IF NOT EXISTS idx_files_dosyaNo_icraMudurlugu ON files(dosyaNo, icraMudurlugu);")
+        cur.execute("CREATE INDEX IF NOT EXISTS idx_borclular_file_id ON borclular(file_id);")
+        cur.execute("CREATE INDEX IF NOT EXISTS idx_borclu_sorgular_borclu_id ON borclu_sorgular(borclu_id);")
+        
+        conn.commit()
+        conn.close()
+        logger = get_logger()
+        logger.info(f"Database and tables created/verified at: {DB_PATH}")
+        
+    except Exception as e:
+        logger = get_logger()
+        logger.error(f"Error creating database: {e}")
+        if conn:
+            conn.close()
+
 def get_database_connection():
     """Get database connection"""
     try:
+        # Ensure database exists before connecting
+        create_database_if_not_exists()
+        
         conn = sqlite3.connect(DB_PATH)
         conn.row_factory = sqlite3.Row  # Enable row factory for easier access
         return conn
@@ -86,17 +166,21 @@ def save_scraping_result_to_db(dosya_no, borclu_adi, sorgu_tipi, sorgu_verisi):
         # Convert sorgu_verisi to JSON string
         sorgu_verisi_json = json.dumps(sorgu_verisi, ensure_ascii=False)
         
+        # Get current timestamp
+        from datetime import datetime
+        current_timestamp = datetime.now().isoformat()
+        
         # Insert or update the query result
         cursor.execute("""
             INSERT OR REPLACE INTO borclu_sorgular 
-            (borclu_id, sorgu_tipi, sorgu_verisi) 
-            VALUES (?, ?, ?)
-        """, (borclu_id, sorgu_tipi, sorgu_verisi_json))
+            (borclu_id, sorgu_tipi, sorgu_verisi, timestamp) 
+            VALUES (?, ?, ?, ?)
+        """, (borclu_id, sorgu_tipi, sorgu_verisi_json, current_timestamp))
         
         conn.commit()
         conn.close()
         
-        logger.info(f"Successfully saved {sorgu_tipi} query result for borclu_id: {borclu_id}")
+        logger.info(f"Successfully saved {sorgu_tipi} query result for borclu_id: {borclu_id} at {current_timestamp}")
         return True
         
     except Exception as e:

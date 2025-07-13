@@ -278,14 +278,14 @@ export default function GayrimenkulSorgulamaModal({
                     <CardTitle className="text-lg font-semibold text-gray-900 flex items-center gap-2">
                       📊 Sorgu Sonucu
                       <span className="text-sm font-normal text-green-700">
-                        ✅ {gayrimenkulSorguSonucu.tasinmazlar.length} Taşınmaz Bulundu
+                        ✅ {gayrimenkulSorguSonucu.tasinmazlar?.length || 0} Taşınmaz Bulundu
                       </span>
                     </CardTitle>
                   </CardHeader>
                 </Card>
 
                 {/* Taşınmazlar Tablosu */}
-                {gayrimenkulSorguSonucu.sonuc === "Kişiye ait taşınmaz kaydı var." && (
+                {gayrimenkulSorguSonucu.sonuc === "Kişiye ait taşınmaz kaydı var." && gayrimenkulSorguSonucu.tasinmazlar && (
               <Card>
                 <CardHeader className="pb-4">
                   <CardTitle className="text-lg font-semibold text-gray-900 flex items-center gap-2">
@@ -310,7 +310,7 @@ export default function GayrimenkulSorgulamaModal({
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {gayrimenkulSorguSonucu.tasinmazlar.map((tasinmaz: Tasinmaz) => (
+                        {gayrimenkulSorguSonucu.tasinmazlar?.map((tasinmaz: Tasinmaz) => (
                           <TableRow key={tasinmaz.no} className="hover:bg-gray-50">
                             <TableCell className="text-xs py-2">{tasinmaz.no}</TableCell>
                             <TableCell className="font-medium text-xs py-2">{tasinmaz.tapu_mudurlugu}</TableCell>

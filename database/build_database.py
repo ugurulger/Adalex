@@ -51,6 +51,7 @@ def create_tables(conn):
         borclu_id TEXT,
         sorgu_tipi TEXT,
         sorgu_verisi TEXT,
+        timestamp TEXT,
         PRIMARY KEY (borclu_id, sorgu_tipi),
         FOREIGN KEY (borclu_id) REFERENCES borclular(borclu_id)
     );
@@ -184,12 +185,13 @@ def upsert_borclular(conn, records):
 def upsert_borclu_sorgular(conn, records):
     insert_sql = """
     INSERT INTO borclu_sorgular (
-        borclu_id, sorgu_tipi, sorgu_verisi
-    ) VALUES (?, ?, ?);
+        borclu_id, sorgu_tipi, sorgu_verisi, timestamp
+    ) VALUES (?, ?, ?, ?);
     """
     update_sql = """
     UPDATE borclu_sorgular SET
-        sorgu_verisi = ?
+        sorgu_verisi = ?,
+        timestamp = ?
     WHERE borclu_id = ? AND sorgu_tipi = ?;
     """
     select_sql = """
@@ -201,12 +203,12 @@ def upsert_borclu_sorgular(conn, records):
         exists = cur.fetchone()
         if exists:
             conn.execute(update_sql, (
-                rec['sorgu_verisi'], rec['borclu_id'], rec['sorgu_tipi']
+                rec['sorgu_verisi'], rec['timestamp'], rec['borclu_id'], rec['sorgu_tipi']
             ))
         else:
             try:
                 conn.execute(insert_sql, (
-                    rec['borclu_id'], rec['sorgu_tipi'], rec['sorgu_verisi']
+                    rec['borclu_id'], rec['sorgu_tipi'], rec['sorgu_verisi'], rec['timestamp']
                 ))
             except sqlite3.IntegrityError as e:
                 print(f"Borclu_sorgular: Kayıt eklenemedi, borclu_id: {rec['borclu_id']}, sorgu_tipi: {rec['sorgu_tipi']} - Hata: {str(e)}")

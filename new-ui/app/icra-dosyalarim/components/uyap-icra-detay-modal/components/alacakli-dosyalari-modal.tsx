@@ -255,14 +255,14 @@ export default function AlacakliDosyalariModal({
                   <CardTitle className="text-lg font-semibold text-gray-900 flex items-center gap-2">
                     📊 Sorgu Sonucu
                     <span className="text-sm font-normal text-green-700">
-                      ✅ {alacakliDosyalariSonucu.icra_dosyalari.length} İcra Dosyası Bulundu
+                      ✅ {alacakliDosyalariSonucu.icra_dosyalari?.length || 0} İcra Dosyası Bulundu
                     </span>
                   </CardTitle>
                 </CardHeader>
               </Card>
 
               {/* İcra Dosyaları Tablosu */}
-              {alacakliDosyalariSonucu.sonuc === "Kişiye ait alacaklı olduğu İcra Dosyası kaydı var." && (
+              {alacakliDosyalariSonucu.sonuc === "Kişiye ait alacaklı olduğu İcra Dosyası kaydı var." && alacakliDosyalariSonucu.icra_dosyalari && (
                 <Card>
                   <CardHeader className="pb-4">
                     <CardTitle className="text-lg font-semibold text-gray-900 flex items-center gap-2">
@@ -284,7 +284,7 @@ export default function AlacakliDosyalariModal({
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {alacakliDosyalariSonucu.icra_dosyalari.map((dosya: IcraDosyasi) => (
+                          {alacakliDosyalariSonucu.icra_dosyalari?.map((dosya: IcraDosyasi) => (
                             <TableRow key={dosya.No} className="hover:bg-gray-50">
                               <TableCell className="text-xs py-2 font-medium">{dosya.No}</TableCell>
                               <TableCell className="text-xs py-2 break-words max-w-xs">

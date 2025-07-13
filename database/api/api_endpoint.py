@@ -22,6 +22,84 @@ DB_PATH = os.path.join(os.path.dirname(__file__), '..', 'files.db')
 # Column names for better data handling
 COLUMNS = ['file_id', 'klasor', 'dosyaNo', 'borcluAdi', 'alacakliAdi', 'foyTuru', 'durum', 'takipTarihi', 'icraMudurlugu']
 
+def create_database_if_not_exists():
+    """Create database and tables if they don't exist"""
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        cur = conn.cursor()
+        
+        # Create files table
+        cur.execute("""
+        CREATE TABLE IF NOT EXISTS files (
+            file_id TEXT PRIMARY KEY,
+            klasor TEXT,
+            dosyaNo TEXT,
+            borcluAdi TEXT,
+            alacakliAdi TEXT,
+            foyTuru TEXT,
+            durum TEXT,
+            takipTarihi TEXT,
+            icraMudurlugu TEXT
+        );
+        """)
+        
+        # Create file_details table
+        cur.execute("""
+        CREATE TABLE IF NOT EXISTS file_details (
+            file_id TEXT PRIMARY KEY,
+            takipSekli TEXT,
+            alacakliVekili TEXT,
+            borcMiktari TEXT,
+            faizOrani TEXT,
+            guncelBorc TEXT,
+            sonOdeme TEXT,
+            FOREIGN KEY (file_id) REFERENCES files(file_id)
+        );
+        """)
+        
+        # Create borclular table
+        cur.execute("""
+        CREATE TABLE IF NOT EXISTS borclular (
+            borclu_id TEXT PRIMARY KEY,
+            file_id TEXT,
+            ad TEXT,
+            tcKimlik TEXT,
+            telefon TEXT,
+            adres TEXT,
+            vekil TEXT,
+            FOREIGN KEY (file_id) REFERENCES files(file_id)
+        );
+        """)
+        
+        # Create borclu_sorgular table with timestamp column
+        cur.execute("""
+        CREATE TABLE IF NOT EXISTS borclu_sorgular (
+            borclu_id TEXT,
+            sorgu_tipi TEXT,
+            sorgu_verisi TEXT,
+            timestamp TEXT,
+            PRIMARY KEY (borclu_id, sorgu_tipi),
+            FOREIGN KEY (borclu_id) REFERENCES borclular(borclu_id)
+        );
+        """)
+        
+        # Create indexes
+        cur.execute("CREATE INDEX IF NOT EXISTS idx_files_dosyaNo_icraMudurlugu ON files(dosyaNo, icraMudurlugu);")
+        cur.execute("CREATE INDEX IF NOT EXISTS idx_borclular_file_id ON borclular(file_id);")
+        cur.execute("CREATE INDEX IF NOT EXISTS idx_borclu_sorgular_borclu_id ON borclu_sorgular(borclu_id);")
+        
+        conn.commit()
+        conn.close()
+        print(f"Database and tables created/verified at: {DB_PATH}")
+        
+    except Exception as e:
+        print(f"Error creating database: {e}")
+        if conn:
+            conn.close()
+
+# Initialize database on startup
+create_database_if_not_exists()
+
 def get_all_files():
     """Get all files from the database"""
     try:
@@ -239,12 +317,15 @@ def get_borclu_sorgu_by_tipi(borclu_id, sorgu_tipi):
     try:
         conn = sqlite3.connect(DB_PATH)
         cur = conn.cursor()
-        cur.execute("SELECT sorgu_verisi FROM borclu_sorgular WHERE borclu_id = ? AND sorgu_tipi = ?", (borclu_id, sorgu_tipi))
+        cur.execute("SELECT sorgu_verisi, timestamp FROM borclu_sorgular WHERE borclu_id = ? AND sorgu_tipi = ?", (borclu_id, sorgu_tipi))
         row = cur.fetchone()
         conn.close()
         
         if row:
-            return json.loads(row[0])
+            return {
+                "data": json.loads(row[0]),
+                "timestamp": row[1]
+            }
         return None
     except Exception as e:
         print(f"Error getting sorgu for borclu {borclu_id}, tipi {sorgu_tipi}: {e}")
@@ -256,16 +337,16 @@ def api_banka_sorgulama(file_id, borclu_id):
     try:
         print(f"API: Fetching banka sorgulama for file_id: {file_id}, borclu_id: {borclu_id}")
         
-        sorgu_data = get_borclu_sorgu_by_tipi(borclu_id, 'banka_sorgulama')
+        sorgu_result = get_borclu_sorgu_by_tipi(borclu_id, 'banka_sorgulama')
         
-        if sorgu_data is None:
+        if sorgu_result is None:
             return jsonify({"error": "Bank query data not found"}), 404
         
         response_data = {
             "file_id": int(file_id),
             "borclu_id": borclu_id,  # Keep as string to match frontend expectation
-            "bankaSorguSonucu": sorgu_data,
-            "timestamp": datetime.now().isoformat()
+            "bankaSorguSonucu": sorgu_result["data"],
+            "timestamp": sorgu_result["timestamp"]
         }
         
         print(f"Successfully retrieved banka sorgulama for borclu_id: {borclu_id}")
@@ -281,16 +362,16 @@ def api_gib_sorgulama(file_id, borclu_id):
     try:
         print(f"API: Fetching GIB sorgulama for file_id: {file_id}, borclu_id: {borclu_id}")
         
-        sorgu_data = get_borclu_sorgu_by_tipi(borclu_id, 'gib_sorgulama')
+        sorgu_result = get_borclu_sorgu_by_tipi(borclu_id, 'gib_sorgulama')
         
-        if sorgu_data is None:
+        if sorgu_result is None:
             return jsonify({"error": "GIB query data not found"}), 404
         
         response_data = {
             "file_id": int(file_id),
             "borclu_id": borclu_id,  # Keep as string to match frontend expectation
-            "gibSorguSonucu": sorgu_data,
-            "timestamp": datetime.now().isoformat()
+            "gibSorguSonucu": sorgu_result["data"],
+            "timestamp": sorgu_result["timestamp"]
         }
         
         print(f"Successfully retrieved GIB sorgulama for borclu_id: {borclu_id}")
@@ -306,16 +387,16 @@ def api_sgk_sorgulama(file_id, borclu_id):
     try:
         print(f"API: Fetching SGK sorgulama for file_id: {file_id}, borclu_id: {borclu_id}")
         
-        sorgu_data = get_borclu_sorgu_by_tipi(borclu_id, 'sgk_sorgulama')
+        sorgu_result = get_borclu_sorgu_by_tipi(borclu_id, 'sgk_sorgulama')
         
-        if sorgu_data is None:
+        if sorgu_result is None:
             return jsonify({"error": "SGK query data not found"}), 404
         
         response_data = {
             "file_id": int(file_id),
             "borclu_id": borclu_id,  # Keep as string to match frontend expectation
-            "sgkSorguSonucu": sorgu_data,
-            "timestamp": datetime.now().isoformat()
+            "sgkSorguSonucu": sorgu_result["data"],
+            "timestamp": sorgu_result["timestamp"]
         }
         
         print(f"Successfully retrieved SGK sorgulama for borclu_id: {borclu_id}")
@@ -331,16 +412,16 @@ def api_sgk_haciz_sorgulama(file_id, borclu_id):
     try:
         print(f"API: Fetching SGK haciz sorgulama for file_id: {file_id}, borclu_id: {borclu_id}")
         
-        sorgu_data = get_borclu_sorgu_by_tipi(borclu_id, 'SGK Haciz')
+        sorgu_result = get_borclu_sorgu_by_tipi(borclu_id, 'SGK Haciz')
         
-        if sorgu_data is None:
+        if sorgu_result is None:
             return jsonify({"error": "SGK haciz query data not found"}), 404
         
         response_data = {
             "file_id": int(file_id),
             "borclu_id": borclu_id,  # Keep as string to match frontend expectation
-            "sgkSorguSonucu": sorgu_data,
-            "timestamp": datetime.now().isoformat()
+            "sgkSorguSonucu": sorgu_result["data"],
+            "timestamp": sorgu_result["timestamp"]
         }
         
         print(f"Successfully retrieved SGK haciz sorgulama for borclu_id: {borclu_id}")
@@ -356,16 +437,16 @@ def api_egm_sorgulama(file_id, borclu_id):
     try:
         print(f"API: Fetching EGM sorgulama for file_id: {file_id}, borclu_id: {borclu_id}")
         
-        sorgu_data = get_borclu_sorgu_by_tipi(borclu_id, 'egm_sorgulama')
+        sorgu_result = get_borclu_sorgu_by_tipi(borclu_id, 'egm_sorgulama')
         
-        if sorgu_data is None:
+        if sorgu_result is None:
             return jsonify({"error": "EGM query data not found"}), 404
         
         response_data = {
             "file_id": int(file_id),
             "borclu_id": borclu_id,  # Keep as string to match frontend expectation
-            "egmSorguSonucu": sorgu_data,
-            "timestamp": datetime.now().isoformat()
+            "egmSorguSonucu": sorgu_result["data"],
+            "timestamp": sorgu_result["timestamp"]
         }
         
         print(f"Successfully retrieved EGM sorgulama for borclu_id: {borclu_id}")
@@ -381,16 +462,16 @@ def api_takbis_sorgulama(file_id, borclu_id):
     try:
         print(f"API: Fetching TAKBIS sorgulama for file_id: {file_id}, borclu_id: {borclu_id}")
         
-        sorgu_data = get_borclu_sorgu_by_tipi(borclu_id, 'takbis_sorgulama')
+        sorgu_result = get_borclu_sorgu_by_tipi(borclu_id, 'takbis_sorgulama')
         
-        if sorgu_data is None:
+        if sorgu_result is None:
             return jsonify({"error": "TAKBIS query data not found"}), 404
         
         response_data = {
             "file_id": int(file_id),
             "borclu_id": borclu_id,  # Keep as string to match frontend expectation
-            "takbisSorguSonucu": sorgu_data,
-            "timestamp": datetime.now().isoformat()
+            "takbisSorguSonucu": sorgu_result["data"],
+            "timestamp": sorgu_result["timestamp"]
         }
         
         print(f"Successfully retrieved TAKBIS sorgulama for borclu_id: {borclu_id}")
@@ -406,16 +487,16 @@ def api_icra_dosyasi_sorgulama(file_id, borclu_id):
     try:
         print(f"API: Fetching icra dosyasi sorgulama for file_id: {file_id}, borclu_id: {borclu_id}")
         
-        sorgu_data = get_borclu_sorgu_by_tipi(borclu_id, 'icra_dosyasi_sorgulama')
+        sorgu_result = get_borclu_sorgu_by_tipi(borclu_id, 'icra_dosyasi_sorgulama')
         
-        if sorgu_data is None:
+        if sorgu_result is None:
             return jsonify({"error": "İcra dosyasi query data not found"}), 404
         
         response_data = {
             "file_id": int(file_id),
             "borclu_id": borclu_id,  # Keep as string to match frontend expectation
-            "icraDosyasiSorguSonucu": sorgu_data,
-            "timestamp": datetime.now().isoformat()
+            "icraDosyasiSorguSonucu": sorgu_result["data"],
+            "timestamp": sorgu_result["timestamp"]
         }
         
         print(f"Successfully retrieved icra dosyasi sorgulama for borclu_id: {borclu_id}")
@@ -432,16 +513,16 @@ def api_adres_sorgulama(file_id, borclu_id):
         print(f"API: Fetching adres sorgulama for file_id: {file_id}, borclu_id: {borclu_id}")
         
         # For adres sorgulama, we look for MERNİS data which contains address information
-        sorgu_data = get_borclu_sorgu_by_tipi(borclu_id, 'MERNİS')
+        sorgu_result = get_borclu_sorgu_by_tipi(borclu_id, 'MERNİS')
         
-        if sorgu_data is None:
+        if sorgu_result is None:
             return jsonify({"error": "Address query data not found"}), 404
         
         response_data = {
             "file_id": int(file_id),
             "borclu_id": borclu_id,  # Keep as string to match frontend expectation
-            "adresSorguSonucu": sorgu_data,
-            "timestamp": datetime.now().isoformat()
+            "adresSorguSonucu": sorgu_result["data"],
+            "timestamp": sorgu_result["timestamp"]
         }
         
         print(f"Successfully retrieved adres sorgulama for borclu_id: {borclu_id}")
@@ -457,16 +538,16 @@ def api_telefon_sorgulama(file_id, borclu_id):
     try:
         print(f"API: Fetching telefon sorgulama for file_id: {file_id}, borclu_id: {borclu_id}")
         
-        sorgu_data = get_borclu_sorgu_by_tipi(borclu_id, 'telefon_sorgulama')
+        sorgu_result = get_borclu_sorgu_by_tipi(borclu_id, 'telefon_sorgulama')
         
-        if sorgu_data is None:
+        if sorgu_result is None:
             return jsonify({"error": "Phone query data not found"}), 404
         
         response_data = {
             "file_id": int(file_id),
             "borclu_id": borclu_id,  # Keep as string to match frontend expectation
-            "telefonSorguSonucu": sorgu_data,
-            "timestamp": datetime.now().isoformat()
+            "telefonSorguSonucu": sorgu_result["data"],
+            "timestamp": sorgu_result["timestamp"]
         }
         
         print(f"Successfully retrieved telefon sorgulama for borclu_id: {borclu_id}")
@@ -483,16 +564,16 @@ def api_arac_sorgulama(file_id, borclu_id):
         print(f"API: Fetching arac sorgulama for file_id: {file_id}, borclu_id: {borclu_id}")
         
         # For arac sorgulama, we look for EGM data which contains vehicle information
-        sorgu_data = get_borclu_sorgu_by_tipi(borclu_id, 'EGM')
+        sorgu_result = get_borclu_sorgu_by_tipi(borclu_id, 'EGM')
         
-        if sorgu_data is None:
+        if sorgu_result is None:
             return jsonify({"error": "Vehicle query data not found"}), 404
         
         response_data = {
             "file_id": int(file_id),
             "borclu_id": borclu_id,  # Keep as string to match frontend expectation
-            "aracSorguSonucu": sorgu_data,
-            "timestamp": datetime.now().isoformat()
+            "aracSorguSonucu": sorgu_result["data"],
+            "timestamp": sorgu_result["timestamp"]
         }
         
         print(f"Successfully retrieved arac sorgulama for borclu_id: {borclu_id}")
@@ -509,16 +590,16 @@ def api_gayrimenkul_sorgulama(file_id, borclu_id):
         print(f"API: Fetching gayrimenkul sorgulama for file_id: {file_id}, borclu_id: {borclu_id}")
         
         # For gayrimenkul sorgulama, we look for TAKBIS data which contains real estate information
-        sorgu_data = get_borclu_sorgu_by_tipi(borclu_id, 'TAKBIS')
+        sorgu_result = get_borclu_sorgu_by_tipi(borclu_id, 'TAKBIS')
         
-        if sorgu_data is None:
+        if sorgu_result is None:
             return jsonify({"error": "Real estate query data not found"}), 404
         
         response_data = {
             "file_id": int(file_id),
             "borclu_id": borclu_id,  # Keep as string to match frontend expectation
-            "gayrimenkulSorguSonucu": sorgu_data,
-            "timestamp": datetime.now().isoformat()
+            "gayrimenkulSorguSonucu": sorgu_result["data"],
+            "timestamp": sorgu_result["timestamp"]
         }
         
         print(f"Successfully retrieved gayrimenkul sorgulama for borclu_id: {borclu_id}")
@@ -534,16 +615,16 @@ def api_dis_isleri_sorgulama(file_id, borclu_id):
     try:
         print(f"API: Fetching dis isleri sorgulama for file_id: {file_id}, borclu_id: {borclu_id}")
         
-        sorgu_data = get_borclu_sorgu_by_tipi(borclu_id, 'dis_isleri_sorgulama')
+        sorgu_result = get_borclu_sorgu_by_tipi(borclu_id, 'dis_isleri_sorgulama')
         
-        if sorgu_data is None:
+        if sorgu_result is None:
             return jsonify({"error": "Foreign affairs query data not found"}), 404
         
         response_data = {
             "file_id": int(file_id),
             "borclu_id": borclu_id,  # Keep as string to match frontend expectation
-            "disIsleriSorguSonucu": sorgu_data,
-            "timestamp": datetime.now().isoformat()
+            "disIsleriSorguSonucu": sorgu_result["data"],
+            "timestamp": sorgu_result["timestamp"]
         }
         
         print(f"Successfully retrieved dis isleri sorgulama for borclu_id: {borclu_id}")
@@ -559,16 +640,16 @@ def api_iski_sorgulama(file_id, borclu_id):
     try:
         print(f"API: Fetching ISKI sorgulama for file_id: {file_id}, borclu_id: {borclu_id}")
         
-        sorgu_data = get_borclu_sorgu_by_tipi(borclu_id, 'iski_sorgulama')
+        sorgu_result = get_borclu_sorgu_by_tipi(borclu_id, 'iski_sorgulama')
         
-        if sorgu_data is None:
+        if sorgu_result is None:
             return jsonify({"error": "ISKI query data not found"}), 404
         
         response_data = {
             "file_id": int(file_id),
             "borclu_id": borclu_id,  # Keep as string to match frontend expectation
-            "iskiSorguSonucu": sorgu_data,
-            "timestamp": datetime.now().isoformat()
+            "iskiSorguSonucu": sorgu_result["data"],
+            "timestamp": sorgu_result["timestamp"]
         }
         
         print(f"Successfully retrieved ISKI sorgulama for borclu_id: {borclu_id}")
@@ -584,16 +665,16 @@ def api_posta_ceki_sorgulama(file_id, borclu_id):
     try:
         print(f"API: Fetching posta ceki sorgulama for file_id: {file_id}, borclu_id: {borclu_id}")
         
-        sorgu_data = get_borclu_sorgu_by_tipi(borclu_id, 'posta_ceki_sorgulama')
+        sorgu_result = get_borclu_sorgu_by_tipi(borclu_id, 'posta_ceki_sorgulama')
         
-        if sorgu_data is None:
+        if sorgu_result is None:
             return jsonify({"error": "Post office check query data not found"}), 404
         
         response_data = {
             "file_id": int(file_id),
             "borclu_id": borclu_id,  # Keep as string to match frontend expectation
-            "postaCekiSorguSonucu": sorgu_data,
-            "timestamp": datetime.now().isoformat()
+            "postaCekiSorguSonucu": sorgu_result["data"],
+            "timestamp": sorgu_result["timestamp"]
         }
         
         print(f"Successfully retrieved posta ceki sorgulama for borclu_id: {borclu_id}")
@@ -609,16 +690,16 @@ def api_alacakli_dosyalari(file_id, borclu_id):
     try:
         print(f"API: Fetching alacakli dosyalari for file_id: {file_id}, borclu_id: {borclu_id}")
         
-        sorgu_data = get_borclu_sorgu_by_tipi(borclu_id, 'İcra Dosyası')
+        sorgu_result = get_borclu_sorgu_by_tipi(borclu_id, 'İcra Dosyası')
         
-        if sorgu_data is None:
+        if sorgu_result is None:
             return jsonify({"error": "Creditor files query data not found"}), 404
         
         response_data = {
             "file_id": int(file_id),
             "borclu_id": borclu_id,  # Keep as string to match frontend expectation
-            "alacakliDosyalariSonucu": sorgu_data,
-            "timestamp": datetime.now().isoformat()
+            "alacakliDosyalariSonucu": sorgu_result["data"],
+            "timestamp": sorgu_result["timestamp"]
         }
         
         print(f"Successfully retrieved alacakli dosyalari for borclu_id: {borclu_id}")
