@@ -669,7 +669,8 @@ def api_posta_ceki_sorgulama(file_id, borclu_id):
     try:
         print(f"API: Fetching posta ceki sorgulama for file_id: {file_id}, borclu_id: {borclu_id}")
         
-        sorgu_result = get_borclu_sorgu_by_tipi(borclu_id, 'posta_ceki_sorgulama')
+        # The backend saves data with sorgu_tipi = "Posta Çeki" (with space)
+        sorgu_result = get_borclu_sorgu_by_tipi(borclu_id, 'Posta Çeki')
         
         if sorgu_result is None:
             return jsonify({"error": "Post office check query data not found"}), 404
@@ -793,6 +794,8 @@ def trigger_sorgulama():
             db_sorgu_tipi = 'GİB'  # Keep as GİB for consistency
         elif sorgu_tipi == 'İSKİ':
             db_sorgu_tipi = 'İSKİ'  # Keep as İSKİ for consistency
+        elif sorgu_tipi == 'Posta Çeki':
+            db_sorgu_tipi = 'Posta Çeki'  # Keep as Posta Çeki for consistency with backend
         elif sorgu_tipi == 'İcra Dosyası':
             db_sorgu_tipi = 'icra_dosyasi_sorgulama'
         

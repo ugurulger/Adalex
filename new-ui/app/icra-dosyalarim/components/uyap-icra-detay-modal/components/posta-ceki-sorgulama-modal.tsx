@@ -25,10 +25,9 @@ interface PostaCekiData {
   file_id: number
   borclu_id: number
   postaCekiSorguSonucu: {
-    "Posta Çeki": {
-      sonuc: string
-      "Posta Çeki": string
-    }
+    sonuc?: string
+    "Posta Çeki"?: string
+    [key: string]: any
   }
   timestamp: string
 }
@@ -45,85 +44,145 @@ export default function PostaCekiSorgulamaModal({
   onUyapToggle,
   isConnecting = false,
 }: PostaCekiSorgulamaModalProps) {
-  const [isQuerying, setIsQuerying] = useState(false)
-  const [lastQueryTime, setLastQueryTime] = useState<Date | null>(null)
-  const [showGreenBackground, setShowGreenBackground] = useState(false)
-  const [queryData, setQueryData] = useState<PostaCekiData | null>(null)
   const [isLoading, setIsLoading] = useState(false)
+  const [queryData, setQueryData] = useState<PostaCekiData | null>(null)
+  const [error, setError] = useState<string | null>(null)
 
   // Fetch current data from database when modal opens or when data might have changed
   const fetchCurrentData = async () => {
     if (!fileId || !borcluId) return
-
     setIsLoading(true)
+    setError(null)
     try {
       const response = await fetch(`/api/icra-dosyalarim/${fileId}/${borcluId}/posta-ceki-sorgulama`)
-      
       if (response.ok) {
-        const data: PostaCekiData = await response.json()
-        setQueryData(data)
+        const rawData = await response.json()
+        // Handle nested structure
+        let postaCekiSorguSonucu = {}
+        if (rawData.postaCekiSorguSonucu) {
+          const data = rawData.postaCekiSorguSonucu
+          if (typeof data === 'object' && data !== null) {
+            for (const dosyaKey in data) {
+              const dosyaData = data[dosyaKey]
+              if (typeof dosyaData === 'object' && dosyaData !== null) {
+                for (const borcluKey in dosyaData) {
+                  const borcluData = dosyaData[borcluKey]
+                  if (typeof borcluData === 'object' && borcluData !== null && borcluData['Posta Çeki']) {
+                    postaCekiSorguSonucu = borcluData['Posta Çeki']
+                    break
+                  }
+                }
+              }
+            }
+          }
+          if (Object.keys(postaCekiSorguSonucu).length === 0) {
+            postaCekiSorguSonucu = rawData.postaCekiSorguSonucu
+          }
+        }
+        setQueryData({
+          file_id: rawData.file_id,
+          borclu_id: rawData.borclu_id,
+          postaCekiSorguSonucu,
+          timestamp: rawData.timestamp
+        })
+      } else {
+        setQueryData(null)
       }
     } catch (error) {
-      console.error("Error fetching current posta ceki data:", error)
-      // Don't show error for fetch, just silently fail
+      setError("Veri alınırken hata oluştu.")
+      setQueryData(null)
     } finally {
       setIsLoading(false)
     }
   }
 
-  // Fetch data when modal opens
   useEffect(() => {
     if (isOpen && fileId && borcluId) {
       fetchCurrentData()
     }
   }, [isOpen, fileId, borcluId])
 
-  // Disabled polling for now - will be implemented later with proper database integration
-  // useEffect(() => {
-  //   if (!isOpen) return
-
-  //   const interval = setInterval(() => {
-  //     fetchCurrentData()
-  //   }, 5000) // Check every 5 seconds
-
-  //   return () => clearInterval(interval)
-  // }, [isOpen, fileId, borcluId])
-
-  // Use API data if available, otherwise show empty state
-  const postaCekiSorguSonucu = queryData?.postaCekiSorguSonucu?.["Posta Çeki"]
-
-  const handleSorgula = () => {
-    if (isQuerying) return
-
-    setIsQuerying(true)
-
-    // Simulate query process for 3 seconds
-    setTimeout(() => {
-      setIsQuerying(false)
-      setLastQueryTime(new Date())
-      setShowGreenBackground(true)
-
-      // Remove green background after 5 seconds
-      setTimeout(() => {
-        setShowGreenBackground(false)
-      }, 5000)
-    }, 3000)
-  }
-
-  // Clean up timers when modal closes
-  useEffect(() => {
-    if (!isOpen) {
-      setIsQuerying(false)
-      setShowGreenBackground(false)
+  const handleSorgula = async () => {
+    if (!dosyaNo || !borcluId) {
+      setError('Dosya No veya Borçlu ID eksik')
+      return
     }
-  }, [isOpen])
-
-  const formatDateTime = (date: Date) => {
-    return `${date.toLocaleDateString("tr-TR")} ${date.toLocaleTimeString("tr-TR", {
-      hour: "2-digit",
-      minute: "2-digit",
-    })}`
+    if (uyapStatus !== "Bağlı") {
+      setError('UYAP bağlantısı yok')
+      return
+    }
+    setIsLoading(true)
+    setError(null)
+    try {
+      const response = await fetch('/api/uyap/trigger-sorgulama', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          dosya_no: dosyaNo,
+          sorgu_tipi: 'Posta Çeki',
+          borclu_id: borcluId,
+        }),
+      })
+      const result = await response.json()
+      if (result.success) {
+        // Poll for data up to 10 times, 1s apart
+        let tries = 0
+        let found = false
+        while (tries < 10 && !found) {
+          await new Promise(res => setTimeout(res, 1000))
+          try {
+            const pollResponse = await fetch(`/api/icra-dosyalarim/${fileId}/${borcluId}/posta-ceki-sorgulama`)
+            if (pollResponse.ok) {
+              const rawData = await pollResponse.json()
+              let postaCekiSorguSonucu = {}
+              if (rawData.postaCekiSorguSonucu) {
+                const data = rawData.postaCekiSorguSonucu
+                if (typeof data === 'object' && data !== null) {
+                  for (const dosyaKey in data) {
+                    const dosyaData = data[dosyaKey]
+                    if (typeof dosyaData === 'object' && dosyaData !== null) {
+                      for (const borcluKey in dosyaData) {
+                        const borcluData = dosyaData[borcluKey]
+                        if (typeof borcluData === 'object' && borcluData !== null && borcluData['Posta Çeki']) {
+                          postaCekiSorguSonucu = borcluData['Posta Çeki']
+                          break
+                        }
+                      }
+                    }
+                  }
+                }
+                if (Object.keys(postaCekiSorguSonucu).length === 0) {
+                  postaCekiSorguSonucu = rawData.postaCekiSorguSonucu
+                }
+              }
+              setQueryData({
+                file_id: rawData.file_id,
+                borclu_id: rawData.borclu_id,
+                postaCekiSorguSonucu,
+                timestamp: rawData.timestamp
+              })
+              found = true
+              break
+            }
+          } catch (e) {
+            // ignore
+          }
+          tries++
+        }
+        if (!found) {
+          setError('Sorgulama tamamlandı fakat sonuç alınamadı. Lütfen daha sonra tekrar deneyin.')
+        }
+      } else {
+        setError(result.message || 'Sorgulama başarısız')
+      }
+    } catch (error) {
+      setError('Sorgulama sırasında hata oluştu')
+    } finally {
+      setIsLoading(false)
+    }
   }
+
+  const postaCekiSorguSonucu = queryData?.postaCekiSorguSonucu
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -145,9 +204,7 @@ export default function PostaCekiSorgulamaModal({
                       : "bg-red-100 text-red-800 border-red-200 hover:bg-red-200",
                   isConnecting && "animate-pulse-slow",
                 )}
-                style={{
-                  animationDuration: isConnecting ? "3s" : undefined,
-                }}
+                style={{ animationDuration: isConnecting ? "3s" : undefined }}
               >
                 {isConnecting ? (
                   <div className="flex items-center gap-1">
@@ -168,26 +225,39 @@ export default function PostaCekiSorgulamaModal({
             <span className="font-medium ml-2">Borçlu:</span> {borcluAdi}
           </div>
         </DialogHeader>
-
         {/* Scrollable Content */}
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
-          {isLoading ? (
-            <div className="flex items-center justify-center h-32">
-              <div className="flex items-center gap-2 text-gray-600">
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
-                <span>Posta Çeki verileri yükleniyor...</span>
-              </div>
-            </div>
-          ) : !postaCekiSorguSonucu ? (
-            <div className="flex items-center justify-center h-32">
-              <div className="text-center text-gray-600">
-                <p>Henüz Posta Çeki sorgulaması yapılmamış</p>
-                <p className="text-sm mt-1">"UYAP'ta Sorgula" butonuna tıklayarak sorgulama yapabilirsiniz</p>
-              </div>
-            </div>
-          ) : (
+          {isLoading && (
+            <Card>
+              <CardContent className="flex items-center justify-center py-8">
+                <div className="flex items-center gap-2">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                  <span className="text-gray-600">Veriler yükleniyor...</span>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+          {error && (
+            <Card>
+              <CardContent className="flex items-center justify-center py-8">
+                <span className="text-red-600">{error}</span>
+              </CardContent>
+            </Card>
+          )}
+          {!isLoading && !error && !postaCekiSorguSonucu && (
+            <Card>
+              <CardContent className="flex items-center justify-center py-8">
+                <div className="text-center">
+                  <div className="text-gray-400 mb-2">📮</div>
+                  <p className="text-gray-600">Henüz Posta Çeki verisi bulunmuyor</p>
+                  <p className="text-sm text-gray-500 mt-1">UYAP'ta sorgula butonuna tıklayarak veri çekebilirsiniz</p>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+          {/* Posta Çeki Data */}
+          {!isLoading && !error && postaCekiSorguSonucu && (
             <>
-              {/* Sorgu Sonucu */}
               <Card>
                 <CardHeader className="pb-4">
                   <CardTitle className="text-lg font-semibold text-gray-900 flex items-center gap-2">
@@ -196,8 +266,6 @@ export default function PostaCekiSorgulamaModal({
                   </CardTitle>
                 </CardHeader>
               </Card>
-
-              {/* Posta Çeki Bilgisi */}
               <Card>
                 <CardHeader className="pb-4">
                   <CardTitle className="text-lg font-semibold text-gray-900 flex items-center gap-2">
@@ -206,33 +274,49 @@ export default function PostaCekiSorgulamaModal({
                 </CardHeader>
                 <CardContent>
                   <div className="bg-gray-50 p-4 rounded-lg">
-                    <p className="text-sm text-gray-900 font-medium">{postaCekiSorguSonucu["Posta Çeki"]}</p>
+                    {postaCekiSorguSonucu.sonuc && (
+                      <p className="text-sm text-gray-900 font-medium">{postaCekiSorguSonucu.sonuc}</p>
+                    )}
+                    {postaCekiSorguSonucu["Posta Çeki"] && (
+                      <p className="text-sm text-gray-700">
+                        <span className="font-medium">Posta Çeki:</span> {postaCekiSorguSonucu["Posta Çeki"]}
+                      </p>
+                    )}
                   </div>
                 </CardContent>
               </Card>
             </>
           )}
         </div>
-
         {/* Fixed Footer - Minimized Height */}
         <div className="flex-shrink-0 px-6 py-2 border-t border-gray-200 bg-gray-50">
           <div className="flex justify-between items-center">
-            <div
-              className={cn(
-                "text-xs text-gray-600 transition-all duration-300 px-2 py-1 rounded",
-                showGreenBackground && "bg-green-100 text-green-800",
-              )}
-            >
-              <span className="font-medium">Son Sorgu Tarihi:</span>{" "}
-              {lastQueryTime ? formatDateTime(lastQueryTime) : "Henüz sorgu yapılmadı"}
+            <div className="text-xs text-gray-600 transition-all duration-300 px-2 py-1 rounded">
+              <span className="font-medium">Son Sorgu Tarihi:</span>{' '}
+              {queryData?.timestamp ? new Date(queryData.timestamp).toLocaleString("tr-TR") : "Henüz sorgu yapılmadı"}
             </div>
             <Button
-              disabled={true}
+              onClick={handleSorgula}
+              disabled={isLoading || uyapStatus !== "Bağlı"}
               size="sm"
-              className="h-7 px-3 text-xs bg-gray-400 text-white cursor-not-allowed"
+              className={cn(
+                "h-7 px-3 text-xs transition-all duration-300",
+                uyapStatus === "Bağlı" && !isLoading
+                  ? "bg-orange-600 hover:bg-orange-700 text-white"
+                  : "bg-gray-400 text-white cursor-not-allowed"
+              )}
             >
-              <Search className="w-3 h-3 mr-1" />
-              UYAP'ta Sorgula
+              {isLoading ? (
+                <div className="flex items-center gap-1">
+                  <div className="animate-spin rounded-full h-2 w-2 border-b-2 border-white"></div>
+                  <span>Sorgulanıyor...</span>
+                </div>
+              ) : (
+                <>
+                  <Search className="w-3 h-3 mr-1" />
+                  UYAP'ta Sorgula
+                </>
+              )}
             </Button>
           </div>
         </div>
