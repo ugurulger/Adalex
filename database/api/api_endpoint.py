@@ -337,7 +337,8 @@ def api_banka_sorgulama(file_id, borclu_id):
     try:
         print(f"API: Fetching banka sorgulama for file_id: {file_id}, borclu_id: {borclu_id}")
         
-        sorgu_result = get_borclu_sorgu_by_tipi(borclu_id, 'banka_sorgulama')
+        # For banka sorgulama, we look for Banka data which contains bank information
+        sorgu_result = get_borclu_sorgu_by_tipi(borclu_id, 'Banka')
         
         if sorgu_result is None:
             return jsonify({"error": "Bank query data not found"}), 404
@@ -538,7 +539,8 @@ def api_telefon_sorgulama(file_id, borclu_id):
     try:
         print(f"API: Fetching telefon sorgulama for file_id: {file_id}, borclu_id: {borclu_id}")
         
-        sorgu_result = get_borclu_sorgu_by_tipi(borclu_id, 'telefon_sorgulama')
+        # For telefon sorgulama, we look for GSM data which contains phone information
+        sorgu_result = get_borclu_sorgu_by_tipi(borclu_id, 'GSM')
         
         if sorgu_result is None:
             return jsonify({"error": "Phone query data not found"}), 404
@@ -546,7 +548,7 @@ def api_telefon_sorgulama(file_id, borclu_id):
         response_data = {
             "file_id": int(file_id),
             "borclu_id": borclu_id,  # Keep as string to match frontend expectation
-            "telefonSorguSonucu": sorgu_result["data"],
+            "gsmSorguSonucu": sorgu_result["data"],
             "timestamp": sorgu_result["timestamp"]
         }
         
@@ -783,6 +785,8 @@ def trigger_sorgulama():
             db_sorgu_tipi = 'TAKBİS'  # Keep as TAKBİS for consistency
         elif sorgu_tipi == 'Banka':
             db_sorgu_tipi = 'Banka'
+        elif sorgu_tipi == 'GSM':
+            db_sorgu_tipi = 'GSM'  # Keep as GSM for consistency
         elif sorgu_tipi == 'İcra Dosyası':
             db_sorgu_tipi = 'icra_dosyasi_sorgulama'
         

@@ -26,10 +26,8 @@ interface BankaData {
   file_id: number
   borclu_id: number
   bankaSorguSonucu: {
-    Banka: {
-      sonuc: string
-      bankalar: Banka[]
-    }
+    sonuc: string
+    bankalar: Banka[]
   }
   timestamp: string
 }
@@ -66,8 +64,19 @@ export default function BankaSorgulamaModal({
       const response = await fetch(`/api/icra-dosyalarim/${fileId}/${borcluId}/banka-sorgulama`)
       
       if (response.ok) {
-        const data: BankaData = await response.json()
-        setQueryData(data)
+        const rawData = await response.json()
+        
+        // Transform the data to match the expected format
+        const transformedData: BankaData = {
+          file_id: rawData.file_id,
+          borclu_id: rawData.borclu_id,
+          bankaSorguSonucu: rawData.bankaSorguSonucu || {},
+          timestamp: rawData.timestamp
+        }
+        
+        console.log('Raw API data:', rawData)
+        console.log('Transformed data:', transformedData)
+        setQueryData(transformedData)
       }
     } catch (error) {
       console.error("Error fetching current banka data:", error)
@@ -96,11 +105,63 @@ export default function BankaSorgulamaModal({
   // }, [isOpen, fileId, borcluId])
 
   // Use API data if available, otherwise show empty state
-  const bankaSorguSonucu = queryData?.bankaSorguSonucu?.Banka
+  const bankaSorguSonucu = queryData?.bankaSorguSonucu
 
-  const handleSorgula = () => {
-    // Disabled for now - will be implemented later with proper database integration
-    console.log("UYAP'ta Sorgula button clicked - functionality disabled for now")
+  const handleSorgula = async () => {
+    if (!dosyaNo || !borcluId) {
+      console.error('Dosya No veya Borçlu ID eksik')
+      return
+    }
+
+    if (uyapStatus !== "Bağlı") {
+      console.error('UYAP bağlantısı yok')
+      return
+    }
+
+    setIsLoading(true)
+    try {
+      const response = await fetch('/api/uyap/trigger-sorgulama', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          dosya_no: dosyaNo,
+          sorgu_tipi: 'Banka',
+          borclu_id: borcluId,
+        }),
+      })
+
+      const result = await response.json()
+
+      if (result.success) {
+        // Refresh the data
+        await fetchCurrentData()
+      } else {
+        console.error('Sorgulama hatası:', result.message)
+        // Show user-friendly error message
+        alert(`Sorgulama başarısız: ${result.message}`)
+      }
+    } catch (error) {
+      console.error('Sorgulama sırasında hata:', error)
+      
+      // Handle specific connection errors
+      let errorMessage = 'Bilinmeyen bir hata oluştu'
+      
+      if (error instanceof Error) {
+        if (error.message.includes('Connection refused') || error.message.includes('Max retries exceeded')) {
+          errorMessage = 'UYAP bağlantısı kesildi. Lütfen UYAP\'ı yeniden bağlayın ve tekrar deneyin.'
+        } else if (error.message.includes('fetch failed')) {
+          errorMessage = 'Sunucu bağlantısı kurulamadı. Lütfen internet bağlantınızı kontrol edin.'
+        } else {
+          errorMessage = error.message
+        }
+      }
+      
+      alert(`Sorgulama hatası: ${errorMessage}`)
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   // Clean up timers when modal closes
@@ -197,14 +258,14 @@ export default function BankaSorgulamaModal({
                   <CardTitle className="text-lg font-semibold text-gray-900 flex items-center gap-2">
                     📊 Sorgu Sonucu
                     <span className="text-sm font-normal text-green-700">
-                      ✅ {bankaSorguSonucu.bankalar.length} Banka Hesabı Bulundu
+                      ✅ {bankaSorguSonucu.bankalar?.length || 0} Banka Hesabı Bulundu
                     </span>
                   </CardTitle>
                 </CardHeader>
               </Card>
 
               {/* Bankalar Tablosu */}
-              {bankaSorguSonucu.sonuc === "Kişiye ait banka hesap kaydı var." && (
+              {bankaSorguSonucu.sonuc === "Kişiye ait banka hesap kaydı var." && bankaSorguSonucu.bankalar && bankaSorguSonucu.bankalar.length > 0 && (
                 <Card>
                   <CardHeader className="pb-4">
                     <CardTitle className="text-lg font-semibold text-gray-900 flex items-center gap-2">
@@ -235,6 +296,19 @@ export default function BankaSorgulamaModal({
                   </CardContent>
                 </Card>
               )}
+
+              {/* No Bank Records Found */}
+              {bankaSorguSonucu.sonuc !== "Kişiye ait banka hesap kaydı var." && (
+                <Card>
+                  <CardContent className="flex items-center justify-center py-8">
+                    <div className="text-center">
+                      <div className="text-gray-400 mb-2">🏦</div>
+                      <p className="text-gray-600">Banka hesap kaydı bulunamadı</p>
+                      <p className="text-sm text-gray-500 mt-1">Sorgu sonucu: {bankaSorguSonucu.sonuc}</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
             </>
           )}
         </div>
@@ -249,16 +323,30 @@ export default function BankaSorgulamaModal({
               )}
             >
               <span className="font-medium">Son Sorgu Tarihi:</span>{" "}
-              {lastQueryTime ? formatDateTime(lastQueryTime) : "Henüz sorgu yapılmadı"}
+              {queryData?.timestamp ? new Date(queryData.timestamp).toLocaleString("tr-TR") : "Henüz sorgu yapılmadı"}
             </div>
             <Button
               onClick={handleSorgula}
-              disabled={true}
+              disabled={isLoading || uyapStatus !== "Bağlı"}
               size="sm"
-              className="h-7 px-3 text-xs transition-all duration-300 bg-gray-400 hover:bg-gray-500 text-white cursor-not-allowed"
+              className={cn(
+                "h-7 px-3 text-xs transition-all duration-300",
+                uyapStatus === "Bağlı" && !isLoading
+                  ? "bg-orange-600 hover:bg-orange-700 text-white"
+                  : "bg-gray-400 text-white cursor-not-allowed"
+              )}
             >
-              <Search className="w-3 h-3 mr-1" />
-              UYAP'ta Sorgula
+              {isLoading ? (
+                <div className="flex items-center gap-1">
+                  <div className="animate-spin rounded-full h-2 w-2 border-b-2 border-white"></div>
+                  <span>Sorgulanıyor...</span>
+                </div>
+              ) : (
+                <>
+                  <Search className="w-3 h-3 mr-1" />
+                  UYAP'ta Sorgula
+                </>
+              )}
             </Button>
           </div>
         </div>

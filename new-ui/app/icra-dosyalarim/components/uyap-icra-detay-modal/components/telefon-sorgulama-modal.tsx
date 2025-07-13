@@ -26,17 +26,15 @@ interface TelefonData {
   file_id: number
   borclu_id: number
   gsmSorguSonucu: {
-    GSM: {
-      sonuc: string
-      "GSM Adres": GSMKayit[]
-    }
+    sonuc: string
+    "GSM Adres": GSMKayit[]
   }
   timestamp: string
 }
 
 interface GSMKayit {
-  Operatör: string
-  adres: string
+  Operator: string
+  Adres: string
 }
 
 export default function TelefonSorgulamaModal({
@@ -66,8 +64,19 @@ export default function TelefonSorgulamaModal({
       const response = await fetch(`/api/icra-dosyalarim/${fileId}/${borcluId}/telefon-sorgulama`)
       
       if (response.ok) {
-        const data: TelefonData = await response.json()
-        setQueryData(data)
+        const rawData = await response.json()
+        
+        // Transform the data to match the expected format
+        const transformedData: TelefonData = {
+          file_id: rawData.file_id,
+          borclu_id: rawData.borclu_id,
+          gsmSorguSonucu: rawData.gsmSorguSonucu || {},
+          timestamp: rawData.timestamp
+        }
+        
+        console.log('Raw API data:', rawData)
+        console.log('Transformed data:', transformedData)
+        setQueryData(transformedData)
       }
     } catch (error) {
       console.error("Error fetching current telefon data:", error)
@@ -96,11 +105,63 @@ export default function TelefonSorgulamaModal({
   // }, [isOpen, fileId, borcluId])
 
   // Use API data if available, otherwise show empty state
-  const gsmSorguSonucu = queryData?.gsmSorguSonucu?.GSM
+  const gsmSorguSonucu = queryData?.gsmSorguSonucu
 
-  const handleSorgula = () => {
-    // Disabled for now - will be implemented later with proper database integration
-    console.log("UYAP'ta Sorgula button clicked - functionality disabled for now")
+  const handleSorgula = async () => {
+    if (!dosyaNo || !borcluId) {
+      console.error('Dosya No veya Borçlu ID eksik')
+      return
+    }
+
+    if (uyapStatus !== "Bağlı") {
+      console.error('UYAP bağlantısı yok')
+      return
+    }
+
+    setIsLoading(true)
+    try {
+      const response = await fetch('/api/uyap/trigger-sorgulama', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          dosya_no: dosyaNo,
+          sorgu_tipi: 'GSM',
+          borclu_id: borcluId,
+        }),
+      })
+
+      const result = await response.json()
+
+      if (result.success) {
+        // Refresh the data
+        await fetchCurrentData()
+      } else {
+        console.error('Sorgulama hatası:', result.message)
+        // Show user-friendly error message
+        alert(`Sorgulama başarısız: ${result.message}`)
+      }
+    } catch (error) {
+      console.error('Sorgulama sırasında hata:', error)
+      
+      // Handle specific connection errors
+      let errorMessage = 'Bilinmeyen bir hata oluştu'
+      
+      if (error instanceof Error) {
+        if (error.message.includes('Connection refused') || error.message.includes('Max retries exceeded')) {
+          errorMessage = 'UYAP bağlantısı kesildi. Lütfen UYAP\'ı yeniden bağlayın ve tekrar deneyin.'
+        } else if (error.message.includes('fetch failed')) {
+          errorMessage = 'Sunucu bağlantısı kurulamadı. Lütfen internet bağlantınızı kontrol edin.'
+        } else {
+          errorMessage = error.message
+        }
+      }
+      
+      alert(`Sorgulama hatası: ${errorMessage}`)
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   // Clean up timers when modal closes
@@ -197,14 +258,14 @@ export default function TelefonSorgulamaModal({
                   <CardTitle className="text-lg font-semibold text-gray-900 flex items-center gap-2">
                     📊 Sorgu Sonucu
                     <span className="text-sm font-normal text-green-700">
-                      ✅ {gsmSorguSonucu["GSM Adres"].length} GSM Kaydı Bulundu
+                      ✅ {gsmSorguSonucu["GSM Adres"]?.length || 0} GSM Kaydı Bulundu
                     </span>
                   </CardTitle>
                 </CardHeader>
               </Card>
 
               {/* GSM Kayıtları Tablosu */}
-              {gsmSorguSonucu.sonuc === "Kişiye ait GSM operatörlerinde kaydı var." && (
+              {gsmSorguSonucu.sonuc === "Kişiye ait GSM operatörlerinde kaydı var." && gsmSorguSonucu["GSM Adres"] && gsmSorguSonucu["GSM Adres"].length > 0 && (
                 <Card>
                   <CardHeader className="pb-4">
                     <CardTitle className="text-lg font-semibold text-gray-900 flex items-center gap-2">
@@ -225,12 +286,25 @@ export default function TelefonSorgulamaModal({
                           {gsmSorguSonucu["GSM Adres"].map((gsm: GSMKayit, index: number) => (
                             <TableRow key={index} className="hover:bg-gray-50">
                               <TableCell className="text-xs py-2 font-medium">{index + 1}</TableCell>
-                              <TableCell className="text-xs py-2 text-gray-900">{gsm.Operatör}</TableCell>
-                              <TableCell className="text-xs py-2 break-words max-w-md">{gsm.adres}</TableCell>
+                              <TableCell className="text-xs py-2 text-gray-900">{gsm.Operator}</TableCell>
+                              <TableCell className="text-xs py-2 break-words max-w-md">{gsm.Adres}</TableCell>
                             </TableRow>
                           ))}
                         </TableBody>
                       </Table>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* No GSM Records Found */}
+              {gsmSorguSonucu.sonuc !== "Kişiye ait GSM operatörlerinde kaydı var." && (
+                <Card>
+                  <CardContent className="flex items-center justify-center py-8">
+                    <div className="text-center">
+                      <div className="text-gray-400 mb-2">📱</div>
+                      <p className="text-gray-600">GSM operatörlerinde kayıt bulunamadı</p>
+                      <p className="text-sm text-gray-500 mt-1">Sorgu sonucu: {gsmSorguSonucu.sonuc}</p>
                     </div>
                   </CardContent>
                 </Card>
@@ -249,16 +323,30 @@ export default function TelefonSorgulamaModal({
               )}
             >
               <span className="font-medium">Son Sorgu Tarihi:</span>{" "}
-              {lastQueryTime ? formatDateTime(lastQueryTime) : "Henüz sorgu yapılmadı"}
+              {queryData?.timestamp ? new Date(queryData.timestamp).toLocaleString("tr-TR") : "Henüz sorgu yapılmadı"}
             </div>
             <Button
               onClick={handleSorgula}
-              disabled={true}
+              disabled={isLoading || uyapStatus !== "Bağlı"}
               size="sm"
-              className="h-7 px-3 text-xs transition-all duration-300 bg-gray-400 hover:bg-gray-500 text-white cursor-not-allowed"
+              className={cn(
+                "h-7 px-3 text-xs transition-all duration-300",
+                uyapStatus === "Bağlı" && !isLoading
+                  ? "bg-orange-600 hover:bg-orange-700 text-white"
+                  : "bg-gray-400 text-white cursor-not-allowed"
+              )}
             >
-              <Search className="w-3 h-3 mr-1" />
-              UYAP'ta Sorgula
+              {isLoading ? (
+                <div className="flex items-center gap-1">
+                  <div className="animate-spin rounded-full h-2 w-2 border-b-2 border-white"></div>
+                  <span>Sorgulanıyor...</span>
+                </div>
+              ) : (
+                <>
+                  <Search className="w-3 h-3 mr-1" />
+                  UYAP'ta Sorgula
+                </>
+              )}
             </Button>
           </div>
         </div>

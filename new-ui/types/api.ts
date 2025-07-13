@@ -143,8 +143,8 @@ export interface TelefonSorgulamaResponse {
   gsmSorguSonucu: {
     sonuc: string
     "GSM Adres": Array<{
-      Operatör: string
-      adres: string
+      Operator: string
+      Adres: string
     }>
   }
   timestamp: string
