@@ -363,7 +363,8 @@ def api_gib_sorgulama(file_id, borclu_id):
     try:
         print(f"API: Fetching GIB sorgulama for file_id: {file_id}, borclu_id: {borclu_id}")
         
-        sorgu_result = get_borclu_sorgu_by_tipi(borclu_id, 'gib_sorgulama')
+        # For GİB sorgulama, we look for GİB data which contains GİB information
+        sorgu_result = get_borclu_sorgu_by_tipi(borclu_id, 'GİB')
         
         if sorgu_result is None:
             return jsonify({"error": "GIB query data not found"}), 404
@@ -787,6 +788,8 @@ def trigger_sorgulama():
             db_sorgu_tipi = 'Banka'
         elif sorgu_tipi == 'GSM':
             db_sorgu_tipi = 'GSM'  # Keep as GSM for consistency
+        elif sorgu_tipi == 'GİB':
+            db_sorgu_tipi = 'GİB'  # Keep as GİB for consistency
         elif sorgu_tipi == 'İcra Dosyası':
             db_sorgu_tipi = 'icra_dosyasi_sorgulama'
         

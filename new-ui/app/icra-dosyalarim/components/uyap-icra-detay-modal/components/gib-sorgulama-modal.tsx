@@ -25,10 +25,8 @@ interface GibData {
   file_id: number
   borclu_id: number
   gibSorguSonucu: {
-    GİB: {
-      sonuc: string
-      "GİB Adres": string
-    }
+    sonuc: string
+    "GİB Adres": string
   }
   timestamp: string
 }
@@ -60,8 +58,19 @@ export default function GibSorgulamaModal({
       const response = await fetch(`/api/icra-dosyalarim/${fileId}/${borcluId}/gib-sorgulama`)
       
       if (response.ok) {
-        const data: GibData = await response.json()
-        setQueryData(data)
+        const rawData = await response.json()
+        
+        // Transform the data to match the expected format
+        const transformedData: GibData = {
+          file_id: rawData.file_id,
+          borclu_id: rawData.borclu_id,
+          gibSorguSonucu: rawData.gibSorguSonucu || {},
+          timestamp: rawData.timestamp
+        }
+        
+        console.log('Raw API data:', rawData)
+        console.log('Transformed data:', transformedData)
+        setQueryData(transformedData)
       }
     } catch (error) {
       console.error("Error fetching current gib data:", error)
@@ -90,24 +99,63 @@ export default function GibSorgulamaModal({
   // }, [isOpen, fileId, borcluId])
 
   // Use API data if available, otherwise show empty state
-  const gibSorguSonucu = queryData?.gibSorguSonucu?.GİB
+  const gibSorguSonucu = queryData?.gibSorguSonucu
 
-  const handleSorgula = () => {
-    if (isQuerying) return
+  const handleSorgula = async () => {
+    if (!dosyaNo || !borcluId) {
+      console.error('Dosya No veya Borçlu ID eksik')
+      return
+    }
 
-    setIsQuerying(true)
+    if (uyapStatus !== "Bağlı") {
+      console.error('UYAP bağlantısı yok')
+      return
+    }
 
-    // Simulate query process for 3 seconds
-    setTimeout(() => {
-      setIsQuerying(false)
-      setLastQueryTime(new Date())
-      setShowGreenBackground(true)
+    setIsLoading(true)
+    try {
+      const response = await fetch('/api/uyap/trigger-sorgulama', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          dosya_no: dosyaNo,
+          sorgu_tipi: 'GİB',
+          borclu_id: borcluId,
+        }),
+      })
 
-      // Remove green background after 5 seconds
-      setTimeout(() => {
-        setShowGreenBackground(false)
-      }, 5000)
-    }, 3000)
+      const result = await response.json()
+
+      if (result.success) {
+        // Refresh the data
+        await fetchCurrentData()
+      } else {
+        console.error('Sorgulama hatası:', result.message)
+        // Show user-friendly error message
+        alert(`Sorgulama başarısız: ${result.message}`)
+      }
+    } catch (error) {
+      console.error('Sorgulama sırasında hata:', error)
+      
+      // Handle specific connection errors
+      let errorMessage = 'Bilinmeyen bir hata oluştu'
+      
+      if (error instanceof Error) {
+        if (error.message.includes('Connection refused') || error.message.includes('Max retries exceeded')) {
+          errorMessage = 'UYAP bağlantısı kesildi. Lütfen UYAP\'ı yeniden bağlayın ve tekrar deneyin.'
+        } else if (error.message.includes('fetch failed')) {
+          errorMessage = 'Sunucu bağlantısı kurulamadı. Lütfen internet bağlantınızı kontrol edin.'
+        } else {
+          errorMessage = error.message
+        }
+      }
+      
+      alert(`Sorgulama hatası: ${errorMessage}`)
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   // Clean up timers when modal closes
@@ -171,45 +219,74 @@ export default function GibSorgulamaModal({
 
         {/* Scrollable Content */}
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
-          {isLoading ? (
-            <div className="flex items-center justify-center h-32">
-              <div className="flex items-center gap-2 text-gray-600">
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
-                <span>GİB verileri yükleniyor...</span>
-              </div>
-            </div>
-          ) : !gibSorguSonucu ? (
-            <div className="flex items-center justify-center h-32">
-              <div className="text-center text-gray-600">
-                <p>Henüz GİB sorgulaması yapılmamış</p>
-                <p className="text-sm mt-1">"UYAP'ta Sorgula" butonuna tıklayarak sorgulama yapabilirsiniz</p>
-              </div>
-            </div>
-          ) : (
+          {/* Loading State */}
+          {isLoading && (
+            <Card>
+              <CardContent className="flex items-center justify-center py-8">
+                <div className="flex items-center gap-2">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                  <span className="text-gray-600">Veriler yükleniyor...</span>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* No Data State */}
+          {!isLoading && !queryData && (
+            <Card>
+              <CardContent className="flex items-center justify-center py-8">
+                <div className="text-center">
+                  <div className="text-gray-400 mb-2">🏛️</div>
+                  <p className="text-gray-600">Henüz GİB verisi bulunmuyor</p>
+                  <p className="text-sm text-gray-500 mt-1">UYAP'ta sorgula butonuna tıklayarak veri çekebilirsiniz</p>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* GİB Data */}
+          {!isLoading && queryData && gibSorguSonucu && (
             <>
               {/* Sorgu Sonucu */}
               <Card>
                 <CardHeader className="pb-4">
                   <CardTitle className="text-lg font-semibold text-gray-900 flex items-center gap-2">
                     📊 Sorgu Sonucu
-                    <span className="text-sm font-normal text-green-700">✅ GİB kaydı bulundu</span>
+                    <span className="text-sm font-normal text-green-700">
+                      ✅ GİB kaydı bulundu
+                    </span>
                   </CardTitle>
                 </CardHeader>
               </Card>
 
               {/* GİB Adres Bilgisi */}
-              <Card>
-                <CardHeader className="pb-4">
-                  <CardTitle className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                    🏛️ GİB Adres Bilgisi
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="bg-gray-50 p-4 rounded-lg">
-                    <p className="text-sm text-gray-900 font-medium">{gibSorguSonucu["GİB Adres"]}</p>
-                  </div>
-                </CardContent>
-              </Card>
+              {(gibSorguSonucu.sonuc === "Kişiye ait GİB kaydı var." || gibSorguSonucu.sonuc === "Kişiye ait GİB kayıtlarına göre adres kaydı var.") && gibSorguSonucu["GİB Adres"] && (
+                <Card>
+                  <CardHeader className="pb-4">
+                    <CardTitle className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                      🏛️ GİB Adres Bilgisi
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="bg-gray-50 p-4 rounded-lg">
+                      <p className="text-sm text-gray-900 font-medium">{gibSorguSonucu["GİB Adres"]}</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* No GİB Records Found */}
+              {gibSorguSonucu.sonuc !== "Kişiye ait GİB kaydı var." && gibSorguSonucu.sonuc !== "Kişiye ait GİB kayıtlarına göre adres kaydı var." && (
+                <Card>
+                  <CardContent className="flex items-center justify-center py-8">
+                    <div className="text-center">
+                      <div className="text-gray-400 mb-2">🏛️</div>
+                      <p className="text-gray-600">GİB kaydı bulunamadı</p>
+                      <p className="text-sm text-gray-500 mt-1">Sorgu sonucu: {gibSorguSonucu.sonuc}</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
             </>
           )}
         </div>
@@ -224,15 +301,30 @@ export default function GibSorgulamaModal({
               )}
             >
               <span className="font-medium">Son Sorgu Tarihi:</span>{" "}
-              {lastQueryTime ? formatDateTime(lastQueryTime) : "Henüz sorgu yapılmadı"}
+              {queryData?.timestamp ? new Date(queryData.timestamp).toLocaleString("tr-TR") : "Henüz sorgu yapılmadı"}
             </div>
             <Button
-              disabled={true}
+              onClick={handleSorgula}
+              disabled={isLoading || uyapStatus !== "Bağlı"}
               size="sm"
-              className="h-7 px-3 text-xs bg-gray-400 text-white cursor-not-allowed"
+              className={cn(
+                "h-7 px-3 text-xs transition-all duration-300",
+                uyapStatus === "Bağlı" && !isLoading
+                  ? "bg-orange-600 hover:bg-orange-700 text-white"
+                  : "bg-gray-400 text-white cursor-not-allowed"
+              )}
             >
-              <Search className="w-3 h-3 mr-1" />
-              UYAP'ta Sorgula
+              {isLoading ? (
+                <div className="flex items-center gap-1">
+                  <div className="animate-spin rounded-full h-2 w-2 border-b-2 border-white"></div>
+                  <span>Sorgulanıyor...</span>
+                </div>
+              ) : (
+                <>
+                  <Search className="w-3 h-3 mr-1" />
+                  UYAP'ta Sorgula
+                </>
+              )}
             </Button>
           </div>
         </div>
