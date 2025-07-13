@@ -618,7 +618,7 @@ def api_dis_isleri_sorgulama(file_id, borclu_id):
     try:
         print(f"API: Fetching dis isleri sorgulama for file_id: {file_id}, borclu_id: {borclu_id}")
         
-        sorgu_result = get_borclu_sorgu_by_tipi(borclu_id, 'dis_isleri_sorgulama')
+        sorgu_result = get_borclu_sorgu_by_tipi(borclu_id, 'Dış İşleri')
         
         if sorgu_result is None:
             return jsonify({"error": "Foreign affairs query data not found"}), 404
@@ -796,6 +796,8 @@ def trigger_sorgulama():
             db_sorgu_tipi = 'İSKİ'  # Keep as İSKİ for consistency
         elif sorgu_tipi == 'Posta Çeki':
             db_sorgu_tipi = 'Posta Çeki'  # Keep as Posta Çeki for consistency with backend
+        elif sorgu_tipi == 'Dış İşleri':
+            db_sorgu_tipi = 'Dış İşleri'  # Keep as Dış İşleri for consistency with backend
         elif sorgu_tipi == 'İcra Dosyası':
             db_sorgu_tipi = 'icra_dosyasi_sorgulama'
         
