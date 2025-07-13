@@ -643,7 +643,8 @@ def api_iski_sorgulama(file_id, borclu_id):
     try:
         print(f"API: Fetching ISKI sorgulama for file_id: {file_id}, borclu_id: {borclu_id}")
         
-        sorgu_result = get_borclu_sorgu_by_tipi(borclu_id, 'iski_sorgulama')
+        # For İSKİ sorgulama, we look for İSKİ data which contains İSKİ information
+        sorgu_result = get_borclu_sorgu_by_tipi(borclu_id, 'İSKİ')
         
         if sorgu_result is None:
             return jsonify({"error": "ISKI query data not found"}), 404
@@ -790,6 +791,8 @@ def trigger_sorgulama():
             db_sorgu_tipi = 'GSM'  # Keep as GSM for consistency
         elif sorgu_tipi == 'GİB':
             db_sorgu_tipi = 'GİB'  # Keep as GİB for consistency
+        elif sorgu_tipi == 'İSKİ':
+            db_sorgu_tipi = 'İSKİ'  # Keep as İSKİ for consistency
         elif sorgu_tipi == 'İcra Dosyası':
             db_sorgu_tipi = 'icra_dosyasi_sorgulama'
         

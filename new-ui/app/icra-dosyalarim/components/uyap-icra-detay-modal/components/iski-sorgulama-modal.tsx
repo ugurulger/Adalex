@@ -25,10 +25,9 @@ interface IskiData {
   file_id: number
   borclu_id: number
   iskiSorguSonucu: {
-    İSKİ: {
-      sonuc: string
-      İSKİ: string
-    }
+    sonuc?: string
+    İSKİ?: string
+    [key: string]: any
   }
   timestamp: string
 }
@@ -60,8 +59,50 @@ export default function IskiSorgulamaModal({
       const response = await fetch(`/api/icra-dosyalarim/${fileId}/${borcluId}/iski-sorgulama`)
       
       if (response.ok) {
-        const data: IskiData = await response.json()
-        setQueryData(data)
+        const rawData = await response.json()
+        
+        console.log('Raw API data:', rawData)
+        
+        // Handle the actual data structure from the backend
+        let iskiSorguSonucu = {}
+        
+        if (rawData.iskiSorguSonucu) {
+          // The data might be nested in the structure like:
+          // { '2024/4177': { 'FERHAT KURT - 12755264316': { 'İSKİ': { 'sonuc': '...' } } } }
+          const data = rawData.iskiSorguSonucu
+          
+          // Try to extract the İSKİ data from the nested structure
+          if (typeof data === 'object' && data !== null) {
+            // Look for the first key that contains İSKİ data
+            for (const dosyaKey in data) {
+              const dosyaData = data[dosyaKey]
+              if (typeof dosyaData === 'object' && dosyaData !== null) {
+                for (const borcluKey in dosyaData) {
+                  const borcluData = dosyaData[borcluKey]
+                  if (typeof borcluData === 'object' && borcluData !== null && borcluData['İSKİ']) {
+                    iskiSorguSonucu = borcluData['İSKİ']
+                    break
+                  }
+                }
+              }
+            }
+          }
+          
+          // If we didn't find nested data, use the data as is
+          if (Object.keys(iskiSorguSonucu).length === 0) {
+            iskiSorguSonucu = rawData.iskiSorguSonucu
+          }
+        }
+        
+        const transformedData: IskiData = {
+          file_id: rawData.file_id,
+          borclu_id: rawData.borclu_id,
+          iskiSorguSonucu: iskiSorguSonucu,
+          timestamp: rawData.timestamp
+        }
+        
+        console.log('Transformed data:', transformedData)
+        setQueryData(transformedData)
       }
     } catch (error) {
       console.error("Error fetching current iski data:", error)
@@ -90,24 +131,63 @@ export default function IskiSorgulamaModal({
   // }, [isOpen, fileId, borcluId])
 
   // Use API data if available, otherwise show empty state
-  const iskiSorguSonucu = queryData?.iskiSorguSonucu?.İSKİ
+  const iskiSorguSonucu = queryData?.iskiSorguSonucu
 
-  const handleSorgula = () => {
-    if (isQuerying) return
+  const handleSorgula = async () => {
+    if (!dosyaNo || !borcluId) {
+      console.error('Dosya No veya Borçlu ID eksik')
+      return
+    }
 
-    setIsQuerying(true)
+    if (uyapStatus !== "Bağlı") {
+      console.error('UYAP bağlantısı yok')
+      return
+    }
 
-    // Simulate query process for 3 seconds
-    setTimeout(() => {
-      setIsQuerying(false)
-      setLastQueryTime(new Date())
-      setShowGreenBackground(true)
+    setIsLoading(true)
+    try {
+      const response = await fetch('/api/uyap/trigger-sorgulama', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          dosya_no: dosyaNo,
+          sorgu_tipi: 'İSKİ',
+          borclu_id: borcluId,
+        }),
+      })
 
-      // Remove green background after 5 seconds
-      setTimeout(() => {
-        setShowGreenBackground(false)
-      }, 5000)
-    }, 3000)
+      const result = await response.json()
+
+      if (result.success) {
+        // Refresh the data
+        await fetchCurrentData()
+      } else {
+        console.error('Sorgulama hatası:', result.message)
+        // Show user-friendly error message
+        alert(`Sorgulama başarısız: ${result.message}`)
+      }
+    } catch (error) {
+      console.error('Sorgulama sırasında hata:', error)
+      
+      // Handle specific connection errors
+      let errorMessage = 'Bilinmeyen bir hata oluştu'
+      
+      if (error instanceof Error) {
+        if (error.message.includes('Connection refused') || error.message.includes('Max retries exceeded')) {
+          errorMessage = 'UYAP bağlantısı kesildi. Lütfen UYAP\'ı yeniden bağlayın ve tekrar deneyin.'
+        } else if (error.message.includes('fetch failed')) {
+          errorMessage = 'Sunucu bağlantısı kurulamadı. Lütfen internet bağlantınızı kontrol edin.'
+        } else {
+          errorMessage = error.message
+        }
+      }
+      
+      alert(`Sorgulama hatası: ${errorMessage}`)
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   // Clean up timers when modal closes
@@ -171,48 +251,79 @@ export default function IskiSorgulamaModal({
 
         {/* Scrollable Content */}
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
-          {isLoading ? (
-            <div className="flex items-center justify-center h-32">
-              <div className="flex items-center gap-2 text-gray-600">
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
-                <span>İSKİ verileri yükleniyor...</span>
-              </div>
-            </div>
-          ) : !iskiSorguSonucu ? (
-            <div className="flex items-center justify-center h-32">
-              <div className="text-center text-gray-600">
-                <p>Henüz İSKİ sorgulaması yapılmamış</p>
-                <p className="text-sm mt-1">"UYAP'ta Sorgula" butonuna tıklayarak sorgulama yapabilirsiniz</p>
-              </div>
-            </div>
-          ) : (
+          {/* Loading State */}
+          {isLoading && (
+            <Card>
+              <CardContent className="flex items-center justify-center py-8">
+                <div className="flex items-center gap-2">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                  <span className="text-gray-600">Veriler yükleniyor...</span>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* No Data State */}
+          {!isLoading && !queryData && (
+            <Card>
+              <CardContent className="flex items-center justify-center py-8">
+                <div className="text-center">
+                  <div className="text-gray-400 mb-2">💧</div>
+                  <p className="text-gray-600">Henüz İSKİ verisi bulunmuyor</p>
+                  <p className="text-sm text-gray-500 mt-1">UYAP'ta sorgula butonuna tıklayarak veri çekebilirsiniz</p>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* İSKİ Data */}
+          {!isLoading && queryData && iskiSorguSonucu && (
             <>
               {/* Sorgu Sonucu */}
               <Card>
                 <CardHeader className="pb-4">
                   <CardTitle className="text-lg font-semibold text-gray-900 flex items-center gap-2">
                     📊 Sorgu Sonucu
-                    <span className="text-sm font-normal text-yellow-700">⚠️ Sorgu Sınırlaması</span>
+                    <span className="text-sm font-normal text-green-700">
+                      ✅ İSKİ kaydı bulundu
+                    </span>
                   </CardTitle>
                 </CardHeader>
               </Card>
 
               {/* İSKİ Sorgu Bilgisi */}
-              <Card>
-                <CardHeader className="pb-4">
-                  <CardTitle className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                    💧 İSKİ Sorgu Bilgisi
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
-                    <p className="text-sm text-yellow-800 font-medium mb-2">{iskiSorguSonucu.sonuc}</p>
-                    <p className="text-sm text-gray-700">
-                      <span className="font-medium">İSKİ Bilgisi:</span> {iskiSorguSonucu["İSKİ"]}
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
+              {iskiSorguSonucu.sonuc && (
+                <Card>
+                  <CardHeader className="pb-4">
+                    <CardTitle className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                      💧 İSKİ Sorgu Bilgisi
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                      <p className="text-sm text-blue-800 font-medium mb-2">{iskiSorguSonucu.sonuc}</p>
+                      {iskiSorguSonucu["İSKİ"] && (
+                        <p className="text-sm text-gray-700">
+                          <span className="font-medium">İSKİ Bilgisi:</span> {iskiSorguSonucu["İSKİ"]}
+                        </p>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* No İSKİ Records Found */}
+              {!iskiSorguSonucu.sonuc && (
+                <Card>
+                  <CardContent className="flex items-center justify-center py-8">
+                    <div className="text-center">
+                      <div className="text-gray-400 mb-2">💧</div>
+                      <p className="text-gray-600">İSKİ kaydı bulunamadı</p>
+                      <p className="text-sm text-gray-500 mt-1">Sorgu sonucu bulunamadı</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
             </>
           )}
         </div>
@@ -227,15 +338,30 @@ export default function IskiSorgulamaModal({
               )}
             >
               <span className="font-medium">Son Sorgu Tarihi:</span>{" "}
-              {lastQueryTime ? formatDateTime(lastQueryTime) : "Henüz sorgu yapılmadı"}
+              {queryData?.timestamp ? new Date(queryData.timestamp).toLocaleString("tr-TR") : "Henüz sorgu yapılmadı"}
             </div>
             <Button
-              disabled={true}
+              onClick={handleSorgula}
+              disabled={isLoading || uyapStatus !== "Bağlı"}
               size="sm"
-              className="h-7 px-3 text-xs bg-gray-400 text-white cursor-not-allowed"
+              className={cn(
+                "h-7 px-3 text-xs transition-all duration-300",
+                uyapStatus === "Bağlı" && !isLoading
+                  ? "bg-orange-600 hover:bg-orange-700 text-white"
+                  : "bg-gray-400 text-white cursor-not-allowed"
+              )}
             >
-              <Search className="w-3 h-3 mr-1" />
-              UYAP'ta Sorgula
+              {isLoading ? (
+                <div className="flex items-center gap-1">
+                  <div className="animate-spin rounded-full h-2 w-2 border-b-2 border-white"></div>
+                  <span>Sorgulanıyor...</span>
+                </div>
+              ) : (
+                <>
+                  <Search className="w-3 h-3 mr-1" />
+                  UYAP'ta Sorgula
+                </>
+              )}
             </Button>
           </div>
         </div>
