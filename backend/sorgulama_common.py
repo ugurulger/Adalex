@@ -322,7 +322,8 @@ def perform_sorgulama(driver, dosya_no, selected_options, result_label=None):
                         elif opt == "TAKBİS":
                             from takbis_sorgu import perform_takbis_sorgu; perform_takbis_sorgu(driver, current, dosya_no, result_label)
                         elif opt == "SGK":
-                            from sgk_sorgu import perform_sgk_sorgu; perform_sgk_sorgu(driver, current, dosya_no, result_label)
+                            # GEÇİCİ: sgk_sorgu2.py'den yeni fonksiyonu test etmek için
+                            from sgk_sorgu2 import perform_sgk_sorgu; perform_sgk_sorgu(driver, current, dosya_no, result_label)
                         elif opt == "İcra Dosyası":
                             from icra_dosyasi_sorgu import perform_icra_dosyasi_sorgu; perform_icra_dosyasi_sorgu(driver, current, dosya_no, result_label)
                         elif opt == "MERNİS":

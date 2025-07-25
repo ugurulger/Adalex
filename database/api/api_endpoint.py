@@ -389,7 +389,7 @@ def api_sgk_sorgulama(file_id, borclu_id):
     try:
         print(f"API: Fetching SGK sorgulama for file_id: {file_id}, borclu_id: {borclu_id}")
         
-        sorgu_result = get_borclu_sorgu_by_tipi(borclu_id, 'sgk_sorgulama')
+        sorgu_result = get_borclu_sorgu_by_tipi(borclu_id, 'SGK')
         
         if sorgu_result is None:
             return jsonify({"error": "SGK query data not found"}), 404
@@ -779,7 +779,7 @@ def trigger_sorgulama():
         if sorgu_tipi == 'MERNİS':
             db_sorgu_tipi = 'Mernis'
         elif sorgu_tipi == 'SGK':
-            db_sorgu_tipi = 'Sgk'
+            db_sorgu_tipi = 'SGK'  # Keep as SGK for consistency with backend
         elif sorgu_tipi == 'SGK Haciz':
             db_sorgu_tipi = 'SGK Haciz'  # Keep as SGK Haciz for consistency
         elif sorgu_tipi == 'EGM':

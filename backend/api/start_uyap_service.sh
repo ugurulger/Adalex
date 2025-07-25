@@ -1,5 +1,11 @@
 #!/bin/bash
 
+echo "Clearing webdriver cache..."
+rm -rf ~/.wdm ~/.cache/selenium ~/.local/share/selenium ~/.chromium_driver ~/.wdm_drivers
+
+# Fix permissions for all chromedriver executables in .wdm cache
+find ~/.wdm -type f -name 'chromedriver' -exec chmod +x {} \; -print
+
 echo "Starting UYAP Automation Service..."
 
 # Check if Python is available

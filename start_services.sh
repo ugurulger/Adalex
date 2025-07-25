@@ -46,6 +46,9 @@ kill_port 5001
 kill_port 3000
 sleep 2
 
+# Fix permissions for chromedriver binaries
+find $HOME/.wdm/drivers/chromedriver -type f -name 'chromedriver*' -exec chmod +x {} \;
+
 # Start Flask API in background
 echo "🔧 Starting Flask API on port 5001..."
 cd database/api
