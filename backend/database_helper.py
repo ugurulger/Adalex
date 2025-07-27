@@ -249,6 +249,32 @@ def save_scraping_data_to_db_and_json(scraping_data, filename=None):
                         success = save_scraping_result_to_db(dosya_no, borclu_adi, sorgu_tipi, sorgu_verisi)
                         if not success:
                             logger.warning(f"Failed to save {sorgu_tipi} for {borclu_adi} in {dosya_no}")
+                        
+                        # MERNİS verilerinden T.C Kimlik No'yu otomatik kaydet
+                        if sorgu_tipi == "MERNİS" and isinstance(sorgu_verisi, dict) and "sonuc" in sorgu_verisi:
+                            mernis_sonuc = sorgu_verisi["sonuc"]
+                            if isinstance(mernis_sonuc, dict) and "Kimlik Bilgileri" in mernis_sonuc:
+                                kimlik_bilgileri = mernis_sonuc["Kimlik Bilgileri"]
+                                if isinstance(kimlik_bilgileri, dict) and "T.C Kimlik No" in kimlik_bilgileri:
+                                    tc_kimlik = kimlik_bilgileri["T.C Kimlik No"]
+                                    if tc_kimlik and tc_kimlik.strip():
+                                        # Borçlunun tcKimlik alanını güncelle
+                                        try:
+                                            conn = get_database_connection()
+                                            if conn:
+                                                cursor = conn.cursor()
+                                                cursor.execute("SELECT file_id FROM files WHERE dosyaNo = ?", (dosya_no,))
+                                                file_result = cursor.fetchone()
+                                                if file_result:
+                                                    file_id = file_result['file_id']
+                                                    borclu_name_only = borclu_adi.split(' - ')[0] if ' - ' in borclu_adi else borclu_adi
+                                                    cursor.execute("UPDATE borclular SET tcKimlik = ? WHERE file_id = ? AND ad LIKE ?", 
+                                                                 (tc_kimlik.strip(), file_id, f"%{borclu_name_only}%"))
+                                                    conn.commit()
+                                                    logger.info(f"Updated tcKimlik for {borclu_adi} to {tc_kimlik}")
+                                                conn.close()
+                                        except Exception as e:
+                                            logger.error(f"Error updating tcKimlik: {e}")
         
         logger.info("Data saved to database successfully")
         return True
