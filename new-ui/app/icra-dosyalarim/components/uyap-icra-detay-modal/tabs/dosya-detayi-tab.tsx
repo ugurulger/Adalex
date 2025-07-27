@@ -280,7 +280,7 @@ export default function DosyaDetayiTab({
                     className="flex flex-col items-center justify-center gap-1 h-16 text-xs border-blue-200 hover:bg-blue-50 p-2"
                   >
                     <div className="flex items-center gap-1">
-                      ⚖️ <span className="w-1.5 h-1.5 bg-green-500 rounded-full"></span>
+                      �����️ <span className="w-1.5 h-1.5 bg-green-500 rounded-full"></span>
                     </div>
                     <span className="text-[10px]">SGK Haciz</span>
                   </Button>

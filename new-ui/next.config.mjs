@@ -21,7 +21,6 @@ const nextConfig = {
     },
   },
   // Faster compilation
-  swcMinify: true,
   compiler: {
     removeConsole: false, // Keep console logs in development
   },

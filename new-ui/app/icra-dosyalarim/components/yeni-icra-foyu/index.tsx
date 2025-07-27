@@ -1,283 +1,235 @@
 "use client"
 
 import { useState } from "react"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Progress } from "@/components/ui/progress"
-import GenelDosyaBilgileriTab from "./tabs/genel-dosya-bilgileri-tab"
-import AlacakliBilgileriTab from "./tabs/alacakli-bilgileri-tab"
-import BorcluBilgileriTab from "./tabs/borclu-bilgileri-tab"
-import AlacakKalemleriTab from "./tabs/alacak-kalemleri-tab"
-import IlamBilgileriTab from "./tabs/ilam-bilgileri-tab"
-import VekilBilgileriTab from "./tabs/vekil-bilgileri-tab"
-import TalepAciklamasiTab from "./tabs/talep-aciklamasi-tab"
-import type { FormData, FormErrors } from "./types/form-types"
-import { validateForm } from "./utils/form-validation"
+import { ChevronLeft, ChevronRight } from "lucide-react"
+import TurleriSecmePage from "./pages/turleri-secme-page"
+import AlacakliBilgisiPage from "./pages/alacakli-bilgisi-page"
+import BorcluBilgisiPage from "./pages/borclu-bilgisi-page"
+import TurlereGoreSecimPage from "./pages/turlere-gore-secim-page"
+import { type FormData, TAKIP_YOLU_OPTIONS } from "./types/form-types"
 
 interface YeniIcraFoyuModalProps {
   isOpen: boolean
   onClose: () => void
-  onSave: (data: FormData) => void
+  onSave?: (data: FormData) => Promise<void>
 }
 
 export default function YeniIcraFoyuModal({ isOpen, onClose, onSave }: YeniIcraFoyuModalProps) {
-  const [activeTab, setActiveTab] = useState("genel")
+  const [currentPage, setCurrentPage] = useState(1)
+  const [isSubmitting, setIsSubmitting] = useState(false)
   const [formData, setFormData] = useState<FormData>({
-    genelBilgiler: {
-      takipTuru: "",
-      dosyaTipi: "",
-      takipTarihi: undefined,
-      mahiyetKodu: "",
-      aciklama: "",
-    },
-    alacakliBilgileri: {
-      tcknVkn: "",
-      adSoyad: "",
-      adresBilgisi: {
-        adresTuru: "",
-        il: "",
-        ilce: "",
-        adres: "",
-      },
-      telefon: "",
-      cepTelefonu: "",
-      email: "",
-    },
-    borcluBilgileri: [
-      {
-        id: 1,
-        tcknVkn: "",
-        adSoyad: "",
-        adresBilgisi: {
-          adresTuru: "",
-          il: "",
-          ilce: "",
-          adres: "",
-        },
-        rol: "BORÇLU",
-      },
-    ],
-    alacakKalemleri: [
-      {
-        id: 1,
-        kalemAdi: "",
-        tutar: "",
-        faizTipi: "",
-        faizBaslangicTarihi: undefined,
-        faizOrani: "",
-        aciklama: "",
-      },
-    ],
-    ilamBilgileri: {
-      mahkemeAdi: "",
-      kararYili: "",
-      dosyaNo: "",
-      kararTarihi: undefined,
-      ilamKalemleri: [],
-    },
-    vekilBilgileri: {
-      tckn: "",
-      adSoyad: "",
-      baroNo: "",
-      adres: "",
-      buroAdi: "",
-    },
-    talepAciklamasi: {
-      talepMetni: "",
-      icraYolu: "",
-      talepTipi: "",
-      aciklama48e9: "",
-    },
+    // Page 1 - Türleri Seçme
+    takipTuru: "",
+    takipYolu: "",
+
+    // Page 2 - Alacaklı Bilgisi
+    alacakliTipi: "",
+    alacakliAdSoyad: "",
+    alacakliTcKimlik: "",
+    alacakliSirketUnvani: "",
+    alacakliVergiNumarasi: "",
+    alacakliTelefon: "",
+    alacakliAdres: "",
+
+    // Page 3 - Borçlu Bilgileri
+    borcluTipi: "",
+    borcluAdSoyad: "",
+    borcluTcKimlik: "",
+    borcluSirketUnvani: "",
+    borcluVergiNumarasi: "",
+    borcluTelefon: "",
+    borcluAdres: "",
+
+    // Page 4 - Türlere Göre Seçim (dynamic fields)
+    dynamicFields: {},
   })
 
-  const [errors, setErrors] = useState<FormErrors>({})
-  const [isSubmitting, setIsSubmitting] = useState(false)
-
-  const tabs = [
-    { id: "genel", label: "Genel Dosya Bilgileri", icon: "📋" },
-    { id: "alacakli", label: "Alacaklı Bilgileri", icon: "🏢" },
-    { id: "borclu", label: "Borçlu Bilgileri", icon: "👤" },
-    { id: "alacak", label: "Alacak Kalemleri", icon: "💰" },
-    { id: "ilam", label: "İlam Bilgileri", icon: "⚖️" },
-    { id: "vekil", label: "Vekil Bilgileri", icon: "👨‍💼" },
-    { id: "talep", label: "Talep Açıklaması", icon: "📝" },
+  const pages = [
+    { title: "Takip Türü ve Yolu Seçimi", component: TurleriSecmePage },
+    { title: "Alacaklı Bilgisi", component: AlacakliBilgisiPage },
+    { title: "Borçlu Bilgileri", component: BorcluBilgisiPage },
+    { title: "Türlere Göre Seçim", component: TurlereGoreSecimPage },
   ]
 
-  const currentTabIndex = tabs.findIndex((tab) => tab.id === activeTab)
-  const progress = ((currentTabIndex + 1) / tabs.length) * 100
-
-  const updateFormData = (section: keyof FormData, data: any) => {
-    setFormData((prev) => ({
-      ...prev,
-      [section]: data,
-    }))
+  const handleClose = () => {
+    setCurrentPage(1)
+    setFormData({
+      takipTuru: "",
+      takipYolu: "",
+      alacakliTipi: "",
+      alacakliAdSoyad: "",
+      alacakliTcKimlik: "",
+      alacakliSirketUnvani: "",
+      alacakliVergiNumarasi: "",
+      alacakliTelefon: "",
+      alacakliAdres: "",
+      borcluTipi: "",
+      borcluAdSoyad: "",
+      borcluTcKimlik: "",
+      borcluSirketUnvani: "",
+      borcluVergiNumarasi: "",
+      borcluTelefon: "",
+      borcluAdres: "",
+      dynamicFields: {},
+    })
+    onClose()
   }
 
   const handleNext = () => {
-    const currentIndex = tabs.findIndex((tab) => tab.id === activeTab)
-    if (currentIndex < tabs.length - 1) {
-      setActiveTab(tabs[currentIndex + 1].id)
+    if (currentPage < pages.length && isCurrentPageValid()) {
+      setCurrentPage(currentPage + 1)
     }
   }
 
   const handlePrevious = () => {
-    const currentIndex = tabs.findIndex((tab) => tab.id === activeTab)
-    if (currentIndex > 0) {
-      setActiveTab(tabs[currentIndex - 1].id)
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1)
     }
   }
 
   const handleSubmit = async () => {
     setIsSubmitting(true)
-    const validationErrors = validateForm(formData)
-
-    if (Object.keys(validationErrors).length > 0) {
-      setErrors(validationErrors)
-      setIsSubmitting(false)
-      return
-    }
-
     try {
-      await onSave(formData)
-      onClose()
+      if (onSave) {
+        await onSave(formData)
+      } else {
+        // Default save behavior - simulate API call
+        await new Promise((resolve) => setTimeout(resolve, 2000))
+      }
+      handleClose()
     } catch (error) {
-      console.error("Form submission error:", error)
+      console.error("Error saving form:", error)
     } finally {
       setIsSubmitting(false)
     }
   }
 
+  const updateFormData = (updates: Partial<FormData>) => {
+    setFormData((prev) => ({ ...prev, ...updates }))
+  }
+
+  // Validation logic for each page
+  const isCurrentPageValid = () => {
+    switch (currentPage) {
+      case 1:
+        return formData.takipTuru && formData.takipYolu
+      case 2:
+        if (formData.alacakliTipi === "gercek_kisi") {
+          return (
+            formData.alacakliAdSoyad && formData.alacakliTcKimlik && formData.alacakliTelefon && formData.alacakliAdres
+          )
+        }
+        if (formData.alacakliTipi === "tuzel_kisi") {
+          return (
+            formData.alacakliSirketUnvani &&
+            formData.alacakliVergiNumarasi &&
+            formData.alacakliTelefon &&
+            formData.alacakliAdres
+          )
+        }
+        return false
+      case 3:
+        if (formData.borcluTipi === "gercek_kisi") {
+          return formData.borcluAdSoyad && formData.borcluTcKimlik && formData.borcluTelefon && formData.borcluAdres
+        }
+        if (formData.borcluTipi === "tuzel_kisi") {
+          return (
+            formData.borcluSirketUnvani &&
+            formData.borcluVergiNumarasi &&
+            formData.borcluTelefon &&
+            formData.borcluAdres
+          )
+        }
+        return false
+      case 4:
+        // Add validation for dynamic fields based on takip yolu
+        return true // For now, always allow submission from page 4
+      default:
+        return false
+    }
+  }
+
+  // Generate header text based on current page and form data
+  const getHeaderText = () => {
+    const baseTitle = pages[currentPage - 1].title
+
+    if (currentPage === 4 && formData.takipTuru && formData.takipYolu) {
+      const takipYoluLabel = TAKIP_YOLU_OPTIONS[formData.takipTuru as keyof typeof TAKIP_YOLU_OPTIONS]?.find(
+        (option) => option.value === formData.takipYolu,
+      )?.label
+
+      if (takipYoluLabel) {
+        return `${baseTitle} - ${formData.takipTuru} / ${takipYoluLabel}`
+      }
+    }
+
+    return baseTitle
+  }
+
+  const CurrentPageComponent = pages[currentPage - 1].component
+
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-6xl max-h-[95vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="text-xl font-bold text-gray-900 flex items-center gap-2">
-            📋 Yeni İcra Föyü Oluştur
-            <Badge className="bg-orange-100 text-orange-800 border-orange-200">Adım {currentTabIndex + 1}/7</Badge>
-          </DialogTitle>
-          <div className="mt-4">
-            <div className="flex justify-between text-sm text-gray-600 mb-2">
-              <span>İlerleme Durumu</span>
-              <span>{Math.round(progress)}% Tamamlandı</span>
-            </div>
-            <Progress value={progress} className="h-2" />
-          </div>
-        </DialogHeader>
+    <Dialog open={isOpen} onOpenChange={handleClose}>
+      <DialogContent className="max-w-4xl p-0 max-h-[90vh] flex flex-col h-[90vh]">
+        {/* Fixed Header */}
+        <div className="py-3 px-6 border-b bg-white flex items-center">
+          <DialogTitle className="text-lg font-semibold sr-only">{getHeaderText()}</DialogTitle>
+          <h2 className="text-lg font-semibold">{getHeaderText()}</h2>
+        </div>
 
-        <div className="space-y-6 mt-6">
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-7 h-auto p-1">
-              {tabs.map((tab, index) => (
-                <TabsTrigger
-                  key={tab.id}
-                  value={tab.id}
-                  className="flex flex-col items-center gap-1 p-3 text-xs data-[state=active]:bg-orange-500 data-[state=active]:text-white"
-                >
-                  <span className="text-lg">{tab.icon}</span>
-                  <span className="hidden sm:block text-center leading-tight">{tab.label}</span>
-                  <span className="sm:hidden">{index + 1}</span>
-                </TabsTrigger>
-              ))}
-            </TabsList>
+        {/* Scrollable Content Area - No padding */}
+        <div className="flex-1 overflow-y-auto">
+          <CurrentPageComponent
+            formData={formData}
+            updateFormData={updateFormData}
+            onNext={handleNext}
+            onPrevious={handlePrevious}
+            isFirstPage={currentPage === 1}
+            isLastPage={currentPage === pages.length}
+            onSubmit={handleSubmit}
+            isSubmitting={isSubmitting}
+          />
+        </div>
 
-            <TabsContent value="genel" className="space-y-6 mt-6">
-              <GenelDosyaBilgileriTab
-                data={formData.genelBilgiler}
-                onChange={(data) => updateFormData("genelBilgiler", data)}
-                errors={errors.genelBilgiler}
-              />
-            </TabsContent>
-
-            <TabsContent value="alacakli" className="space-y-6 mt-6">
-              <AlacakliBilgileriTab
-                data={formData.alacakliBilgileri}
-                onChange={(data) => updateFormData("alacakliBilgileri", data)}
-                errors={errors.alacakliBilgileri}
-              />
-            </TabsContent>
-
-            <TabsContent value="borclu" className="space-y-6 mt-6">
-              <BorcluBilgileriTab
-                data={formData.borcluBilgileri}
-                onChange={(data) => updateFormData("borcluBilgileri", data)}
-                errors={errors.borcluBilgileri}
-              />
-            </TabsContent>
-
-            <TabsContent value="alacak" className="space-y-6 mt-6">
-              <AlacakKalemleriTab
-                data={formData.alacakKalemleri}
-                onChange={(data) => updateFormData("alacakKalemleri", data)}
-                errors={errors.alacakKalemleri}
-              />
-            </TabsContent>
-
-            <TabsContent value="ilam" className="space-y-6 mt-6">
-              <IlamBilgileriTab
-                data={formData.ilamBilgileri}
-                onChange={(data) => updateFormData("ilamBilgileri", data)}
-                errors={errors.ilamBilgileri}
-                takipTuru={formData.genelBilgiler.takipTuru}
-              />
-            </TabsContent>
-
-            <TabsContent value="vekil" className="space-y-6 mt-6">
-              <VekilBilgileriTab
-                data={formData.vekilBilgileri}
-                onChange={(data) => updateFormData("vekilBilgileri", data)}
-                errors={errors.vekilBilgileri}
-              />
-            </TabsContent>
-
-            <TabsContent value="talep" className="space-y-6 mt-6">
-              <TalepAciklamasiTab
-                data={formData.talepAciklamasi}
-                onChange={(data) => updateFormData("talepAciklamasi", data)}
-                errors={errors.talepAciklamasi}
-                takipTuru={formData.genelBilgiler.takipTuru}
-              />
-            </TabsContent>
-          </Tabs>
-
-          {/* Navigation Buttons */}
-          <div className="flex justify-between items-center pt-6 border-t border-gray-200">
+        {/* Fixed Footer */}
+        <div className="py-3 px-6 border-t bg-white mt-auto">
+          <div className="flex justify-between items-center">
             <Button
               variant="outline"
               onClick={handlePrevious}
-              disabled={currentTabIndex === 0}
-              className="flex items-center gap-2"
+              disabled={currentPage === 1}
+              className="flex items-center gap-1 bg-transparent h-8 text-sm"
             >
-              ← Önceki Adım
+              <ChevronLeft className="w-3 h-3" />
+              Önceki
             </Button>
 
-            <div className="flex gap-3">
-              <Button variant="outline" onClick={onClose}>
+            {/* Page Info in the middle */}
+            <div className="text-sm text-gray-500 font-medium">Sayfa {currentPage}/4</div>
+
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={handleClose} className="h-8 text-sm bg-transparent">
                 İptal
               </Button>
 
-              {currentTabIndex === tabs.length - 1 ? (
+              {currentPage === pages.length ? (
                 <Button
                   onClick={handleSubmit}
                   disabled={isSubmitting}
-                  className="bg-orange-600 hover:bg-orange-700 text-white flex items-center gap-2"
+                  className="bg-orange-600 hover:bg-orange-700 flex items-center gap-1 h-8 text-sm disabled:bg-gray-300 disabled:cursor-not-allowed"
                 >
-                  {isSubmitting ? (
-                    <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                      Kaydediliyor...
-                    </>
-                  ) : (
-                    <>✅ Föyü Oluştur</>
-                  )}
+                  {isSubmitting ? "Kaydediliyor..." : "Formu Kaydet"}
                 </Button>
               ) : (
                 <Button
                   onClick={handleNext}
-                  className="bg-orange-600 hover:bg-orange-700 text-white flex items-center gap-2"
+                  disabled={!isCurrentPageValid()}
+                  className="bg-orange-600 hover:bg-orange-700 flex items-center gap-1 h-8 text-sm disabled:bg-gray-300 disabled:cursor-not-allowed"
                 >
-                  Sonraki Adım →
+                  Sonraki
+                  <ChevronRight className="w-3 h-3" />
                 </Button>
               )}
             </div>

@@ -3,13 +3,15 @@
 import { useState } from "react"
 import { Badge } from "@/components/ui/badge"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { cn } from "@/lib/utils"
 import DosyaDetayiTab from "./tabs/dosya-detayi-tab"
 import EvrakGonderTab from "./tabs/evrak-gonder-tab"
 import OdemeEkraniTab from "./tabs/odeme-ekrani-tab"
 import NotlarTab from "./tabs/notlar-tab"
 import IsAtamaTab from "./tabs/is-atama-tab"
+import DosyaOzetiTab from "./tabs/dosya-ozeti-tab"
+import EvrakOlusturTab from "./tabs/evrak-olustur-tab"
 
 interface UyapIcraDetayModalProps {
   isOpen: boolean
@@ -28,7 +30,24 @@ export default function UyapIcraDetayModal({
   onUyapToggle,
   isConnecting,
 }: UyapIcraDetayModalProps) {
-  const [activeTab, setActiveTab] = useState("details")
+  const [parentTab, setParentTab] = useState("uyap")
+  const [uyapChildTab, setUyapChildTab] = useState("details")
+  const [evrakSubTab, setEvrakSubTab] = useState("gonder") // New state for Evrak sub-tabs
+  const [defterimChildTab, setDefterimChildTab] = useState("notes")
+
+  // Get current child tab based on parent tab
+  const getCurrentChildTab = () => {
+    return parentTab === "uyap" ? uyapChildTab : defterimChildTab
+  }
+
+  // Set child tab based on parent tab
+  const setCurrentChildTab = (value: string) => {
+    if (parentTab === "uyap") {
+      setUyapChildTab(value)
+    } else {
+      setDefterimChildTab(value)
+    }
+  }
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -70,57 +89,113 @@ export default function UyapIcraDetayModal({
         </DialogHeader>
 
         {selectedCase && (
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col flex-1 min-h-0">
-            {/* Fixed Tab Navigation */}
-            <div className="flex-shrink-0 px-6 pt-4 pb-2 border-b border-gray-100">
-              <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-1 sm:gap-0 h-auto lg:h-10 py-1 lg:py-1">
-                <TabsTrigger value="details" className="text-xs sm:text-sm px-1 sm:px-3 h-8 lg:h-9">
-                  📋 Dosya Detayı
-                </TabsTrigger>
-                <TabsTrigger value="documents" className="text-xs sm:text-sm px-1 sm:px-3 h-8 lg:h-9">
-                  📤 Evrak Gönder
-                </TabsTrigger>
-                <TabsTrigger value="payment" className="text-xs sm:text-sm px-1 sm:px-3 h-8 lg:h-9">
-                  💰 Ödeme Ekranı
-                </TabsTrigger>
-                <TabsTrigger value="notes" className="text-xs sm:text-sm px-1 sm:px-3 h-8 lg:h-9">
-                  📝 Notlar
-                </TabsTrigger>
-                <TabsTrigger value="tasks" className="text-xs sm:text-sm px-1 sm:px-3 h-8 lg:h-9">
-                  👥 İş Atama
-                </TabsTrigger>
-              </TabsList>
+          <div className="flex flex-col flex-1 min-h-0">
+            {/* Contiguous Tab Navigation - Multiple Rows */}
+            <div className="flex-shrink-0 px-6 pt-3 pb-3 border-b border-gray-100">
+              {/* Parent Tab Navigation - First Row */}
+              <div>
+                <Tabs value={parentTab} onValueChange={setParentTab} className="w-full">
+                  <TabsList className="grid w-full grid-cols-2 gap-1 h-7 py-0.5">
+                    <TabsTrigger value="uyap" className="text-sm px-4 h-6 font-semibold">
+                      🏛️ UYAP
+                    </TabsTrigger>
+                    <TabsTrigger value="defterim" className="text-sm px-4 h-6 font-semibold">
+                      📚 DEFTERİM
+                    </TabsTrigger>
+                  </TabsList>
+                </Tabs>
+              </div>
+
+              {/* Child Tab Navigation - Second Row */}
+              <div>
+                <Tabs value={getCurrentChildTab()} onValueChange={setCurrentChildTab} className="w-full">
+                  <TabsList
+                    className={cn(
+                      "w-full gap-1 h-7 py-0.5",
+                      parentTab === "uyap"
+                        ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
+                        : "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3",
+                    )}
+                  >
+                    {parentTab === "uyap" ? (
+                      <>
+                        <TabsTrigger value="details" className="text-xs sm:text-sm px-1 sm:px-3 h-6">
+                          📋 Dosya Detayı
+                        </TabsTrigger>
+                        <TabsTrigger value="documents" className="text-xs sm:text-sm px-1 sm:px-3 h-6">
+                          📄 Evrak
+                        </TabsTrigger>
+                        <TabsTrigger value="payment" className="text-xs sm:text-sm px-1 sm:px-3 h-6">
+                          💰 Ödeme Ekranı
+                        </TabsTrigger>
+                      </>
+                    ) : (
+                      <>
+                        <TabsTrigger value="summary" className="text-xs sm:text-sm px-1 sm:px-3 h-6">
+                          📊 Dosya Özeti
+                        </TabsTrigger>
+                        <TabsTrigger value="notes" className="text-xs sm:text-sm px-1 sm:px-3 h-6">
+                          📝 Notlar
+                        </TabsTrigger>
+                        <TabsTrigger value="tasks" className="text-xs sm:text-sm px-1 sm:px-3 h-6">
+                          👥 İş Atama
+                        </TabsTrigger>
+                      </>
+                    )}
+                  </TabsList>
+                </Tabs>
+              </div>
+
+              {/* Evrak Sub-Tab Navigation - Third Row (only show when Evrak is selected) */}
+              {parentTab === "uyap" && uyapChildTab === "documents" && (
+                <div>
+                  <Tabs value={evrakSubTab} onValueChange={setEvrakSubTab} className="w-full">
+                    <TabsList className="w-full gap-1 h-7 py-0.5 grid grid-cols-1 sm:grid-cols-2">
+                      <TabsTrigger value="gonder" className="text-xs sm:text-sm px-1 sm:px-3 h-6">
+                        📤 Evrak Gönder
+                      </TabsTrigger>
+                      <TabsTrigger value="olustur" className="text-xs sm:text-sm px-1 sm:px-3 h-6">
+                        📝 Evrak Oluştur
+                      </TabsTrigger>
+                    </TabsList>
+                  </Tabs>
+                </div>
+              )}
             </div>
 
             {/* Scrollable Content Area */}
             <div className="flex-1 overflow-y-auto px-6 py-4 min-h-0">
-              {/* Tab Contents */}
-              <TabsContent value="details" className="space-y-6 mt-0 data-[state=inactive]:hidden">
-                <DosyaDetayiTab
-                  selectedCase={selectedCase}
-                  uyapStatus={uyapStatus}
-                  onUyapToggle={onUyapToggle}
-                  isConnecting={isConnecting}
-                />
-              </TabsContent>
+              {/* UYAP Tab Contents */}
+              {parentTab === "uyap" && (
+                <>
+                  {uyapChildTab === "details" && (
+                    <DosyaDetayiTab
+                      selectedCase={selectedCase}
+                      uyapStatus={uyapStatus}
+                      onUyapToggle={onUyapToggle}
+                      isConnecting={isConnecting}
+                    />
+                  )}
+                  {uyapChildTab === "documents" && (
+                    <>
+                      {evrakSubTab === "gonder" && <EvrakGonderTab />}
+                      {evrakSubTab === "olustur" && <EvrakOlusturTab />}
+                    </>
+                  )}
+                  {uyapChildTab === "payment" && <OdemeEkraniTab />}
+                </>
+              )}
 
-              <TabsContent value="documents" className="space-y-6 mt-0 data-[state=inactive]:hidden">
-                <EvrakGonderTab />
-              </TabsContent>
-
-              <TabsContent value="payment" className="space-y-6 mt-0 data-[state=inactive]:hidden">
-                <OdemeEkraniTab />
-              </TabsContent>
-
-              <TabsContent value="notes" className="space-y-6 mt-0 data-[state=inactive]:hidden">
-                <NotlarTab selectedCase={selectedCase} />
-              </TabsContent>
-
-              <TabsContent value="tasks" className="space-y-6 mt-0 data-[state=inactive]:hidden">
-                <IsAtamaTab />
-              </TabsContent>
+              {/* DEFTERİM Tab Contents */}
+              {parentTab === "defterim" && (
+                <>
+                  {defterimChildTab === "summary" && <DosyaOzetiTab selectedCase={selectedCase} />}
+                  {defterimChildTab === "notes" && <NotlarTab selectedCase={selectedCase} />}
+                  {defterimChildTab === "tasks" && <IsAtamaTab />}
+                </>
+              )}
             </div>
-          </Tabs>
+          </div>
         )}
       </DialogContent>
     </Dialog>

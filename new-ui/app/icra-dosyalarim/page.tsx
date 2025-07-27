@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -21,14 +21,18 @@ import {
   Settings,
   ChevronDown,
   User,
+  Calculator,
+  TrendingUp,
+  BarChart3,
 } from "lucide-react"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
 import UyapIcraDetayModal from "./components/uyap-icra-detay-modal"
 import YeniIcraFoyuModal from "./components/yeni-icra-foyu"
+import GuncelFaizOranlariModal from "./components/guncel-faiz-oranlari-modal"
+import PratikFaizHesaplamaModal from "./components/pratik-faiz-hesaplama-modal"
 import type { FormData } from "./components/yeni-icra-foyu/types/form-types"
 import type { IcraDosyasiListItem } from "../../types/api"
-import { uyapService, UYAPResponse } from "@/lib/uyap-service"
 
 export default function IcraDosyalarimPage() {
   const [searchTerm, setSearchTerm] = useState("")
@@ -40,6 +44,8 @@ export default function IcraDosyalarimPage() {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [activeView, setActiveView] = useState<"empty" | "list" | "new">("empty")
   const [isNewFileModalOpen, setIsNewFileModalOpen] = useState(false)
+  const [isFaizOranlariModalOpen, setIsFaizOranlariModalOpen] = useState(false)
+  const [isPratikFaizHesaplamaModalOpen, setIsPratikFaizHesaplamaModalOpen] = useState(false)
   const [uyapStatus, setUyapStatus] = useState<"Bağlı Değil" | "Bağlanıyor" | "Bağlı">("Bağlı Değil")
   const [isConnecting, setIsConnecting] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
@@ -47,27 +53,6 @@ export default function IcraDosyalarimPage() {
   const [pageCount, setPageCount] = useState<string>("10")
   const [username, setUsername] = useState<string>("Tuğçe Delibaş")
   const [pincode, setPincode] = useState<string>("9092")
-  const [uyapSessionId, setUyapSessionId] = useState<string | null>(null)
-  const [isUyapSearching, setIsUyapSearching] = useState(false)
-  const [isUyapExtracting, setIsUyapExtracting] = useState(false)
-  const [successMessage, setSuccessMessage] = useState<string | null>(null)
-
-  // Check UYAP status on component mount
-  useEffect(() => {
-    const checkUyapStatus = async () => {
-      try {
-        const response: UYAPResponse = await uyapService.getStatus()
-        if (response.success && response.active_sessions && response.active_sessions.length > 0) {
-          setUyapSessionId(response.active_sessions[0])
-          setUyapStatus("Bağlı")
-        }
-      } catch (error) {
-        console.error("Error checking UYAP status:", error)
-      }
-    }
-
-    checkUyapStatus()
-  }, [])
 
   // Fetch data from API
   const fetchData = async () => {
@@ -198,34 +183,53 @@ export default function IcraDosyalarimPage() {
       setIsConnecting(true)
 
       try {
-        // Login to UYAP
-        const response: UYAPResponse = await uyapService.login(pincode)
-        
-        if (response.success && response.session_id) {
-          setUyapSessionId(response.session_id)
-        setUyapStatus("Bağlı")
+        // Call the real UYAP login API
+        const response = await fetch('/api/uyap', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            action: 'login',
+            pin_kodu: pincode || '9092', // Use the PIN from the profile dropdown
+          }),
+        })
+
+        const result = await response.json()
+
+        if (result.success) {
+          setUyapStatus("Bağlı")
+          console.log('UYAP login successful:', result.message)
         } else {
-          setError(response.message || "UYAP'a bağlanılamadı")
           setUyapStatus("Bağlı Değil")
+          console.error('UYAP login failed:', result.message)
         }
       } catch (error) {
-        console.error("UYAP login error:", error)
-        setError("UYAP'a bağlanırken hata oluştu")
         setUyapStatus("Bağlı Değil")
+        console.error('UYAP login error:', error)
       } finally {
         setIsConnecting(false)
       }
     } else {
       // Disconnect
       try {
-        if (uyapSessionId) {
-          await uyapService.logout(uyapSessionId)
-        }
+        const response = await fetch('/api/uyap', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            action: 'logout',
+            session_id: pincode || '9092',
+          }),
+        })
+
+        const result = await response.json()
+        console.log('UYAP logout result:', result)
       } catch (error) {
-        console.error("UYAP logout error:", error)
+        console.error('UYAP logout error:', error)
       }
-      
-      setUyapSessionId(null)
+
       setUyapStatus("Bağlı Değil")
       setIsConnecting(false)
     }
@@ -238,62 +242,96 @@ export default function IcraDosyalarimPage() {
 
   // İlk Kurulum functions
   const handleSearchAllFiles = async () => {
-    if (!uyapSessionId) {
-      setError("Önce UYAP'a bağlanın")
+    if (uyapStatus !== "Bağlı") {
       return
     }
 
     try {
-      setIsUyapSearching(true)
-      setError(null)
-      const response: UYAPResponse = await uyapService.searchFiles(uyapSessionId)
+      console.log("Bütün Dosyaları UYAP'ta Ara başlatılıyor...")
       
-      if (response.success) {
-        console.log("UYAP search completed successfully")
-        setSuccessMessage("UYAP arama işlemi başarıyla tamamlandı")
-        // Clear success message after 3 seconds
-        setTimeout(() => setSuccessMessage(null), 3000)
+      // Call the UYAP search files API
+      const response = await fetch('/api/uyap', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'search-files',
+          session_id: pincode || '9092',
+        }),
+      })
+
+      const result = await response.json()
+
+      if (result.success) {
+        console.log('UYAP search files successful:', result.message)
+        
+        // Optionally refresh the file list after search
+        // await fetchData()
       } else {
-        setError(response.message || "UYAP arama işlemi başarısız")
+        console.error('UYAP search files failed:', result.message)
       }
     } catch (error) {
-      console.error("UYAP search error:", error)
-      setError("UYAP arama işlemi sırasında hata oluştu")
-    } finally {
-      setIsUyapSearching(false)
+      console.error('UYAP search files error:', error)
     }
   }
 
   const handleFetchFromUyap = async () => {
-    if (!uyapSessionId) {
-      setError("Önce UYAP'a bağlanın")
+    if (uyapStatus !== "Bağlı") {
+      return
+    }
+
+    if (!pageCount || parseInt(pageCount) <= 0) {
       return
     }
 
     try {
-      setIsUyapExtracting(true)
-      setError(null)
-      const response: UYAPResponse = await uyapService.extractData(uyapSessionId)
+      console.log(`Föyleri UYAP'tan Çek başlatılıyor... (${pageCount} sayfa)`)
       
-      if (response.success) {
-        console.log("UYAP data extraction completed successfully")
-        setSuccessMessage("UYAP veri çekme işlemi başarıyla tamamlandı")
-        // Clear success message after 3 seconds
-        setTimeout(() => setSuccessMessage(null), 3000)
+      // Call the UYAP extract data API
+      const response = await fetch('/api/uyap', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'extract-data',
+          session_id: pincode || '9092',
+          page_count: parseInt(pageCount),
+        }),
+      })
+
+      const result = await response.json()
+
+      if (result.success) {
+        console.log('UYAP extract data successful:', result.message)
+        
+        // Refresh the file list to show new data
+        await fetchData()
       } else {
-        setError(response.message || "UYAP veri çekme işlemi başarısız")
+        console.error('UYAP extract data failed:', result.message)
       }
     } catch (error) {
-      console.error("UYAP extract error:", error)
-      setError("UYAP veri çekme işlemi sırasında hata oluştu")
-    } finally {
-      setIsUyapExtracting(false)
+      console.error('UYAP extract data error:', error)
     }
   }
 
   // Profile functions (to be implemented later)
   const handleProfileSave = () => {
     console.log("Profile saved:", { username, pincode })
+  }
+
+  // Tool functions
+  const handlePratikFaizHesaplama = () => {
+    setIsPratikFaizHesaplamaModalOpen(true)
+  }
+
+  const handleGuncelFaizOranlari = () => {
+    setIsFaizOranlariModalOpen(true)
+  }
+
+  const handleRaporlar = () => {
+    console.log("Raporlar clicked")
   }
 
   // Left sidebar buttons
@@ -309,6 +347,25 @@ export default function IcraDosyalarimPage() {
       icon: Plus,
       action: () => setIsNewFileModalOpen(true),
       active: false,
+    },
+  ]
+
+  // Tool buttons
+  const toolButtons = [
+    {
+      label: "Pratik Faiz Hesaplama",
+      icon: Calculator,
+      action: handlePratikFaizHesaplama,
+    },
+    {
+      label: "Güncel Faiz Oranları",
+      icon: TrendingUp,
+      action: handleGuncelFaizOranlari,
+    },
+    {
+      label: "Raporlar",
+      icon: BarChart3,
+      action: handleRaporlar,
     },
   ]
 
@@ -375,13 +432,8 @@ export default function IcraDosyalarimPage() {
                         onClick={handleSearchAllFiles}
                         className="w-full justify-start text-xs sm:text-sm bg-transparent"
                         variant="outline"
-                        disabled={isUyapSearching || isUyapExtracting || !uyapSessionId}
                       >
-                        {isUyapSearching ? (
-                          <Loader2 className="w-3 h-3 sm:w-4 sm:h-4 mr-2 animate-spin" />
-                        ) : (
                         <Search className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
-                        )}
                         Bütün Dosyaları UYAP'ta Ara
                       </Button>
                     </div>
@@ -392,13 +444,8 @@ export default function IcraDosyalarimPage() {
                         onClick={handleFetchFromUyap}
                         className="flex-1 justify-start text-xs sm:text-sm bg-transparent"
                         variant="outline"
-                        disabled={isUyapSearching || isUyapExtracting || !uyapSessionId}
                       >
-                        {isUyapExtracting ? (
-                          <Loader2 className="w-3 h-3 sm:w-4 sm:h-4 mr-2 animate-spin" />
-                        ) : (
                         <FileText className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
-                        )}
                         Föyleri UYAP'tan Çek
                       </Button>
                       <div className="flex items-center gap-1">
@@ -410,7 +457,6 @@ export default function IcraDosyalarimPage() {
                           className="w-16 h-8 text-xs text-center"
                           min="1"
                           max="100"
-                          disabled={isUyapSearching || isUyapExtracting}
                         />
                         <span className="text-xs text-gray-500">sayfa</span>
                       </div>
@@ -547,6 +593,29 @@ export default function IcraDosyalarimPage() {
                       </div>
                     </CardContent>
                   </Card>
+                  <Card>
+                    <CardHeader className="pb-2 sm:pb-3">
+                      <CardTitle className="text-sm sm:text-base">Araçlar</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-2 sm:space-y-3 px-1 sm:px-2">
+                      <div className="grid grid-cols-2 lg:grid-cols-1 gap-2 sm:gap-3">
+                        {toolButtons.map((button, index) => {
+                          const Icon = button.icon
+                          return (
+                            <Button
+                              key={index}
+                              variant="outline"
+                              className="w-full justify-start h-9 sm:h-10 text-[10px] sm:text-xs px-1 sm:px-2 bg-transparent"
+                              onClick={button.action}
+                            >
+                              <Icon className="w-2.5 h-2.5 sm:w-3 sm:h-3 mr-0 flex-shrink-0" />
+                              <span className="truncate text-[10px] sm:text-sm">{button.label}</span>
+                            </Button>
+                          )
+                        })}
+                      </div>
+                    </CardContent>
+                  </Card>
                 </div>
               </div>
 
@@ -572,13 +641,6 @@ export default function IcraDosyalarimPage() {
                         >
                           Tekrar Dene
                         </Button>
-                      </div>
-                    )}
-
-                    {/* Success Display */}
-                    {successMessage && (
-                      <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
-                        <p className="text-green-800 text-sm">{successMessage}</p>
                       </div>
                     )}
 
@@ -703,7 +765,7 @@ export default function IcraDosyalarimPage() {
                                           <ArrowUpDown className="w-2.5 h-2.5 ml-1" />
                                         </Button>
                                       </TableHead>
-                                      <TableHead className="font-semibold text-gray-700 py-1 px-1">
+                                      <TableHead className="font-semibold text-gray-700 py-1 px-1 hidden lg:table-cell">
                                         <Button
                                           variant="ghost"
                                           onClick={() => handleSort("icraMudurlugu")}
@@ -754,7 +816,7 @@ export default function IcraDosyalarimPage() {
                                             {item.foyTuru}
                                           </div>
                                         </TableCell>
-                                        <TableCell className="py-1 px-1 text-[9px]">
+                                        <TableCell className="py-1 px-1 text-[9px] hidden lg:table-cell">
                                           <div className="max-w-[120px] truncate" title={item.icraMudurlugu}>
                                             {item.icraMudurlugu}
                                           </div>
@@ -831,6 +893,15 @@ export default function IcraDosyalarimPage() {
         isOpen={isNewFileModalOpen}
         onClose={() => setIsNewFileModalOpen(false)}
         onSave={handleSaveNewFile}
+      />
+
+      {/* Güncel Faiz Oranları Modal */}
+      <GuncelFaizOranlariModal isOpen={isFaizOranlariModalOpen} onClose={() => setIsFaizOranlariModalOpen(false)} />
+
+      {/* Pratik Faiz Hesaplama Modal */}
+      <PratikFaizHesaplamaModal
+        isOpen={isPratikFaizHesaplamaModalOpen}
+        onClose={() => setIsPratikFaizHesaplamaModalOpen(false)}
       />
     </div>
   )

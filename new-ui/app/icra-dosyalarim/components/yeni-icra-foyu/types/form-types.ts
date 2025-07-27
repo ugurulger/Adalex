@@ -1,91 +1,64 @@
-export interface GenelBilgiler {
-  takipTuru: string
-  dosyaTipi: string
-  takipTarihi?: Date
-  mahiyetKodu: string
-  aciklama: string
-}
-
-export interface AdresBilgisi {
-  adresTuru: string
-  il: string
-  ilce: string
-  adres: string
-}
-
-export interface AlacakliBilgileri {
-  tcknVkn: string
-  adSoyad: string
-  adresBilgisi: AdresBilgisi
-  telefon?: string
-  cepTelefonu?: string
-  email?: string
-}
-
-export interface BorcluBilgileri {
-  id: number
-  tcknVkn: string
-  adSoyad: string
-  adresBilgisi: AdresBilgisi
-  rol: string
-}
-
-export interface AlacakKalemi {
-  id: number
-  kalemAdi: string
-  tutar: string
-  faizTipi: string
-  faizBaslangicTarihi?: Date
-  faizOrani: string
-  aciklama: string
-}
-
-export interface IlamKalemi {
-  id: number
-  kalemAdi: string
-  tutar: string
-  aciklama: string
-}
-
-export interface IlamBilgileri {
-  mahkemeAdi: string
-  kararYili: string
-  dosyaNo: string
-  kararTarihi?: Date
-  ilamKalemleri: IlamKalemi[]
-}
-
-export interface VekilBilgileri {
-  tckn: string
-  adSoyad: string
-  baroNo: string
-  adres: string
-  buroAdi: string
-}
-
-export interface TalepAciklamasi {
-  talepMetni: string
-  icraYolu: string
-  talepTipi: string
-  aciklama48e9: string
-}
-
 export interface FormData {
-  genelBilgiler: GenelBilgiler
-  alacakliBilgileri: AlacakliBilgileri
-  borcluBilgileri: BorcluBilgileri[]
-  alacakKalemleri: AlacakKalemi[]
-  ilamBilgileri: IlamBilgileri
-  vekilBilgileri: VekilBilgileri
-  talepAciklamasi: TalepAciklamasi
+  // Page 1 - Türleri Seçme
+  takipTuru: string
+  takipYolu: string
+
+  // Page 2 - Alacaklı Bilgisi
+  alacakliTipi: string
+  alacakliAdSoyad: string
+  alacakliTcKimlik: string
+  alacakliSirketUnvani: string
+  alacakliVergiNumarasi: string
+  alacakliTelefon: string
+  alacakliAdres: string
+
+  // Page 3 - Borçlu Bilgileri
+  borcluTipi: string
+  borcluAdSoyad: string
+  borcluTcKimlik: string
+  borcluSirketUnvani: string
+  borcluVergiNumarasi: string
+  borcluTelefon: string
+  borcluAdres: string
+
+  // Page 4 - Türlere Göre Seçim (dynamic fields)
+  dynamicFields: Record<string, any>
 }
 
-export interface FormErrors {
-  genelBilgiler?: Partial<GenelBilgiler>
-  alacakliBilgileri?: Partial<AlacakliBilgileri>
-  borcluBilgileri?: Array<Partial<BorcluBilgileri>>
-  alacakKalemleri?: Array<Partial<AlacakKalemi>>
-  ilamBilgileri?: Partial<IlamBilgileri>
-  vekilBilgileri?: Partial<VekilBilgileri>
-  talepAciklamasi?: Partial<TalepAciklamasi>
+export const TAKIP_YOLU_OPTIONS = {
+  ILAMSIZ: [
+    { value: "7_ornek", label: "7 Örnek (İLAMSIZ TAKIP)" },
+    { value: "8_ornek", label: "8 Örnek (Menkul rehnin paraya çevrilmesi)" },
+    { value: "9_ornek", label: "9 Örnek (İpoteğin Paraya çevrilmesi)" },
+    { value: "10_ornek", label: "10 Örnek (Kambiyo Yoluyla Haciz Takibi)" },
+    { value: "11_ornek", label: "11 Örnek (İflas Yoluyla Adi Takip)" },
+    { value: "12_ornek", label: "12 Örnek (Kambiyo Yoluyla İflas Takibi)" },
+    { value: "13_ornek", label: "13 Örnek (Adi Kira ve Hasilat Kiralarına Ait Takip)" },
+    { value: "14_ornek", label: "14 Örnek (Tahliye Emri)" },
+  ],
+  ILAMLI: [
+    { value: "2_5_ornek", label: "2-5 Örnek (Menkul Teslimi)" },
+    { value: "4_5_ornek", label: "4-5 Örnek (Genel Alacak Teminat)" },
+    { value: "6_ornek", label: "6 Örnek (İpoteğin Paraya Çevrilmesi)" },
+  ],
 }
+
+export const FAIZ_TIPI_OPTIONS = [
+  { value: "gunluk", label: "Günlük" },
+  { value: "aylik", label: "Aylık" },
+  { value: "yillik_365", label: "Yıllık 365" },
+  { value: "yillik_360", label: "Yıllık 360" },
+  { value: "360_gun_hesabi", label: "360 Gün Hesabı" },
+]
+
+export const BELGE_BILGILERI_OPTIONS = [
+  { value: "bono", label: "Bono" },
+  { value: "cek", label: "Çek" },
+  { value: "police", label: "Poliçe" },
+]
+
+export const ALACAK_TURU_OPTIONS = [
+  { value: "kira", label: "Kira" },
+  { value: "kira_farki", label: "Kira Farkı" },
+  { value: "diger", label: "Diğer" },
+]
