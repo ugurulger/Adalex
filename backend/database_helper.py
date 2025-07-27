@@ -201,13 +201,20 @@ def save_scraping_data_to_db_and_json(scraping_data, filename=None):
         bool: True if successful, False otherwise
     """
     logger = get_logger()
-    
+    # Print borclu_id and DB_PATH for debugging
+    try:
+        if isinstance(scraping_data, dict):
+            for dosya_no, borclular in scraping_data.items():
+                for borclu_id in borclular.keys():
+                    print(f"[SAVE] borclu_id={borclu_id}, DB_PATH={os.path.abspath(os.path.join(os.path.dirname(__file__), '../files.db'))}")
+    except Exception as e:
+        print(f"[SAVE] Debug print error: {e}")
     # Save to JSON file first (backup)
     try:
         save_to_json_simple(scraping_data, filename)
         logger.info("Data saved to JSON file as backup")
     except Exception as e:
-        logger.warning(f"Failed to save to JSON file: {e}")
+        logger.error(f"Failed to save data to JSON: {e}")
     
     # Save to database
     try:

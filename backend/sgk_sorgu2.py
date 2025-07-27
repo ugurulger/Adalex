@@ -44,8 +44,12 @@ def parse_pdf_table_subtable(table_element):
     heading_counts = {}
 
     rows = table_element.find_elements(By.TAG_NAME, "tr")
-    for row in rows:
+    logger.info(f"Found {len(rows)} rows in table")
+    
+    for row_index, row in enumerate(rows):
         tds = row.find_elements(By.TAG_NAME, "td")
+        logger.info(f"Row {row_index + 1}: {len(tds)} cells")
+        
         if len(tds) == 1:
             td_class = tds[0].get_attribute("class") or ""
             if "fw-bold" in td_class and "text-center" in td_class:
@@ -54,17 +58,34 @@ def parse_pdf_table_subtable(table_element):
                 new_heading = heading_text if heading_counts[heading_text] == 1 else f"{heading_text}_{heading_counts[heading_text]}"
                 main_dict[new_heading] = {}
                 current_subtable = main_dict[new_heading]
+                logger.info(f"Created heading: {new_heading}")
                 continue
         i = 0
         while i < len(tds):
             label_cell = tds[i]
             label_class = label_cell.get_attribute("class") or ""
             label_text = label_cell.text.strip()
+            logger.info(f"Row {row_index + 1}, Cell {i}: '{label_text}' (class: {label_class})")
+            
             if "fw-bold" in label_class and i + 1 < len(tds):
-                current_subtable[label_text] = tds[i + 1].text.strip()
+                value_text = tds[i + 1].text.strip()
+                current_subtable[label_text] = value_text
+                logger.info(f"Added: {label_text} = {value_text}")
                 i += 2
             else:
                 i += 1
+    logger.info(f"Final parsed data: {main_dict}")
+    
+    # If no structured data found, check if there's an error message in the table
+    if not main_dict:
+        try:
+            # Look for error messages in the table
+            error_text = table_element.text.strip()
+            if any(keyword in error_text.lower() for keyword in ["hata", "bulunamadı", "teknik", "lütfen", "daha sonra"]):
+                return error_text
+        except:
+            pass
+    
     return main_dict if main_dict else {}
 
 def extract_data_from_card(driver, item_text, table_id, result_label=None):
@@ -76,6 +97,10 @@ def extract_data_from_card(driver, item_text, table_id, result_label=None):
         table = wait.until(EC.visibility_of_element_located((By.ID, table_id)))
         wait.until(EC.element_to_be_clickable((By.ID, table_id)))
         structured_data = parse_pdf_table_subtable(table)
+        # If structured_data is a string (error message), return it directly
+        if isinstance(structured_data, str):
+            return structured_data
+        # If structured_data is empty dict, return "Tablo boş"
         return structured_data if structured_data else "Tablo boş"
     except Exception as e:
         logger.warning(f"Veri çekme hatası {table_id} için: {e}")

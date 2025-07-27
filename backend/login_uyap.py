@@ -4,10 +4,11 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
-from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException, NoSuchElementException
+import subprocess
+import os
 
 # Constants
 USER_DATA_DIR = "/Users/ugurulger/Library/Application Support/Google/ChromeDuplicate"
@@ -41,10 +42,21 @@ def open_browser_and_login(pinkodu, result_label=None):
         chrome_options.add_argument(f"--user-data-dir={USER_DATA_DIR}")
         chrome_options.add_argument(f"--profile-directory={PROFILE_DIRECTORY}")
         chrome_options.add_argument(f"--load-extension={ARKSIGNER_EXTENSION_PATH}")
-        chromedriver_dir = ChromeDriverManager().install()
-        if chromedriver_dir.endswith("THIRD_PARTY_NOTICES.chromedriver"):
-            chromedriver_dir = chromedriver_dir.replace("THIRD_PARTY_NOTICES.chromedriver", "chromedriver")
-        driver = webdriver.Chrome(service=Service(chromedriver_dir), options=chrome_options)
+        chrome_options.add_argument("--no-sandbox")
+        chrome_options.add_argument("--disable-dev-shm-usage")
+        chrome_options.add_argument("--disable-gpu")
+        chrome_options.add_argument("--remote-debugging-port=9222")
+        
+        # Use system ChromeDriver
+        chromedriver_path = "/opt/homebrew/bin/chromedriver"
+        if not os.path.exists(chromedriver_path):
+            # Fallback to which command
+            try:
+                chromedriver_path = subprocess.check_output(["which", "chromedriver"], text=True).strip()
+            except subprocess.CalledProcessError:
+                chromedriver_path = "chromedriver"  # Let system find it
+        
+        driver = webdriver.Chrome(service=Service(chromedriver_path), options=chrome_options)
         wait = WebDriverWait(driver, 15)
 
         # 1. Open the page
