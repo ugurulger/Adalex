@@ -7,7 +7,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException, NoSuchElementException, ElementClickInterceptedException, StaleElementReferenceException
-from database_helper import save_scraping_data_to_db_and_json
+from database_helper import save_extract_data_to_db, save_to_json_simple
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -18,7 +18,6 @@ def extract_data_from_table(driver, ui_callback=None):
         all_data = []  # Array to store file data matching database structure
         processed_dosya_nos = set()  # Track processed rows across all pages
         max_pages_to_process = 1  # Limit to first 3 pages
-        row_counter = 1  # Global counter for row numbering across all pages
 
         # Define output directory and daily JSON filename
         output_dir = "/Users/ugurulger/Desktop/extracted_data"
@@ -87,10 +86,8 @@ def extract_data_from_table(driver, ui_callback=None):
 
                     dosya_durumu = cells[3].find_element(By.CSS_SELECTOR, "div.label-light").text.strip() if cells[3].find_elements(By.CSS_SELECTOR, "div.label-light") else cells[3].text.strip()
 
-                    # Create file data structure matching database
+                    # Create file data structure matching database (without file_id and klasor)
                     file_data = {
-                        "file_id": str(row_counter),
-                        "klasor": str(row_counter),  # Same as file_id for UI display
                         "dosyaNo": dosya_no,
                         "eYil": int(dosya_no.split("/")[0]) if "/" in dosya_no else None,  # Extract year from dosyaNo
                         "eNo": int(dosya_no.split("/")[1]) if "/" in dosya_no else None,  # Extract number from dosyaNo
@@ -303,10 +300,8 @@ def extract_data_from_table(driver, ui_callback=None):
                             for taraf_key, taraf_info in taraf_data.items():
                                 if taraf_info["Rol"].lower() == "borçlu":
                                     borclu_names.append(taraf_info["Adi"])
-                                    # Add to borcluList
+                                    # Add to borcluList (without file_id and borclu_id - will be set by helper)
                                     borclu_data = {
-                                        "borclu_id": f"{row_counter}_{len(file_data['borcluList']) + 1}",
-                                        "file_id": str(row_counter),
                                         "ad": taraf_info["Adi"],
                                         "tcKimlik": "",
                                         "telefon": "",
@@ -333,11 +328,10 @@ def extract_data_from_table(driver, ui_callback=None):
 
                     # Add the file data to all_data array
                     all_data.append(file_data)
-                    row_counter += 1
 
                     # Update UI with the new row's data
                     if ui_callback:
-                        ui_callback(row_counter - 1, file_data)
+                        ui_callback(len(all_data), file_data)
 
                     # Close the popup
                     wait = WebDriverWait(driver, 10)
@@ -399,13 +393,21 @@ def extract_data_from_table(driver, ui_callback=None):
                         break
 
         # Save all extracted data to both database and JSON (backup)
-        save_scraping_data_to_db_and_json(all_data, output_file)
+        # Use the new function for extract data
+        processed_data = []
+        for file_data in all_data:
+            processed_file_data = save_extract_data_to_db(file_data)
+            if processed_file_data:
+                processed_data.append(processed_file_data)
+        
+        # Save to JSON as backup
+        save_to_json_simple(processed_data, output_file)
         logger.info(f"Saved all data to database and {output_file} (backup)")
 
         # Print all extracted data at the end
-        logger.info(f"Finished processing {len(all_data)} files across {min(page, max_pages)} pages. Printing all data now:")
-        for i, file_data in enumerate(all_data, 1):
-            print(f"\nFile {i}:")
+        logger.info(f"Finished processing {len(processed_data)} files across {min(page, max_pages)} pages. Printing all data now:")
+        for i, file_data in enumerate(processed_data, 1):
+            print(f"\nRow: {i}:")
             print(f"  file_id: {file_data['file_id']}")
             print(f"  klasor: {file_data['klasor']}")
             print(f"  dosyaNo: {file_data['dosyaNo']}")
@@ -426,7 +428,7 @@ def extract_data_from_table(driver, ui_callback=None):
             for borclu in file_data['borcluList']:
                 print(f"    - {borclu['ad']} (ID: {borclu['borclu_id']})")
 
-        return all_data
+        return processed_data
 
     except TimeoutException:
         logger.error("Timeout waiting for table to load.")

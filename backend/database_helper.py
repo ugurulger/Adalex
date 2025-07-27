@@ -482,4 +482,134 @@ def save_to_json_simple(data, filename=None):
     
     # Save data to JSON file
     with open(filename, 'w', encoding='utf-8') as f:
-        json.dump(data, f, ensure_ascii=False, indent=4) 
+        json.dump(data, f, ensure_ascii=False, indent=4)
+
+#This function is used to get or create file_id for search_all_files_extract.py
+def get_or_create_file_id_for_extract(dosya_no, icra_mudurlugu):
+    """
+    Get existing file_id or create new one for search_all_files_extract.py
+    
+    Args:
+        dosya_no (str): File number
+        icra_mudurlugu (str): İcra Müdürlüğü
+    
+    Returns:
+        tuple: (file_id, klasor, is_new_file)
+    """
+    logger = get_logger()
+    
+    try:
+        conn = get_database_connection()
+        if not conn:
+            logger.error("Failed to get database connection")
+            return None, None, False
+        
+        cursor = conn.cursor()
+        
+        # Check if file already exists
+        cursor.execute("""
+            SELECT file_id, klasor FROM files 
+            WHERE dosyaNo = ? AND icraMudurlugu = ?
+        """, (dosya_no, icra_mudurlugu))
+        
+        existing_file = cursor.fetchone()
+        
+        if existing_file:
+            # File exists, return existing file_id and klasor
+            logger.info(f"File already exists: dosya_no={dosya_no}, icra_mudurlugu={icra_mudurlugu}, file_id={existing_file['file_id']}")
+            conn.close()
+            return existing_file['file_id'], existing_file['klasor'], False
+        
+        # File doesn't exist, find the next available file_id
+        cursor.execute("""
+            SELECT file_id FROM files 
+            ORDER BY CAST(file_id AS INTEGER) DESC 
+            LIMIT 1
+        """)
+        
+        last_file = cursor.fetchone()
+        
+        if last_file:
+            # Get the next available file_id
+            next_file_id = str(int(last_file['file_id']) + 1)
+        else:
+            # No files exist, start with 1
+            next_file_id = "1"
+        
+        # klasor is the same as file_id for UI display
+        klasor = next_file_id
+        
+        logger.info(f"Created new file_id: {next_file_id} for dosya_no={dosya_no}, icra_mudurlugu={icra_mudurlugu}")
+        conn.close()
+        return next_file_id, klasor, True
+        
+    except Exception as e:
+        logger.error(f"Error getting or creating file_id: {e}")
+        if conn:
+            conn.close()
+        return None, None, False
+
+# This function is used to save extract data to database with automatic file_id and klasor generation
+def save_extract_data_to_db(file_data_without_ids):
+    """
+    Save extract data to database with automatic file_id and klasor generation
+    
+    Args:
+        file_data_without_ids (dict): File data without file_id and klasor
+    
+    Returns:
+        dict: File data with generated file_id and klasor, or None if failed
+    """
+    logger = get_logger()
+    
+    try:
+        dosya_no = file_data_without_ids.get('dosyaNo')
+        icra_mudurlugu = file_data_without_ids.get('icraMudurlugu')
+        
+        if not dosya_no or not icra_mudurlugu:
+            logger.error("dosyaNo or icraMudurlugu is missing")
+            return None
+        
+        # Get or create file_id and klasor
+        file_id, klasor, is_new_file = get_or_create_file_id_for_extract(dosya_no, icra_mudurlugu)
+        
+        if not file_id:
+            logger.error("Failed to get or create file_id")
+            return None
+        
+        # Add file_id and klasor to the data
+        file_data = file_data_without_ids.copy()
+        file_data['file_id'] = file_id
+        file_data['klasor'] = klasor
+        
+        # Update borclu_id in borcluList to use the new file_id
+        for i, borclu in enumerate(file_data.get('borcluList', [])):
+            borclu['file_id'] = file_id
+            borclu['borclu_id'] = f"{file_id}_{i + 1}"
+        
+        # Save to database
+        if is_new_file:
+            # New file - insert all data
+            save_file_data_to_db(file_data)
+            for borclu in file_data.get('borcluList', []):
+                save_borclu_data_to_db(borclu, file_id)
+        else:
+            # Existing file - update data
+            save_file_data_to_db(file_data)
+            # Update borclular (delete old ones and insert new ones)
+            conn = get_database_connection()
+            if conn:
+                cursor = conn.cursor()
+                cursor.execute("DELETE FROM borclular WHERE file_id = ?", (file_id,))
+                conn.commit()
+                conn.close()
+                
+                for borclu in file_data.get('borcluList', []):
+                    save_borclu_data_to_db(borclu, file_id)
+        
+        logger.info(f"Successfully saved extract data for file_id: {file_id}")
+        return file_data
+        
+    except Exception as e:
+        logger.error(f"Error saving extract data to database: {e}")
+        return None 
