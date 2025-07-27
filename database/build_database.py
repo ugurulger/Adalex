@@ -11,6 +11,8 @@ def create_tables(conn):
         file_id TEXT PRIMARY KEY,
         klasor TEXT,
         dosyaNo TEXT,
+        eYil INTEGER,
+        eNo INTEGER,
         borcluAdi TEXT,
         alacakliAdi TEXT,
         foyTuru TEXT,
@@ -64,14 +66,16 @@ def create_tables(conn):
 def upsert_files(conn, records):
     insert_sql = """
     INSERT INTO files (
-        file_id, klasor, dosyaNo, borcluAdi,
+        file_id, klasor, dosyaNo, eYil, eNo, borcluAdi,
         alacakliAdi, foyTuru, durum,
         takipTarihi, icraMudurlugu
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
     """
     update_sql = """
     UPDATE files SET
         klasor = ?,
+        eYil = ?,
+        eNo = ?,
         borcluAdi = ?,
         alacakliAdi = ?,
         foyTuru = ?,
@@ -89,7 +93,7 @@ def upsert_files(conn, records):
         exists = cur.fetchone()
         if exists:
             conn.execute(update_sql, (
-                rec['klasor'], rec['borcluAdi'], rec['alacakliAdi'],
+                rec['klasor'], rec.get('eYil'), rec.get('eNo'), rec['borcluAdi'], rec['alacakliAdi'],
                 rec['foyTuru'], rec['durum'], rec['takipTarihi'],
                 rec['icraMudurlugu'], rec['dosyaNo'], rec['icraMudurlugu']
             ))
@@ -97,7 +101,7 @@ def upsert_files(conn, records):
             try:
                 conn.execute(insert_sql, (
                     rec['file_id'], rec['klasor'], rec['dosyaNo'],
-                    rec['borcluAdi'], rec['alacakliAdi'], rec['foyTuru'],
+                    rec.get('eYil'), rec.get('eNo'), rec['borcluAdi'], rec['alacakliAdi'], rec['foyTuru'],
                     rec['durum'], rec['takipTarihi'], rec['icraMudurlugu']
                 ))
             except sqlite3.IntegrityError as e:

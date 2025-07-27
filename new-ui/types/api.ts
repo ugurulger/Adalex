@@ -4,6 +4,8 @@ export interface IcraDosyasiListItem {
   file_id: number
   klasor: string
   dosyaNo: string
+  eYil: number
+  eNo: number
   borcluAdi: string
   alacakliAdi: string
   foyTuru: string
@@ -26,6 +28,8 @@ export interface IcraDosyasiDetay {
   file_id: number
   klasor: string
   dosyaNo: string
+  eYil: number
+  eNo: number
   borcluAdi: string
   alacakliAdi: string
   foyTuru: string

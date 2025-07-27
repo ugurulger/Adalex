@@ -97,6 +97,8 @@ export default function IcraDosyalarimPage() {
       return (
         item.klasor.toLowerCase().includes(searchLower) ||
         item.dosyaNo.toLowerCase().includes(searchLower) ||
+        item.eYil.toString().includes(searchLower) ||
+        item.eNo.toString().includes(searchLower) ||
         item.borcluAdi.toLowerCase().includes(searchLower) ||
         item.alacakliAdi.toLowerCase().includes(searchLower) ||
         item.foyTuru.toLowerCase().includes(searchLower) ||
@@ -117,10 +119,10 @@ export default function IcraDosyalarimPage() {
       let bValue = b[field as keyof typeof b]
 
       // Special handling for numeric fields
-      if (field === "klasor" || field === "dosyaNo") {
+      if (field === "klasor" || field === "dosyaNo" || field === "eYil" || field === "eNo") {
         // Convert to numbers for numeric sorting
-        const aNum = parseInt(aValue) || 0
-        const bNum = parseInt(bValue) || 0
+        const aNum = typeof aValue === 'number' ? aValue : parseInt(String(aValue)) || 0
+        const bNum = typeof bValue === 'number' ? bValue : parseInt(String(bValue)) || 0
         
         if (direction === "asc") {
           return aNum - bNum
@@ -716,7 +718,7 @@ export default function IcraDosyalarimPage() {
                                       <div className="flex justify-between items-start">
                                         <div>
                                           <p className="font-medium text-sm">{item.klasor}</p>
-                                          <p className="text-xs text-gray-600">Dosya No: {item.dosyaNo}</p>
+                                          <p className="text-xs text-gray-600">E.Yıl: {item.eYil} | E.No: {item.eNo}</p>
                                         </div>
                                         {getStatusBadge(item.durum)}
                                       </div>
@@ -753,10 +755,20 @@ export default function IcraDosyalarimPage() {
                                       <TableHead className="font-semibold text-gray-700 py-1 px-1 w-12">
                                         <Button
                                           variant="ghost"
-                                          onClick={() => handleSort("dosyaNo")}
+                                          onClick={() => handleSort("eYil")}
                                           className="h-auto p-0 font-semibold text-gray-700 hover:text-gray-900 text-xs"
                                         >
-                                          Dosya No
+                                          E.Yıl
+                                          <ArrowUpDown className="w-2.5 h-2.5 ml-1" />
+                                        </Button>
+                                      </TableHead>
+                                      <TableHead className="font-semibold text-gray-700 py-1 px-1 w-12">
+                                        <Button
+                                          variant="ghost"
+                                          onClick={() => handleSort("eNo")}
+                                          className="h-auto p-0 font-semibold text-gray-700 hover:text-gray-900 text-xs"
+                                        >
+                                          E.No
                                           <ArrowUpDown className="w-2.5 h-2.5 ml-1" />
                                         </Button>
                                       </TableHead>
@@ -825,7 +837,12 @@ export default function IcraDosyalarimPage() {
                                         <TableCell className="py-1 px-1 text-[10px] font-medium">
                                           {item.klasor}
                                         </TableCell>
-                                        <TableCell className="py-1 px-1 text-[10px]">{item.dosyaNo}</TableCell>
+                                        <TableCell className="py-1 px-1 text-[10px] font-medium">
+                                          {item.eYil?.toString() || ''}
+                                        </TableCell>
+                                        <TableCell className="py-1 px-1 text-[10px] font-medium">
+                                          {item.eNo?.toString() || ''}
+                                        </TableCell>
                                         <TableCell className="py-1 px-1 text-[10px]">
                                           <div className="max-w-[120px] truncate" title={item.borcluAdi}>
                                             {item.borcluAdi}

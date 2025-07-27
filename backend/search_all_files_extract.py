@@ -92,6 +92,8 @@ def extract_data_from_table(driver, ui_callback=None):
                         "file_id": str(row_counter),
                         "klasor": str(row_counter),  # Same as file_id for UI display
                         "dosyaNo": dosya_no,
+                        "eYil": int(dosya_no.split("/")[0]) if "/" in dosya_no else None,  # Extract year from dosyaNo
+                        "eNo": int(dosya_no.split("/")[1]) if "/" in dosya_no else None,  # Extract number from dosyaNo
                         "borcluAdi": "",  # Will be populated from Taraf Bilgileri
                         "alacakliAdi": "",  # Will be populated from Taraf Bilgileri
                         "foyTuru": cells[2].text.strip(),
@@ -407,6 +409,8 @@ def extract_data_from_table(driver, ui_callback=None):
             print(f"  file_id: {file_data['file_id']}")
             print(f"  klasor: {file_data['klasor']}")
             print(f"  dosyaNo: {file_data['dosyaNo']}")
+            print(f"  eYil: {file_data['eYil']}")
+            print(f"  eNo: {file_data['eNo']}")
             print(f"  borcluAdi: {file_data['borcluAdi']}")
             print(f"  alacakliAdi: {file_data['alacakliAdi']}")
             print(f"  foyTuru: {file_data['foyTuru']}")

@@ -20,7 +20,7 @@ CORS(app)  # Enable CORS for cross-origin requests
 DB_PATH = os.path.join(os.path.dirname(__file__), '..', 'files.db')
 
 # Column names for better data handling
-COLUMNS = ['file_id', 'klasor', 'dosyaNo', 'borcluAdi', 'alacakliAdi', 'foyTuru', 'durum', 'takipTarihi', 'icraMudurlugu']
+COLUMNS = ['file_id', 'klasor', 'dosyaNo', 'eYil', 'eNo', 'borcluAdi', 'alacakliAdi', 'foyTuru', 'durum', 'takipTarihi', 'icraMudurlugu']
 
 def create_database_if_not_exists():
     """Create database and tables if they don't exist"""
@@ -34,6 +34,8 @@ def create_database_if_not_exists():
             file_id TEXT PRIMARY KEY,
             klasor TEXT,
             dosyaNo TEXT,
+            eYil INTEGER,
+            eNo INTEGER,
             borcluAdi TEXT,
             alacakliAdi TEXT,
             foyTuru TEXT,
@@ -104,6 +106,7 @@ def get_all_files():
     """Get all files from the database"""
     try:
         conn = sqlite3.connect(DB_PATH)
+        conn.row_factory = sqlite3.Row  # Enable row factory for easier access
         cur = conn.cursor()
         cur.execute("SELECT * FROM files ORDER BY file_id")
         rows = cur.fetchall()
@@ -117,6 +120,7 @@ def get_file_by_id(file_id):
     """Get a specific file by ID"""
     try:
         conn = sqlite3.connect(DB_PATH)
+        conn.row_factory = sqlite3.Row  # Enable row factory for easier access
         cur = conn.cursor()
         cur.execute("SELECT * FROM files WHERE file_id = ?", (file_id,))
         row = cur.fetchone()
@@ -170,7 +174,8 @@ def get_borclu_sorgular_by_borclu_id(borclu_id):
 def get_file_dict(file_row):
     """Convert a file row to a dictionary with column names"""
     if file_row:
-        return dict(zip(COLUMNS, file_row))
+        # Since we're using sqlite3.Row, we can convert directly to dict
+        return dict(file_row)
     return None
 
 @app.route('/api/icra-dosyalarim', methods=['GET'])
@@ -203,6 +208,8 @@ def api_icra_dosyalarim():
                     "file_id": file_dict['file_id'],
                     "klasor": file_dict['klasor'],
                     "dosyaNo": file_dict['dosyaNo'],
+                    "eYil": file_dict['eYil'],
+                    "eNo": file_dict['eNo'],
                     "borcluAdi": borcluAdi,
                     "alacakliAdi": file_dict['alacakliAdi'],
                     "foyTuru": file_dict['foyTuru'],
@@ -241,6 +248,8 @@ def api_icra_dosya_detail(file_id):
             "file_id": file_dict['file_id'],
             "klasor": file_dict['klasor'],
             "dosyaNo": file_dict['dosyaNo'],
+            "eYil": file_dict['eYil'],
+            "eNo": file_dict['eNo'],
             "borcluAdi": file_dict['borcluAdi'],
             "alacakliAdi": file_dict['alacakliAdi'],
             "foyTuru": file_dict['foyTuru'],

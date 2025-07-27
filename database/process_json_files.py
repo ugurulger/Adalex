@@ -91,6 +91,8 @@ def process_main_rows(extracted):
             "file_id": file_id,
             "klasor": klasor,
             "dosyaNo": dosya_no,
+            "eYil": int(dosya_no.split("/")[0]) if "/" in dosya_no else None,
+            "eNo": int(dosya_no.split("/")[1]) if "/" in dosya_no else None,
             "borcluAdi": ", ".join(b["Adi"] for b in borclular),
             "alacakliAdi": alacakli.get("Adi", ""),
             "foyTuru": genel.get("Dosya Türü", ""),

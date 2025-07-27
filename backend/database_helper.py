@@ -30,6 +30,8 @@ def create_database_if_not_exists():
             file_id TEXT PRIMARY KEY,
             klasor TEXT,
             dosyaNo TEXT,
+            eYil INTEGER,
+            eNo INTEGER,
             borcluAdi TEXT,
             alacakliAdi TEXT,
             foyTuru TEXT,
@@ -275,13 +277,15 @@ def save_file_data_to_db(file_data):
         # Insert or update file data in files table
         cursor.execute("""
             INSERT OR REPLACE INTO files 
-            (file_id, klasor, dosyaNo, borcluAdi, alacakliAdi, foyTuru, durum, 
+            (file_id, klasor, dosyaNo, eYil, eNo, borcluAdi, alacakliAdi, foyTuru, durum, 
              takipTarihi, icraMudurlugu) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, (
             file_data.get('file_id'),
             file_data.get('klasor'),
             file_data.get('dosyaNo'),
+            file_data.get('eYil'),
+            file_data.get('eNo'),
             file_data.get('borcluAdi'),
             file_data.get('alacakliAdi'),
             file_data.get('foyTuru'),
