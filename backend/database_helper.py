@@ -50,6 +50,7 @@ def create_database_if_not_exists():
             borcMiktari TEXT,
             faizOrani TEXT,
             guncelBorc TEXT,
+            sonOdeme TEXT,
             FOREIGN KEY (file_id) REFERENCES files(file_id)
         );
         """)
@@ -411,101 +412,57 @@ def get_scraping_result_from_db(dosya_no, borclu_adi, sorgu_tipi):
         return None
 
 def process_mernis_data_for_borclu(dosya_no, borclu_adi, mernis_sonuc):
-    """
-    MERNİS verilerinden T.C Kimlik No ve adres bilgilerini çıkarıp borçlunun veritabanı kayıtlarını günceller.
-    
-    Args:
-        dosya_no (str): Dosya numarası
-        borclu_adi (str): Borçlu adı
-        mernis_sonuc (dict): MERNİS sorgusundan gelen sonuç verileri
-    
-    Returns:
-        bool: Başarılı ise True, değilse False
-    """
+    """MERNİS verilerinden TC Kimlik ve adres bilgilerini veritabanına kaydet"""
     logger = get_logger()
     
-    # T.C Kimlik No güncelleme
-    tc_kimlik = ""
-    if isinstance(mernis_sonuc, dict) and "Kimlik Bilgileri" in mernis_sonuc:
-        kimlik_bilgileri = mernis_sonuc["Kimlik Bilgileri"]
-        if isinstance(kimlik_bilgileri, dict) and "T.C Kimlik No" in kimlik_bilgileri:
-            tc_kimlik = kimlik_bilgileri["T.C Kimlik No"]
-    
-    # Adres bilgilerini birleştir
-    adres_str = ""
-    if isinstance(mernis_sonuc, dict) and "Adres Bilgileri" in mernis_sonuc:
-        adres_bilgileri = mernis_sonuc["Adres Bilgileri"]
-        if isinstance(adres_bilgileri, dict):
-            mahalle = adres_bilgileri.get("Mahalle", "").strip()
-            cadde_sokak = adres_bilgileri.get("Cadde/Sokak", "").strip()
-            dis_kapi = adres_bilgileri.get("Dış Kapı No", "").strip()
-            ic_kapi = adres_bilgileri.get("İç Kapı No", "").strip()
-            ilce = adres_bilgileri.get("İlçe", "").strip()
-            il = adres_bilgileri.get("İl", "").strip()
-            
-            # Adres parçalarını birleştir
-            adres_parcalari = []
-            if mahalle:
-                adres_parcalari.append(mahalle)
-            if cadde_sokak:
-                adres_parcalari.append(cadde_sokak)
-            
-            # Kapı numaralarını birleştir
-            kapi_no = ""
-            if dis_kapi and ic_kapi:
-                kapi_no = f"No: {dis_kapi}/{ic_kapi}"
-            elif dis_kapi:
-                kapi_no = f"No: {dis_kapi}"
-            elif ic_kapi:
-                kapi_no = f"No: {ic_kapi}"
-            
-            if kapi_no:
-                adres_parcalari.append(kapi_no)
-            
-            # İl/İlçe bilgisini ekle
-            if ilce and il:
-                adres_parcalari.append(f"{ilce}/{il}")
-            elif ilce:
-                adres_parcalari.append(ilce)
-            elif il:
-                adres_parcalari.append(il)
-            
-            adres_str = " ".join(adres_parcalari)
-    
-    # Veritabanını güncelle (TC Kimlik ve/veya Adres varsa)
-    if tc_kimlik and tc_kimlik.strip() or adres_str and adres_str.strip():
-        try:
+    try:
+        # TC Kimlik ve adres bilgilerini çıkar
+        tc_kimlik = mernis_sonuc.get("Kimlik Bilgileri", {}).get("T.C Kimlik No", "").strip()
+        adres_bilgileri = mernis_sonuc.get("Adres Bilgileri", {})
+        
+        # Adres parçalarını birleştir
+        adres_parcalari = []
+        if adres_bilgileri.get("Mahalle"): adres_parcalari.append(adres_bilgileri["Mahalle"])
+        if adres_bilgileri.get("Cadde/Sokak"): adres_parcalari.append(adres_bilgileri["Cadde/Sokak"])
+        
+        # Kapı numarası
+        dis_kapi = adres_bilgileri.get("Dış Kapı No", "")
+        ic_kapi = adres_bilgileri.get("İç Kapı No", "")
+        if dis_kapi and ic_kapi:
+            adres_parcalari.append(f"No: {ic_kapi}/{dis_kapi}")
+        elif dis_kapi:
+            adres_parcalari.append(f"No: {dis_kapi}")
+        elif ic_kapi:
+            adres_parcalari.append(f"No: {ic_kapi}")
+        
+        # İl/İlçe
+        ilce = adres_bilgileri.get("İlçe", "")
+        il = adres_bilgileri.get("İl", "")
+        if ilce and il:
+            adres_parcalari.append(f"{ilce}/{il}")
+        elif ilce:
+            adres_parcalari.append(ilce)
+        elif il:
+            adres_parcalari.append(il)
+        
+        adres_str = " ".join(adres_parcalari)
+        
+        # Veritabanını güncelle
+        if tc_kimlik or adres_str:
             conn = get_database_connection()
-            if conn:
-                cursor = conn.cursor()
-                cursor.execute("SELECT file_id FROM files WHERE dosyaNo = ?", (dosya_no,))
-                file_result = cursor.fetchone()
-                if file_result:
-                    file_id = file_result['file_id']
-                    borclu_name_only = borclu_adi.split(' - ')[0] if ' - ' in borclu_adi else borclu_adi
-                    
-                    # Hem TC Kimlik hem de Adres güncelle
-                    if tc_kimlik and tc_kimlik.strip() and adres_str and adres_str.strip():
-                        cursor.execute("UPDATE borclular SET tcKimlik = ?, adres = ? WHERE file_id = ? AND ad LIKE ?", 
-                                     (tc_kimlik.strip(), adres_str, file_id, f"%{borclu_name_only}%"))
-                        logger.info(f"Updated tcKimlik and adres for {borclu_adi}: TC={tc_kimlik}, Adres={adres_str}")
-                    elif tc_kimlik and tc_kimlik.strip():
-                        cursor.execute("UPDATE borclular SET tcKimlik = ? WHERE file_id = ? AND ad LIKE ?", 
-                                     (tc_kimlik.strip(), file_id, f"%{borclu_name_only}%"))
-                        logger.info(f"Updated tcKimlik for {borclu_adi} to {tc_kimlik}")
-                    elif adres_str and adres_str.strip():
-                        cursor.execute("UPDATE borclular SET adres = ? WHERE file_id = ? AND ad LIKE ?", 
-                                     (adres_str, file_id, f"%{borclu_name_only}%"))
-                        logger.info(f"Updated adres for {borclu_adi} to {adres_str}")
-                    
-                    conn.commit()
-                conn.close()
-                return True
-        except Exception as e:
-            logger.error(f"Error updating borclu data: {e}")
-            return False
-    
-    return True
+            cursor = conn.cursor()
+            cursor.execute("SELECT file_id FROM files WHERE dosyaNo = ?", (dosya_no,))
+            file_id = cursor.fetchone()['file_id']
+            borclu_name_only = borclu_adi.split(' - ')[0] if ' - ' in borclu_adi else borclu_adi
+            
+            cursor.execute("UPDATE borclular SET tcKimlik = ?, adres = ? WHERE file_id = ? AND ad LIKE ?", 
+                         (tc_kimlik, adres_str, file_id, f"%{borclu_name_only}%"))
+            conn.commit()
+            conn.close()
+            logger.info(f"Updated borclu data for {borclu_adi}")
+            
+    except Exception as e:
+        logger.error(f"Error updating borclu data: {e}")
 
 def save_to_json_simple(data, filename=None):
     """
