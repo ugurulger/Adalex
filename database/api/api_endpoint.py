@@ -394,10 +394,19 @@ def api_sgk_sorgulama(file_id, borclu_id):
         if sorgu_result is None:
             return jsonify({"error": "SGK query data not found"}), 404
         
+        # The data is already in the correct structure from the database
+        sgk_data = sorgu_result["data"]
+        
         response_data = {
             "file_id": int(file_id),
             "borclu_id": borclu_id,  # Keep as string to match frontend expectation
-            "sgkSorguSonucu": sorgu_result["data"],
+            "sskCalisani": sgk_data.get("sskCalisani", {"sonuc": {}}),
+            "bagkurCalisani": sgk_data.get("bagkurCalisani", {"sonuc": {}}),
+            "sskIsYeriBilgisi": sgk_data.get("sskIsYeriBilgisi", {"sonuc": {}}),
+            "kamuCalisani": sgk_data.get("kamuCalisani", {"sonuc": {}}),
+            "kamuEmeklisi": sgk_data.get("kamuEmeklisi", {"sonuc": {}}),
+            "sskEmeklisi": sgk_data.get("sskEmeklisi", {"sonuc": {}}),
+            "bagkurEmeklisi": sgk_data.get("bagkurEmeklisi", {"sonuc": {}}),
             "timestamp": sorgu_result["timestamp"]
         }
         

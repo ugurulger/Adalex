@@ -145,6 +145,18 @@ def perform_sgk_sorgu(driver, current, dosya_no, result_label=None):
         "Bağkur Emeklisi": "pdfDetayTable-bagkur_emekli",
         "SSK İş Yeri Bilgisi": "pdfDetayTable-ssk_is_yeri_bilgileri"
     }
+    
+    # Initialize consolidated SGK data structure
+    consolidated_sgk = {
+        'sskCalisani': {'sonuc': {}},
+        'bagkurCalisani': {'sonuc': {}},
+        'sskIsYeriBilgisi': {'sonuc': {}},
+        'kamuCalisani': {'sonuc': {}},
+        'kamuEmeklisi': {'sonuc': {}},
+        'sskEmeklisi': {'sonuc': {}},
+        'bagkurEmeklisi': {'sonuc': {}}
+    }
+    
     for index, current_item in enumerate(SGK_ITEMS, 1):
         try:
             logger.info(f"{current_item} başlığına tıklanıyor...")
@@ -174,7 +186,23 @@ def perform_sgk_sorgu(driver, current, dosya_no, result_label=None):
             # Tablo verisini çek
             table_id = table_ids[current_item]
             data = extract_data_from_card(driver, current, table_id, result_label)
-            extracted_data[dosya_no][current][current_item] = {"sonuc": data}
+            
+            # Map the data to the correct consolidated field
+            if current_item == 'SSK Çalışanı':
+                consolidated_sgk['sskCalisani'] = {"sonuc": data}
+            elif current_item == 'Bağkur Çalışanı':
+                consolidated_sgk['bagkurCalisani'] = {"sonuc": data}
+            elif current_item == 'SSK İş Yeri Bilgisi':
+                consolidated_sgk['sskIsYeriBilgisi'] = {"sonuc": data}
+            elif current_item == 'Kamu Çalışanı':
+                consolidated_sgk['kamuCalisani'] = {"sonuc": data}
+            elif current_item == 'Kamu Emeklisi':
+                consolidated_sgk['kamuEmeklisi'] = {"sonuc": data}
+            elif current_item == 'SSK Emeklisi':
+                consolidated_sgk['sskEmeklisi'] = {"sonuc": data}
+            elif current_item == 'Bağkur Emeklisi':
+                consolidated_sgk['bagkurEmeklisi'] = {"sonuc": data}
+            
             logger.info(f"Extracted data for '{current_item}': {data}")
 
             logger.info(f"{current_item} için Sorgula butonuna başarıyla tıklandı.")
@@ -186,6 +214,9 @@ def perform_sgk_sorgu(driver, current, dosya_no, result_label=None):
                 result_label.config(text=f"Hata: {current_item} için tıklama başarısız.")
             continue
 
+    # Save consolidated SGK data instead of individual sub-queries
+    extracted_data[dosya_no][current]['SGK'] = consolidated_sgk
+    
     save_scraping_data_to_db_and_json(extracted_data, JSON_FILE)
-    logger.info("[SGK] Data to be saved:\n%s", json.dumps(extracted_data, ensure_ascii=False, indent=2))
+    logger.info("[SGK] Consolidated data to be saved:\n%s", json.dumps(extracted_data, ensure_ascii=False, indent=2))
     return True, extracted_data

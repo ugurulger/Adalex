@@ -27,7 +27,7 @@ cleanup() {
     kill_port 5001
     kill_port 3000
     
-    # Additional cleanup
+    # Additional cleanup (preserve .next cache for faster restarts)
     echo "🧹 Cleaning up any remaining processes..."
     pkill -f "python api_endpoint.py" 2>/dev/null
     pkill -f "next dev" 2>/dev/null
@@ -63,7 +63,14 @@ sleep 3
 # Start Next.js in background
 echo "🔧 Starting Next.js on port 3000..."
 cd new-ui
-npm run dev &
+# Ensure dependencies are installed (only if missing)
+if [ ! -d "node_modules" ]; then
+    echo "📦 Installing dependencies..."
+    npm install
+fi
+# Start Next.js with optimized flags for faster startup
+echo "⚡ Starting Next.js with optimized settings..."
+NODE_ENV=development npm run dev:fast &
 NEXTJS_PID=$!
 cd ..
 

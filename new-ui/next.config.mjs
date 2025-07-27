@@ -9,6 +9,22 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
+  // Performance optimizations for faster development
+  experimental: {
+    turbo: {
+      rules: {
+        '*.svg': {
+          loaders: ['@svgr/webpack'],
+          as: '*.js',
+        },
+      },
+    },
+  },
+  // Faster compilation
+  swcMinify: true,
+  compiler: {
+    removeConsole: false, // Keep console logs in development
+  },
   env: {
     FLASK_API_URL: process.env.FLASK_API_URL || 'http://localhost:5001',
   },

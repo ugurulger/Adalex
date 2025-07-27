@@ -53,7 +53,6 @@ export default function SgkSorgulamaModal({
   onUyapToggle,
   isConnecting = false,
 }: SgkSorgulamaModalProps) {
-  const [isQuerying, setIsQuerying] = useState(false)
   const [lastQueryTime, setLastQueryTime] = useState<Date | null>(null)
   const [showGreenBackground, setShowGreenBackground] = useState(false)
   const [queryData, setQueryData] = useState<SgkSorgulamaData | null>(null)
@@ -102,15 +101,66 @@ export default function SgkSorgulamaModal({
   const bagkurCalisani = queryData?.bagkurCalisani?.sonuc || {}
   const sskIsYeriBilgisi = queryData?.sskIsYeriBilgisi?.sonuc || []
 
-  const handleSorgula = () => {
-    // Disabled for now - will be implemented later with proper database integration
-    console.log("UYAP'ta Sorgula button clicked - functionality disabled for now")
+  const handleSorgula = async () => {
+    if (!dosyaNo || !borcluId) {
+      console.error('Dosya No veya Borçlu ID eksik')
+      return
+    }
+
+    if (uyapStatus !== "Bağlı") {
+      console.error('UYAP bağlantısı yok')
+      return
+    }
+
+    setIsLoading(true)
+    try {
+      const response = await fetch('/api/uyap/trigger-sorgulama', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          dosya_no: dosyaNo,
+          sorgu_tipi: 'SGK',
+          borclu_id: borcluId,
+        }),
+      })
+
+      const result = await response.json()
+
+      if (result.success) {
+        // Refresh the data
+        await fetchCurrentData()
+      } else {
+        console.error('Sorgulama hatası:', result.message)
+        // Show user-friendly error message
+        alert(`Sorgulama başarısız: ${result.message}`)
+      }
+    } catch (error) {
+      console.error('Sorgulama sırasında hata:', error)
+      
+      // Handle specific connection errors
+      let errorMessage = 'Bilinmeyen bir hata oluştu'
+      
+      if (error instanceof Error) {
+        if (error.message.includes('Connection refused') || error.message.includes('Max retries exceeded')) {
+          errorMessage = 'UYAP bağlantısı kesildi. Lütfen UYAP\'ı yeniden bağlayın ve tekrar deneyin.'
+        } else if (error.message.includes('fetch failed')) {
+          errorMessage = 'Sunucu bağlantısı kurulamadı. Lütfen internet bağlantınızı kontrol edin.'
+        } else {
+          errorMessage = error.message
+        }
+      }
+      
+      alert(`Sorgulama hatası: ${errorMessage}`)
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   // Clean up timers when modal closes
   useEffect(() => {
     if (!isOpen) {
-      setIsQuerying(false)
       setShowGreenBackground(false)
     }
   }, [isOpen])
@@ -197,97 +247,13 @@ export default function SgkSorgulamaModal({
             <>
               {/* SSK Çalışanı Bilgileri */}
               <Card>
-            <CardHeader className="pb-4">
-              <CardTitle className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                👷 SSK Çalışanı Bilgileri
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {Object.keys(sskCalisani).length > 0 ? (
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow className="bg-gray-50">
-                        <TableHead className="font-semibold text-gray-700 text-xs w-2/5">Bilgi Türü</TableHead>
-                        <TableHead className="font-semibold text-gray-700 text-xs w-3/5">Değer</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {Object.entries(sskCalisani).map(([key, value]) => (
-                        <TableRow key={key} className="hover:bg-gray-50">
-                          <TableCell className="font-medium text-xs text-gray-700 border-r border-gray-200 py-1">
-                            {key}
-                          </TableCell>
-                          <TableCell className="text-xs text-gray-900 py-1">
-                            {value || <span className="text-gray-400 italic">Bilgi Yok</span>}
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              ) : (
-                <div className="text-center text-gray-500 py-4">
-                  <span className="text-sm italic">SSK çalışanı bilgisi bulunamadı</span>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Bağkur Çalışanı Bilgileri */}
-          <Card>
-            <CardHeader className="pb-4">
-              <CardTitle className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                🏪 Bağkur Çalışanı Bilgileri
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {Object.keys(bagkurCalisani).length > 0 ? (
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow className="bg-gray-50">
-                        <TableHead className="font-semibold text-gray-700 text-xs w-2/5">Bilgi Türü</TableHead>
-                        <TableHead className="font-semibold text-gray-700 text-xs w-3/5">Değer</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {Object.entries(bagkurCalisani).map(([key, value]) => (
-                        <TableRow key={key} className="hover:bg-gray-50">
-                          <TableCell className="font-medium text-xs text-gray-700 border-r border-gray-200 py-1">
-                            {key}
-                          </TableCell>
-                          <TableCell className="text-xs text-gray-900 py-1">
-                            {value || <span className="text-gray-400 italic">Bilgi Yok</span>}
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              ) : (
-                <div className="text-center text-gray-500 py-4">
-                  <span className="text-sm italic">Bağkur çalışanı bilgisi bulunamadı</span>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* SSK İş Yeri Bilgileri */}
-          <Card>
-            <CardHeader className="pb-4">
-              <CardTitle className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                🏭 SSK İş Yeri Bilgileri
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              {Array.isArray(sskIsYeriBilgisi) && sskIsYeriBilgisi.length > 0 ? (
-                sskIsYeriBilgisi.map((item, index) => (
-                  <div key={index} className="border border-gray-200 rounded-lg p-4">
-                    <h4 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                      {item?.type === "workplace" ? "🏢" : "👤"}
-                      {item?.title || `Kayıt ${index + 1}`}
-                    </h4>
+                <CardHeader className="pb-4">
+                  <CardTitle className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                    👷 SSK Çalışanı Bilgileri
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {Object.keys(sskCalisani).length > 0 ? (
                     <div className="overflow-x-auto">
                       <Table>
                         <TableHeader>
@@ -297,36 +263,120 @@ export default function SgkSorgulamaModal({
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {item?.data && typeof item.data === "object" ? (
-                            Object.entries(item.data).map(([key, value]) => (
-                              <TableRow key={key} className="hover:bg-gray-50">
-                                <TableCell className="font-medium text-xs text-gray-700 border-r border-gray-200 py-1">
-                                  {key}
-                                </TableCell>
-                                <TableCell className="text-xs text-gray-900 py-1">
-                                  {value || <span className="text-gray-400 italic">Bilgi Yok</span>}
-                                </TableCell>
-                              </TableRow>
-                            ))
-                          ) : (
-                            <TableRow>
-                              <TableCell colSpan={2} className="text-center text-gray-500 py-4">
-                                <span className="text-sm italic">Bu kayıt için veri bulunamadı</span>
+                          {Object.entries(sskCalisani).map(([key, value]) => (
+                            <TableRow key={key} className="hover:bg-gray-50">
+                              <TableCell className="font-medium text-xs text-gray-700 border-r border-gray-200 py-1">
+                                {key}
+                              </TableCell>
+                              <TableCell className="text-xs text-gray-900 py-1">
+                                {value || <span className="text-gray-400 italic">Bilgi Yok</span>}
                               </TableCell>
                             </TableRow>
-                          )}
+                          ))}
                         </TableBody>
                       </Table>
                     </div>
-                  </div>
-                ))
-              ) : (
-                <div className="text-center text-gray-500 py-4">
-                  <span className="text-sm italic">İş yeri bilgisi bulunamadı</span>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                  ) : (
+                    <div className="text-center text-gray-500 py-4">
+                      <span className="text-sm italic">SSK çalışanı bilgisi bulunamadı</span>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Bağkur Çalışanı Bilgileri */}
+              <Card>
+                <CardHeader className="pb-4">
+                  <CardTitle className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                    🏪 Bağkur Çalışanı Bilgileri
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {Object.keys(bagkurCalisani).length > 0 ? (
+                    <div className="overflow-x-auto">
+                      <Table>
+                        <TableHeader>
+                          <TableRow className="bg-gray-50">
+                            <TableHead className="font-semibold text-gray-700 text-xs w-2/5">Bilgi Türü</TableHead>
+                            <TableHead className="font-semibold text-gray-700 text-xs w-3/5">Değer</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {Object.entries(bagkurCalisani).map(([key, value]) => (
+                            <TableRow key={key} className="hover:bg-gray-50">
+                              <TableCell className="font-medium text-xs text-gray-700 border-r border-gray-200 py-1">
+                                {key}
+                              </TableCell>
+                              <TableCell className="text-xs text-gray-900 py-1">
+                                {value || <span className="text-gray-400 italic">Bilgi Yok</span>}
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  ) : (
+                    <div className="text-center text-gray-500 py-4">
+                      <span className="text-sm italic">Bağkur çalışanı bilgisi bulunamadı</span>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* SSK İş Yeri Bilgileri */}
+              <Card>
+                <CardHeader className="pb-4">
+                  <CardTitle className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                    🏭 SSK İş Yeri Bilgileri
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  {sskIsYeriBilgisi && typeof sskIsYeriBilgisi === "object" && Object.keys(sskIsYeriBilgisi).length > 0 ? (
+                    Object.entries(sskIsYeriBilgisi).map(([sectionKey, sectionData], index) => (
+                      <div key={index} className="border border-gray-200 rounded-lg p-4">
+                        <h4 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                          {sectionKey === "İŞ YERİ BİLGİLERİ" ? "🏢" : "👤"}
+                          {sectionKey}
+                        </h4>
+                        <div className="overflow-x-auto">
+                          <Table>
+                            <TableHeader>
+                              <TableRow className="bg-gray-50">
+                                <TableHead className="font-semibold text-gray-700 text-xs w-2/5">Bilgi Türü</TableHead>
+                                <TableHead className="font-semibold text-gray-700 text-xs w-3/5">Değer</TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {sectionData && typeof sectionData === "object" ? (
+                                Object.entries(sectionData).map(([key, value]) => (
+                                  <TableRow key={key} className="hover:bg-gray-50">
+                                    <TableCell className="font-medium text-xs text-gray-700 border-r border-gray-200 py-1">
+                                      {key}
+                                    </TableCell>
+                                    <TableCell className="text-xs text-gray-900 py-1">
+                                      {String(value) || <span className="text-gray-400 italic">Bilgi Yok</span>}
+                                    </TableCell>
+                                  </TableRow>
+                                ))
+                              ) : (
+                                <TableRow>
+                                  <TableCell colSpan={2} className="text-center text-gray-500 py-4">
+                                    <span className="text-sm italic">Bu kayıt için veri bulunamadı</span>
+                                  </TableCell>
+                                </TableRow>
+                              )}
+                            </TableBody>
+                          </Table>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-center text-gray-500 py-4">
+                      <span className="text-sm italic">İş yeri bilgisi bulunamadı</span>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
             </>
           )}
         </div>
@@ -345,19 +395,19 @@ export default function SgkSorgulamaModal({
             </div>
             <Button
               onClick={handleSorgula}
-              disabled={isQuerying}
+              disabled={isLoading || uyapStatus !== "Bağlı"}
               size="sm"
               className={cn(
                 "h-7 px-3 text-xs transition-all duration-300",
-                isQuerying
-                  ? "bg-blue-600 hover:bg-blue-700 text-white cursor-not-allowed"
-                  : "bg-orange-600 hover:bg-orange-700 text-white",
+                uyapStatus === "Bağlı" && !isLoading
+                  ? "bg-orange-600 hover:bg-orange-700 text-white"
+                  : "bg-gray-400 text-white cursor-not-allowed"
               )}
             >
-              {isQuerying ? (
+              {isLoading ? (
                 <div className="flex items-center gap-1">
                   <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white"></div>
-                  <span>UYAP'ta Sorgulanıyor</span>
+                  <span>Sorgulanıyor...</span>
                 </div>
               ) : (
                 <>
