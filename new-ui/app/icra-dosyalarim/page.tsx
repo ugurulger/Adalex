@@ -65,7 +65,18 @@ export default function IcraDosyalarimPage() {
       }
       const data: IcraDosyasiListItem[] = await response.json()
       setAllData(data)
-      setFilteredData(data)
+      
+      // Apply default sorting by klasor in descending order
+      const sortedData = [...data].sort((a, b) => {
+        const aNum = parseInt(a.klasor) || 0
+        const bNum = parseInt(b.klasor) || 0
+        return bNum - aNum // Descending order
+      })
+      setFilteredData(sortedData)
+      
+      // Set default sort state
+      setSortField("klasor")
+      setSortDirection("desc")
     } catch (error) {
       console.error("Error fetching data:", error)
       setError("Veri yüklenirken hata oluştu. Lütfen tekrar deneyin.")
@@ -102,9 +113,23 @@ export default function IcraDosyalarimPage() {
     setSortDirection(direction)
 
     const sorted = [...filteredData].sort((a, b) => {
-      const aValue = a[field as keyof typeof a]
-      const bValue = b[field as keyof typeof b]
+      let aValue = a[field as keyof typeof a]
+      let bValue = b[field as keyof typeof b]
 
+      // Special handling for numeric fields
+      if (field === "klasor" || field === "dosyaNo") {
+        // Convert to numbers for numeric sorting
+        const aNum = parseInt(aValue) || 0
+        const bNum = parseInt(bValue) || 0
+        
+        if (direction === "asc") {
+          return aNum - bNum
+        } else {
+          return bNum - aNum
+        }
+      }
+
+      // Default string comparison for other fields
       if (direction === "asc") {
         return aValue > bValue ? 1 : -1
       } else {
