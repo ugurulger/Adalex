@@ -120,11 +120,11 @@ export default function DosyaDetayiTab({
           </div>
           <div>
             <Label className="text-xs font-bold text-gray-600">Takip Türü</Label>
-            <p className="text-gray-900 text-xs">{selectedCase.takipTuru || "İlamsız Takip"}</p>
+            <p className="text-gray-900 text-xs">{selectedCase.takipTuru}</p>
           </div>
           <div>
             <Label className="text-xs font-bold text-gray-600">Takip Yolu</Label>
-            <p className="text-gray-900 text-xs">{selectedCase.takipYolu || "Genel Haciz"}</p>
+            <p className="text-gray-900 text-xs">{selectedCase.takipYolu}</p>
           </div>
           <div>
             <Label className="text-xs font-bold text-gray-600">Takip Şekli</Label>
