@@ -13,6 +13,8 @@
 
     //ilgili dosyaya girildiginde gosterilecek olan veriler(detaylar).
     "takipSekli": "ÖRNEK: 7 İlamsız Takiplerde Ödeme Emri - Eski No: 49", // extract row*.Dosya Bilgileri.Şekli  bilgisi from extracted_data_20250315.json
+    "takipYolu": "ÖRNEK: Genel Haciz Yoluyla Takip", // extract row*.Dosya Bilgileri.Yolu  bilgisi from extracted_data_20250315.json
+    "takipTuru": "ÖRNEK: İlamsız Takip", // extract row*.Dosya Bilgileri.Türü  bilgisi from extracted_data_20250315.json
 
     "alacakliVekili": "Av. Ali Kaya", // extract row*.Taraf Bilgisi.Taraf*.Vekil  (row*.Taraf Bilgisi.Taraf*.Rol= 'Alacaklı' olanlanin ) bilgisi from extracted_data_20250315.json
     "borcMiktari": "75.500,00 TL", // TBD - Simdilik bos birak.

@@ -46,6 +46,8 @@ def create_database_if_not_exists():
         CREATE TABLE IF NOT EXISTS file_details (
             file_id TEXT PRIMARY KEY,
             takipSekli TEXT,
+            takipYolu TEXT,
+            takipTuru TEXT,
             alacakliVekili TEXT,
             borcMiktari TEXT,
             faizOrani TEXT,
@@ -301,11 +303,13 @@ def save_file_data_to_db(file_data):
         # Insert or update file details in file_details table
         cursor.execute("""
             INSERT OR REPLACE INTO file_details 
-            (file_id, takipSekli, alacakliVekili, borcMiktari, faizOrani, guncelBorc) 
-            VALUES (?, ?, ?, ?, ?, ?)
+            (file_id, takipSekli, takipYolu, takipTuru, alacakliVekili, borcMiktari, faizOrani, guncelBorc) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         """, (
             file_data.get('file_id'),
             file_data.get('takipSekli'),
+            file_data.get('takipYolu'),
+            file_data.get('takipTuru'),
             file_data.get('alacakliVekili'),
             file_data.get('borcMiktari'),
             file_data.get('faizOrani'),

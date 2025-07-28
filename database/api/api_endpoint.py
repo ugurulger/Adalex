@@ -50,6 +50,8 @@ def create_database_if_not_exists():
         CREATE TABLE IF NOT EXISTS file_details (
             file_id TEXT PRIMARY KEY,
             takipSekli TEXT,
+            takipYolu TEXT,
+            takipTuru TEXT,
             alacakliVekili TEXT,
             borcMiktari TEXT,
             faizOrani TEXT,
@@ -257,6 +259,8 @@ def api_icra_dosya_detail(file_id):
             "takipTarihi": file_dict['takipTarihi'],
             "icraMudurlugu": file_dict['icraMudurlugu'],
             "takipSekli": file_details.get('takipSekli', '') if file_details else '',
+            "takipYolu": file_details.get('takipYolu', '') if file_details else '',
+            "takipTuru": file_details.get('takipTuru', '') if file_details else '',
             "alacakliVekili": file_details.get('alacakliVekili', '') if file_details else '',
             "borcMiktari": file_details.get('borcMiktari', '') if file_details else '',
             "faizOrani": file_details.get('faizOrani', '') if file_details else '',

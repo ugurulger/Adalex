@@ -98,6 +98,8 @@ def extract_data_from_table(driver, ui_callback=None):
                         "takipTarihi": cells[4].text.strip(),
                         "icraMudurlugu": icra_mudurlugu,  # Correct İcra Müdürlüğü from first column
                         "takipSekli": "",
+                        "takipYolu": "",
+                        "takipTuru": "",
                         "alacakliVekili": "",
                         "borcMiktari": "",
                         "faizOrani": "",
@@ -201,9 +203,11 @@ def extract_data_from_table(driver, ui_callback=None):
                             if sekli_label == "Şekli":
                                 dosya_bilgileri["Şekli"] = driver.find_element(By.XPATH, sekli_value_xpath).text.strip() if driver.find_elements(By.XPATH, sekli_value_xpath) else "Not found"
 
-                        # Update takipSekli from Dosya Bilgileri
+                        # Update takipSekli, takipYolu, and takipTuru from Dosya Bilgileri
                         if dosya_bilgileri["Türü"] != "Not found":
-                            file_data["takipSekli"] = f"{dosya_bilgileri['Türü']} - {dosya_bilgileri['Yolu']} - {dosya_bilgileri['Şekli']}"
+                            file_data["takipTuru"] = dosya_bilgileri["Türü"]
+                            file_data["takipYolu"] = dosya_bilgileri["Yolu"]
+                            file_data["takipSekli"] = dosya_bilgileri["Şekli"]
                         
                         logger.info(f"Dosya Bilgileri extracted for Row {row_index + 1} on Page {page}: {dosya_bilgileri}")
                     else:
@@ -420,6 +424,8 @@ def extract_data_from_table(driver, ui_callback=None):
             print(f"  takipTarihi: {file_data['takipTarihi']}")
             print(f"  icraMudurlugu: {file_data['icraMudurlugu']}")
             print(f"  takipSekli: {file_data['takipSekli']}")
+            print(f"  takipYolu: {file_data['takipYolu']}")
+            print(f"  takipTuru: {file_data['takipTuru']}")
             print(f"  alacakliVekili: {file_data['alacakliVekili']}")
             print(f"  borcMiktari: {file_data['borcMiktari']}")
             print(f"  faizOrani: {file_data['faizOrani']}")

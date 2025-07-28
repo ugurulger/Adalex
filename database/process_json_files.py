@@ -105,6 +105,8 @@ def process_main_rows(extracted):
         out_details.append({
             "file_id": file_id,
             "takipSekli": rec.get("Dosya Bilgileri", {}).get("Şekli", ""),
+            "takipYolu": rec.get("Dosya Bilgileri", {}).get("Yolu", ""),
+            "takipTuru": rec.get("Dosya Bilgileri", {}).get("Türü", ""),
             "alacakliVekili": alacakli.get("Vekil", ""),
             "borcMiktari": dosya_hesabi.get("Takipte Kesinleşen Miktar", ""),
             "faizOrani": "",    # TBD

@@ -26,6 +26,8 @@ def create_tables(conn):
     CREATE TABLE IF NOT EXISTS file_details (
         file_id TEXT PRIMARY KEY,
         takipSekli TEXT,
+        takipYolu TEXT,
+        takipTuru TEXT,
         alacakliVekili TEXT,
         borcMiktari TEXT,
         faizOrani TEXT,
@@ -110,13 +112,15 @@ def upsert_files(conn, records):
 def upsert_file_details(conn, records):
     insert_sql = """
     INSERT INTO file_details (
-        file_id, takipSekli, alacakliVekili,
+        file_id, takipSekli, takipYolu, takipTuru, alacakliVekili,
         borcMiktari, faizOrani, guncelBorc, sonOdeme
-    ) VALUES (?, ?, ?, ?, ?, ?, ?);
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
     """
     update_sql = """
     UPDATE file_details SET
         takipSekli = ?,
+        takipYolu = ?,
+        takipTuru = ?,
         alacakliVekili = ?,
         borcMiktari = ?,
         faizOrani = ?,
@@ -133,7 +137,7 @@ def upsert_file_details(conn, records):
         exists = cur.fetchone()
         if exists:
             conn.execute(update_sql, (
-                rec['takipSekli'], rec['alacakliVekili'],
+                rec['takipSekli'], rec['takipYolu'], rec['takipTuru'], rec['alacakliVekili'],
                 rec['borcMiktari'], rec['faizOrani'],
                 rec['guncelBorc'], rec['sonOdeme'],
                 rec['file_id']
@@ -141,7 +145,7 @@ def upsert_file_details(conn, records):
         else:
             try:
                 conn.execute(insert_sql, (
-                    rec['file_id'], rec['takipSekli'], rec['alacakliVekili'],
+                    rec['file_id'], rec['takipSekli'], rec['takipYolu'], rec['takipTuru'], rec['alacakliVekili'],
                     rec['borcMiktari'], rec['faizOrani'],
                     rec['guncelBorc'], rec['sonOdeme']
                 ))

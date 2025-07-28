@@ -37,6 +37,8 @@ export interface IcraDosyasiDetay {
   takipTarihi: string
   icraMudurlugu: string
   takipSekli: string
+  takipYolu: string
+  takipTuru: string
   alacakliVekili: string
   borcMiktari: string
   faizOrani: string
