@@ -113,10 +113,14 @@ export default function DosyaDetayiTab({
           📋 Genel Dosya Bilgileri
           <Badge className="ml-2 bg-blue-100 text-blue-800 text-xs">UYAP Entegre</Badge>
         </h3>
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-2 text-xs">
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-2 text-xs">
           <div>
             <Label className="text-xs font-bold text-gray-600">Dosya Türü</Label>
             <p className="text-gray-900 font-medium text-xs">{selectedCase.foyTuru}</p>
+          </div>
+          <div>
+            <Label className="text-xs font-bold text-gray-600">Takip Türü</Label>
+            <p className="text-gray-900 text-xs">{selectedCase.takipTuru || "İlamsız Takip"}</p>
           </div>
           <div>
             <Label className="text-xs font-bold text-gray-600">Takip Yolu</Label>
