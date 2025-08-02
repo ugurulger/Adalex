@@ -790,7 +790,7 @@ def trigger_sorgulama():
         import os
         sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', 'backend'))
         
-        from sorgulama_common import perform_sorgulama
+        from scrappers.queries.sorgulama_common import perform_sorgulama
         
         # Run the sorgulama
         perform_sorgulama(driver, dosya_no, selected_options)

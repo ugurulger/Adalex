@@ -26,6 +26,9 @@ export async function POST(request: NextRequest) {
       case 'query':
         endpoint = '/api/uyap/query';
         break;
+      case 'trigger-sorgulama':
+        endpoint = '/api/uyap/trigger-sorgulama';
+        break;
       default:
         return NextResponse.json(
           { error: 'Invalid action' },
