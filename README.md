@@ -11,7 +11,7 @@ Adalex/
 │   ├── api_endpoint.py      # Flask API sunucusu
 │   ├── requirements.txt     # Python bağımlılıkları
 │   └── app.py              # Eski Flask uygulaması
-├── new-ui/                  # Next.js frontend
+├── frontend/                  # Next.js frontend
 │   ├── app/                # Next.js 13+ app router
 │   ├── components/         # UI bileşenleri
 │   └── package.json        # Node.js bağımlılıkları
@@ -38,7 +38,7 @@ pip install -r requirements.txt
 ### 3. Frontend Kurulumu
 
 ```bash
-cd new-ui
+cd frontend
 npm install
 # veya
 pnpm install
@@ -62,7 +62,7 @@ python api_endpoint.py
 
 **Terminal 2 - Next.js Frontend:**
 ```bash
-cd new-ui
+cd frontend
 npm run dev
 ```
 

@@ -62,7 +62,7 @@ sleep 3
 
 # Start Next.js in background
 echo "🔧 Starting Next.js on port 3000..."
-cd new-ui
+cd frontend
 # Ensure dependencies are installed (only if missing)
 if [ ! -d "node_modules" ]; then
     echo "📦 Installing dependencies..."
