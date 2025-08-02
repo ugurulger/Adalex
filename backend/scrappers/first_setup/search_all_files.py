@@ -1,4 +1,12 @@
-from ..queries.sorgulama_common import get_logger, click_element_merged
+import sys
+import os
+
+# Add backend directory to Python path for imports
+backend_dir = os.path.join(os.path.dirname(__file__), '..', '..')
+if backend_dir not in sys.path:
+    sys.path.insert(0, backend_dir)
+
+from scrappers.queries.sorgulama_common import get_logger, click_element_merged
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC

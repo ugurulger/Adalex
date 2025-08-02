@@ -1,4 +1,11 @@
 import logging, time, os, json, inspect
+import sys
+
+# Add backend directory to Python path for imports
+backend_dir = os.path.join(os.path.dirname(__file__), '..', '..')
+if backend_dir not in sys.path:
+    sys.path.insert(0, backend_dir)
+
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
@@ -316,31 +323,31 @@ def perform_sorgulama(driver, dosya_no, selected_options, result_label=None):
                 if enabled:
                     try:
                         if opt == "EGM" or opt == "EGM-TNB":
-                            from egm_sorgu import perform_egm_sorgu; perform_egm_sorgu(driver, current, dosya_no, result_label)
+                            from scrappers.queries.egm_sorgu import perform_egm_sorgu; perform_egm_sorgu(driver, current, dosya_no, result_label)
                         elif opt == "Banka":
-                            from banka_sorgu import perform_banka_sorgu; perform_banka_sorgu(driver, current, dosya_no, result_label)
+                            from scrappers.queries.banka_sorgu import perform_banka_sorgu; perform_banka_sorgu(driver, current, dosya_no, result_label)
                         elif opt == "TAKBİS":
-                            from takbis_sorgu import perform_takbis_sorgu; perform_takbis_sorgu(driver, current, dosya_no, result_label)
+                            from scrappers.queries.takbis_sorgu import perform_takbis_sorgu; perform_takbis_sorgu(driver, current, dosya_no, result_label)
                         elif opt == "SGK":
                             # GEÇİCİ: sgk_sorgu2.py'den yeni fonksiyonu test etmek için
-                            from sgk_sorgu2 import perform_sgk_sorgu
+                            from scrappers.queries.sgk_sorgu2 import perform_sgk_sorgu
                             perform_sgk_sorgu(driver, current, dosya_no, result_label)
                         elif opt == "İcra Dosyası":
-                            from icra_dosyasi_sorgu import perform_icra_dosyasi_sorgu; perform_icra_dosyasi_sorgu(driver, current, dosya_no, result_label)
+                            from scrappers.queries.icra_dosyasi_sorgu import perform_icra_dosyasi_sorgu; perform_icra_dosyasi_sorgu(driver, current, dosya_no, result_label)
                         elif opt == "MERNİS":
-                            from mernis_sorgu import perform_mernis_sorgu; perform_mernis_sorgu(driver, current, dosya_no, result_label)
+                            from scrappers.queries.mernis_sorgu import perform_mernis_sorgu; perform_mernis_sorgu(driver, current, dosya_no, result_label)
                         elif opt == "İSKİ":
-                            from iski_sorgu import perform_iski_sorgu; perform_iski_sorgu(driver, current, dosya_no, result_label)
+                            from scrappers.queries.iski_sorgu import perform_iski_sorgu; perform_iski_sorgu(driver, current, dosya_no, result_label)
                         elif opt == "GİB":
-                            from gib_sorgu import perform_gib_sorgu; perform_gib_sorgu(driver, current, dosya_no, result_label)
+                            from scrappers.queries.gib_sorgu import perform_gib_sorgu; perform_gib_sorgu(driver, current, dosya_no, result_label)
                         elif opt == "GSM":
-                            from gsm_sorgu import perform_gsm_sorgu; perform_gsm_sorgu(driver, current, dosya_no, result_label)
+                            from scrappers.queries.gsm_sorgu import perform_gsm_sorgu; perform_gsm_sorgu(driver, current, dosya_no, result_label)
                         elif opt == "Dış İşleri":
-                            from dis_isleri_sorgu import perform_dis_isleri_sorgu; perform_dis_isleri_sorgu(driver, current, dosya_no, result_label)
+                            from scrappers.queries.dis_isleri_sorgu import perform_dis_isleri_sorgu; perform_dis_isleri_sorgu(driver, current, dosya_no, result_label)
                         elif opt == "Posta Çeki":
-                            from posta_ceki_sorgu import perform_posta_ceki_sorgu; perform_posta_ceki_sorgu(driver, current, dosya_no, result_label)
+                            from scrappers.queries.posta_ceki_sorgu import perform_posta_ceki_sorgu; perform_posta_ceki_sorgu(driver, current, dosya_no, result_label)
                         elif opt == "SGK Haciz":
-                            from sgk_haciz_sorgu import perform_sgk_haciz_sorgu; perform_sgk_haciz_sorgu(driver, current, dosya_no, result_label)
+                            from scrappers.queries.sgk_haciz_sorgu import perform_sgk_haciz_sorgu; perform_sgk_haciz_sorgu(driver, current, dosya_no, result_label)
                     except Exception as ex:
                         logger.error(f"Failed to process {opt} for {current}: {ex}")
             if index < len(items)-1:

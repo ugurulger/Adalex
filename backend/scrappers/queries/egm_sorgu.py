@@ -2,12 +2,19 @@ import logging
 import time
 import os
 import json
+import sys
+
+# Add backend directory to Python path for imports
+backend_dir = os.path.join(os.path.dirname(__file__), '..', '..')
+if backend_dir not in sys.path:
+    sys.path.insert(0, backend_dir)
+
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException, StaleElementReferenceException, ElementNotInteractableException
-from ..sorgulama_common import click_element_merged, save_to_json, get_logger, check_result_or_popup, DESKTOP_PATH
-from ...services.database_helper import save_scraping_data_to_db_and_json
+from scrappers.queries.sorgulama_common import click_element_merged, save_to_json, get_logger, check_result_or_popup, DESKTOP_PATH
+from services.database_helper import save_scraping_data_to_db_and_json
 
 # Constants
 TIMEOUT = 15
