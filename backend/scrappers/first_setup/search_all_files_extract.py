@@ -14,7 +14,7 @@ backend_dir = os.path.join(os.path.dirname(__file__), '..', '..')
 if backend_dir not in sys.path:
     sys.path.insert(0, backend_dir)
 
-from services.database_helper import save_extract_data_to_db, save_to_json_simple
+from services.database_writer import save_extract_data_to_db, save_to_json_simple
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)

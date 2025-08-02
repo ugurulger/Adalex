@@ -11,7 +11,7 @@ from datetime import datetime
 # Add backend directory to path
 sys.path.append(os.path.join(os.path.dirname(__file__), 'backend'))
 
-from database_helper import get_database_connection
+from backend.services.database_writer import get_database_connection
 
 def test_search_all_files_extract_integration():
     """Test that search_all_files_extract.py data can be saved and retrieved from database"""
@@ -81,7 +81,7 @@ def test_search_all_files_extract_integration():
     
     try:
         # Import the database helper function
-        from database_helper import save_scraping_data_to_db_and_json
+        from backend.services.database_writer import save_scraping_data_to_db_and_json
         
         print(f"📝 Saving sample data to database and {test_output_file}...")
         

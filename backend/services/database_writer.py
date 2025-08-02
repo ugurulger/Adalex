@@ -9,7 +9,7 @@ DB_PATH = os.path.join(os.path.dirname(__file__), '..', '..', 'database', 'files
 
 def get_logger():
     """Get logger for database operations"""
-    logger = logging.getLogger('database_helper')
+    logger = logging.getLogger('database_writer')
     if not logger.handlers:
         handler = logging.StreamHandler()
         formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')

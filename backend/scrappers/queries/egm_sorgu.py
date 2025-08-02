@@ -14,7 +14,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException, StaleElementReferenceException, ElementNotInteractableException
 from scrappers.queries.sorgulama_common import click_element_merged, save_to_json, get_logger, check_result_or_popup, DESKTOP_PATH
-from services.database_helper import save_scraping_data_to_db_and_json
+from services.database_writer import save_scraping_data_to_db_and_json
 
 # Constants
 TIMEOUT = 15

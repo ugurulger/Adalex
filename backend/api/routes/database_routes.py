@@ -8,7 +8,7 @@ from datetime import datetime
 import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
-from services.database_service import (
+from services.database_reader import (
     get_all_files, get_file_by_id, get_file_details_by_id,
     get_borclular_by_file_id, get_borclu_sorgular_by_borclu_id,
     get_borclu_sorgu_by_tipi, get_file_dict

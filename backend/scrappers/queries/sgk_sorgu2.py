@@ -18,7 +18,7 @@ from selenium.common.exceptions import (
     NoSuchElementException
 )
 from scrappers.queries.sorgulama_common import handle_popup_if_present, click_element_merged, save_to_json
-from services.database_helper import save_scraping_data_to_db_and_json
+from services.database_writer import save_scraping_data_to_db_and_json
 
 # Global Constants
 TIMEOUT = 20

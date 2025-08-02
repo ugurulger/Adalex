@@ -20,7 +20,7 @@ from selenium.common.exceptions import (
     NoSuchFrameException
 )
 from scrappers.queries.sorgulama_common import handle_popup_if_present, click_element_merged, save_to_json, get_logger, check_result_or_popup
-from services.database_helper import save_scraping_data_to_db_and_json
+from services.database_writer import save_scraping_data_to_db_and_json
 
 # Constants
 TIMEOUT = 15
