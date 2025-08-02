@@ -51,8 +51,8 @@ find $HOME/.wdm/drivers/chromedriver -type f -name 'chromedriver*' -exec chmod +
 
 # Start Flask API in background
 echo "🔧 Starting Flask API on port 5001..."
-cd database/api
-source venv/bin/activate
+cd backend/api
+source ../venv/bin/activate
 FLASK_RUN_PORT=5001 python api_endpoint.py &
 FLASK_PID=$!
 cd ../..

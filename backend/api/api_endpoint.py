@@ -7,8 +7,8 @@ import json
 import threading
 from datetime import datetime
 
-# Add backend folder to path to import UYAP functions
-sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', 'backend'))
+# Add current directory to path to import backend functions
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 app = Flask(__name__)
 
@@ -17,7 +17,8 @@ uyap_sessions = {}
 uyap_session_lock = threading.Lock()
 CORS(app)  # Enable CORS for cross-origin requests
 
-DB_PATH = os.path.join(os.path.dirname(__file__), '..', 'files.db')
+# Update database path to point to the database directory
+DB_PATH = os.path.join(os.path.dirname(__file__), '..', '..', 'database', 'files.db')
 
 # Column names for better data handling
 COLUMNS = ['file_id', 'klasor', 'dosyaNo', 'eYil', 'eNo', 'borcluAdi', 'alacakliAdi', 'foyTuru', 'durum', 'takipTarihi', 'icraMudurlugu']
@@ -790,7 +791,7 @@ def trigger_sorgulama():
         import os
         sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', 'backend'))
         
-        from sorgulama_common import perform_sorgulama
+        from scrappers.queries.sorgulama_common import perform_sorgulama
         
         # Run the sorgulama
         perform_sorgulama(driver, dosya_no, selected_options)
