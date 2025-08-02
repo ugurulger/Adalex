@@ -373,48 +373,6 @@ def save_borclu_data_to_db(borclu_data, file_id):
             conn.close()
         return False
 
-def get_scraping_result_from_db(dosya_no, borclu_adi, sorgu_tipi):
-    """
-    Get scraping result from database
-    
-    Args:
-        dosya_no (str): File number
-        borclu_adi (str): Debtor name
-        sorgu_tipi (str): Query type
-    
-    Returns:
-        dict: Query result data or None if not found
-    """
-    logger = get_logger()
-    
-    try:
-        conn = get_database_connection()
-        if not conn:
-            return None
-        
-        cursor = conn.cursor()
-        
-        # Find borclu_id
-        cursor.execute("""
-            SELECT b.borclu_id, bs.sorgu_verisi
-            FROM borclular b
-            JOIN files f ON b.file_id = f.file_id
-            JOIN borclu_sorgular bs ON b.borclu_id = bs.borclu_id
-            WHERE f.dosyaNo = ? AND b.ad LIKE ? AND bs.sorgu_tipi = ?
-        """, (dosya_no, f"%{borclu_adi}%", sorgu_tipi))
-        
-        result = cursor.fetchone()
-        conn.close()
-        
-        if result:
-            return json.loads(result['sorgu_verisi'])
-        else:
-            return None
-            
-    except Exception as e:
-        logger.error(f"Error getting scraping result from database: {e}")
-        return None
-
 def process_mernis_data_for_borclu(dosya_no, borclu_adi, mernis_sonuc):
     """MERNİS verilerinden TC Kimlik ve adres bilgilerini veritabanına kaydet"""
     logger = get_logger()
