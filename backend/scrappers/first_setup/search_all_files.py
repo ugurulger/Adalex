@@ -1,4 +1,4 @@
-from sorgulama_common import get_logger, click_element_merged
+from ..queries.sorgulama_common import get_logger, click_element_merged
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC

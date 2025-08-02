@@ -11,8 +11,8 @@ from selenium.common.exceptions import (
     ElementClickInterceptedException,
     NoSuchElementException
 )
-from sorgulama_common import handle_popup_if_present, click_element_merged, save_to_json, get_logger, check_result_or_popup
-from database_helper import save_scraping_data_to_db_and_json
+from ..sorgulama_common import handle_popup_if_present, click_element_merged, save_to_json, get_logger, check_result_or_popup
+from ...services.database_helper import save_scraping_data_to_db_and_json
 
 # Global Sabitler
 TIMEOUT = 15

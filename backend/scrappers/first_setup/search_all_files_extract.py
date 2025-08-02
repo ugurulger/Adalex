@@ -7,7 +7,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException, NoSuchElementException, ElementClickInterceptedException, StaleElementReferenceException
-from database_helper import save_extract_data_to_db, save_to_json_simple
+from ...services.database_helper import save_extract_data_to_db, save_to_json_simple
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
