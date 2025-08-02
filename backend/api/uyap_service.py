@@ -4,6 +4,9 @@ import threading
 import os
 import sys
 
+# Add parent directory to Python path for imports
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 app = Flask(__name__)
 
 # Global UYAP session management
@@ -21,7 +24,7 @@ def uyap_login():
         print(f"UYAP Login attempt with PIN: {pin_kodu}")
         
         # Import UYAP login function
-        from ..services.login_uyap import open_browser_and_login
+        from services.login_uyap import open_browser_and_login
         
         with uyap_session_lock:
             # Check if session already exists
@@ -116,7 +119,7 @@ def uyap_search_files():
             driver = uyap_sessions[session_id]
             
             # Import search function
-            from ..scrappers.first_setup.search_all_files import search_all_files
+            from scrappers.first_setup.search_all_files import search_all_files
             
             # Perform search
             search_all_files(driver)
@@ -152,7 +155,7 @@ def uyap_extract_data():
             driver = uyap_sessions[session_id]
             
             # Import extract function
-            from ..scrappers.first_setup.search_all_files_extract import extract_data_from_table
+            from scrappers.first_setup.search_all_files_extract import extract_data_from_table
             
             # Perform extraction
             extracted_data = extract_data_from_table(driver)
@@ -191,7 +194,7 @@ def uyap_query():
             driver = uyap_sessions[session_id]
             
             # Import query function
-            from ..scrappers.queries.sorgulama_common import perform_sorgulama
+            from scrappers.queries.sorgulama_common import perform_sorgulama
             
             # Perform query
             result = perform_sorgulama(driver, dosya_no, selected_options)
@@ -244,4 +247,4 @@ def health_check():
 
 if __name__ == '__main__':
     print("Starting UYAP Automation Service...")
-    app.run(debug=True, port=5002, host='0.0.0.0') 
+    app.run(debug=True, port=5001, host='0.0.0.0') 
