@@ -1,0 +1,171 @@
+{
+  "users": [
+    {
+      "id": 1,
+      "username": "test_user",
+      "pincode": "9092",
+      "role": "admin"
+    },
+    {
+      "id": 2,
+      "username": "demo_user",
+      "pincode": "1234",
+      "role": "user"
+    }
+  ],
+  "cases": [
+    {
+      "file_id": 1,
+      "klasor": "2024/1",
+      "dosyaNo": "2024/1",
+      "eYil": 2024,
+      "eNo": 1,
+      "borcluAdi": "Ahmet Yılmaz",
+      "alacakliAdi": "Mehmet Demir",
+      "foyTuru": "İlamlı",
+      "durum": "Açık",
+      "takipTarihi": "2024-01-15",
+      "icraMudurlugu": "İstanbul",
+      "tutar": 50000,
+      "faizOrani": 15
+    },
+    {
+      "file_id": 2,
+      "klasor": "2024/2",
+      "dosyaNo": "2024/2",
+      "eYil": 2024,
+      "eNo": 2,
+      "borcluAdi": "Fatma Kaya",
+      "alacakliAdi": "Ali Özkan",
+      "foyTuru": "İlamsız",
+      "durum": "Derdest",
+      "takipTarihi": "2024-01-20",
+      "icraMudurlugu": "Ankara",
+      "tutar": 75000,
+      "faizOrani": 12
+    }
+  ],
+  "borclular": [
+    {
+      "borclu_id": 1,
+      "file_id": 1,
+      "borclu_adi": "Ahmet",
+      "borclu_soyadi": "Yılmaz",
+      "tc_no": "12345678901",
+      "adres": "İstanbul, Türkiye",
+      "telefon": "05551234567"
+    },
+    {
+      "borclu_id": 2,
+      "file_id": 1,
+      "borclu_adi": "Fatma",
+      "borclu_soyadi": "Kaya",
+      "tc_no": "98765432109",
+      "adres": "İzmir, Türkiye",
+      "telefon": "05551111111"
+    }
+  ],
+  "sorgular": [
+    {
+      "sorgu_id": 1,
+      "borclu_id": 1,
+      "sorgu_tipi": "Banka",
+      "sorgu_verisi": {
+        "hesap_sayisi": 2,
+        "toplam_bakiye": 15000,
+        "hesaplar": [
+          {
+            "banka_adi": "Ziraat Bankası",
+            "hesap_no": "1234567890",
+            "bakiye": 10000
+          },
+          {
+            "banka_adi": "İş Bankası",
+            "hesap_no": "0987654321",
+            "bakiye": 5000
+          }
+        ]
+      },
+      "timestamp": "2024-01-15T10:30:00"
+    },
+    {
+      "sorgu_id": 2,
+      "borclu_id": 1,
+      "sorgu_tipi": "SGK",
+      "sorgu_verisi": {
+        "sgk_no": "12345678901",
+        "durum": "Aktif",
+        "prim_borcu": 5000
+      },
+      "timestamp": "2024-01-15T11:00:00"
+    },
+    {
+      "sorgu_id": 3,
+      "borclu_id": 1,
+      "sorgu_tipi": "GİB",
+      "sorgu_verisi": {
+        "vergi_no": "1234567890",
+        "vergi_borcu": 8000,
+        "haciz_durumu": "Yok"
+      },
+      "timestamp": "2024-01-15T11:30:00"
+    }
+  ],
+  "documents": [
+    {
+      "doc_id": 1,
+      "file_id": 1,
+      "doc_name": "İlam Belgesi",
+      "doc_type": "pdf",
+      "upload_date": "2024-01-15T10:00:00",
+      "file_size": 1024000
+    },
+    {
+      "doc_id": 2,
+      "file_id": 1,
+      "doc_name": "Borçlu Beyannamesi",
+      "doc_type": "pdf",
+      "upload_date": "2024-01-15T10:30:00",
+      "file_size": 512000
+    }
+  ],
+  "query_results": {
+    "banka": {
+      "hesap_sayisi": 2,
+      "toplam_bakiye": 15000,
+      "hesaplar": [
+        {
+          "banka_adi": "Ziraat Bankası",
+          "hesap_no": "1234567890",
+          "bakiye": 10000
+        },
+        {
+          "banka_adi": "İş Bankası",
+          "hesap_no": "0987654321",
+          "bakiye": 5000
+        }
+      ]
+    },
+    "sgk": {
+      "sgk_no": "12345678901",
+      "durum": "Aktif",
+      "prim_borcu": 5000
+    },
+    "gib": {
+      "vergi_no": "1234567890",
+      "vergi_borcu": 8000,
+      "haciz_durumu": "Yok"
+    },
+    "egm": {
+      "arac_sayisi": 1,
+      "araclar": [
+        {
+          "plaka": "34ABC123",
+          "marka": "Toyota",
+          "model": "Corolla",
+          "yil": 2020
+        }
+      ]
+    }
+  }
+} 
