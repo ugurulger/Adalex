@@ -36,9 +36,9 @@ This project is being built with a strong emphasis on testability, quality contr
 - **Testing Tools**: Playwrite, PyTest, unittest  
 - **Version Control**: Git & GitHub
 
-## 📸 Screenshots
+## 📸 Demo & Screenshots
 
-**Note**: The data shown in this example is completely fictional and does not belong to any real person. All names, identification numbers, addresses, and other personal information are made up for demonstration purposes only.
+> **Note**: The data shown in this demo is completely fictional and does not belong to any real person. All names, identification numbers, addresses, and other personal information are made up for demonstration purposes only.
 ![Adalex Demo](AdalexDemo.gif)
 *Demo showcasing the Adalex platform in action*
 
