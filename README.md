@@ -1,63 +1,125 @@
-# Adalex - İcra Dosyaları Yönetim Sistemi
+# Adalex - Execution Files Management System
 
-Bu proje, icra dosyalarının yönetimi için geliştirilmiş bir web uygulamasıdır. Modern bir Next.js frontend ve güvenli bir Flask API backend kullanmaktadır.
+This project is a web application developed for managing execution files. It uses a modern Next.js frontend and a secure Flask API backend.
 
-## 🏗️ Proje Yapısı
+## 🏗️ Project Structure
 
 ```
 Adalex/
-├── database/                 # Veritabanı ve API katmanı
-│   ├── files.db             # SQLite veritabanı
-│   ├── api_endpoint.py      # Flask API sunucusu
-│   ├── requirements.txt     # Python bağımlılıkları
-│   └── app.py              # Eski Flask uygulaması
-├── frontend/                  # Next.js frontend
-│   ├── app/                # Next.js 13+ app router
-│   ├── components/         # UI bileşenleri
-│   └── package.json        # Node.js bağımlılıkları
-└── start_services.sh       # Servisleri başlatma scripti
+├── backend/                    # Flask API Backend
+│   ├── api/                   # API layer
+│   │   ├── api_endpoint.py   # Main API server
+│   │   ├── requirements.txt  # Python dependencies
+│   │   └── routes/           # API routes
+│   │       ├── database_routes.py
+│   │       └── uyap_routes.py
+│   ├── scrappers/            # Web scraping modules
+│   │   ├── first_setup/      # Initial setup scripts
+│   │   └── queries/          # Query modules
+│   │       ├── banka_sorgu.py
+│   │       ├── dis_isleri_sorgu.py
+│   │       ├── egm_sorgu.py
+│   │       ├── gib_sorgu.py
+│   │       ├── gsm_sorgu.py
+│   │       ├── icra_dosyasi_sorgu.py
+│   │       ├── iski_sorgu.py
+│   │       ├── mernis_sorgu.py
+│   │       ├── posta_ceki_sorgu.py
+│   │       ├── sgk_haciz_sorgu.py
+│   │       ├── sgk_sorgu.py
+│   │       ├── sgk_sorgu2.py
+│   │       ├── sorgulama_common.py
+│   │       └── takbis_sorgu.py
+│   └── services/             # Service layer
+│       ├── database_reader.py
+│       ├── database_writer.py
+│       ├── login_uyap.py
+│       └── uyap_service.py
+├── database/                 # Database operations
+│   ├── build_database.py    # Database creation
+│   ├── clear_database.py    # Database cleanup
+│   ├── datastructure.json   # Data structure definitions
+│   └── process_json_files.py
+├── frontend/                 # Next.js Frontend
+│   ├── app/                 # Next.js 13+ app router
+│   │   ├── api/            # API routes
+│   │   ├── dava-dosyalarim/
+│   │   ├── icra-dosyalarim/
+│   │   │   ├── components/ # UI components
+│   │   │   └── ...
+│   │   └── layout.tsx
+│   ├── components/          # General UI components
+│   │   └── ui/             # Shadcn/ui components
+│   ├── hooks/              # Custom React hooks
+│   ├── lib/                # Helper libraries
+│   ├── styles/             # CSS styles
+│   ├── types/              # TypeScript type definitions
+│   └── package.json        # Node.js dependencies
+├── tests/                   # Test files
+│   ├── backend/            # Backend tests
+│   │   └── integration/    # Integration tests
+│   ├── config/             # Test configurations
+│   ├── frontend/           # Frontend tests
+│   │   ├── e2e/           # End-to-end tests
+│   │   ├── integration/    # Integration tests
+│   │   └── mocks/         # Mock files
+│   ├── shared/             # Shared test files
+│   │   ├── fixtures/      # Test data
+│   │   └── helpers/       # Test helpers
+│   └── test_integration.py
+├── start_services.sh       # Service startup script
+└── stop_services.sh        # Service shutdown script
 ```
 
-## 🚀 Kurulum ve Çalıştırma
+## 🚀 Installation and Setup
 
-### 1. Gereksinimler
+### 1. Requirements
 
 - Python 3.8+
 - Node.js 18+
-- npm veya pnpm
+- npm or pnpm
 
-### 2. Veritabanı API Kurulumu
+### 2. Backend Setup
 
 ```bash
-cd database
+cd backend
 python3 -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
+source venv/bin/activate  # Linux/Mac
+# or
+venv\Scripts\activate     # Windows
+pip install -r api/requirements.txt
 ```
 
-### 3. Frontend Kurulumu
+### 3. Frontend Setup
 
 ```bash
 cd frontend
 npm install
-# veya
+# or
 pnpm install
 ```
 
-### 4. Servisleri Başlatma
+### 4. Database Setup
 
-#### Otomatik Başlatma (Önerilen)
+```bash
+cd database
+python build_database.py
+```
+
+### 5. Starting Services
+
+#### Automatic Startup (Recommended)
 ```bash
 ./start_services.sh
 ```
 
-#### Manuel Başlatma
+#### Manual Startup
 
-**Terminal 1 - Database API:**
+**Terminal 1 - Backend API:**
 ```bash
-cd database
+cd backend
 source venv/bin/activate
-python api_endpoint.py
+python api/api_endpoint.py
 ```
 
 **Terminal 2 - Next.js Frontend:**
@@ -66,50 +128,70 @@ cd frontend
 npm run dev
 ```
 
-## 🌐 Erişim Noktaları
+## 🌐 Access Points
 
 - **Frontend:** http://localhost:3000
-- **Database API:** http://localhost:5001
+- **Backend API:** http://localhost:5001
 - **API Health Check:** http://localhost:5001/health
 
 ## 🔌 API Endpoints
 
-### Ana Endpoints
+### Main Endpoints
 
-- `GET /api/icra-dosyalarim` - Tüm icra dosyalarını listele
-- `GET /api/icra-dosyalarim/{file_id}` - Belirli bir dosyanın detaylarını getir
-- `GET /api/icra-dosyalarim/{file_id}/{borclu_id}` - Borçlu detaylarını getir
+- `GET /api/icra-dosyalarim` - List all execution files
+- `GET /api/icra-dosyalarim/{file_id}` - Get details of a specific file
+- `GET /api/icra-dosyalarim/{file_id}/{borclu_id}` - Get debtor details
+- `POST /api/uyap/trigger-sorgulama` - Trigger UYAP query
 
-### Örnek Kullanım
+### Query Endpoints
+
+- `GET /api/icra-dosyalarim/{file_id}/{borclu_id}/banka-sorgulama`
+- `GET /api/icra-dosyalarim/{file_id}/{borclu_id}/dis-isleri-sorgulama`
+- `GET /api/icra-dosyalarim/{file_id}/{borclu_id}/gib-sorgulama`
+- `GET /api/icra-dosyalarim/{file_id}/{borclu_id}/sgk-sorgulama`
+- `GET /api/icra-dosyalarim/{file_id}/{borclu_id}/telefon-sorgulama`
+- `GET /api/icra-dosyalarim/{file_id}/{borclu_id}/adres-sorgulama`
+- `GET /api/icra-dosyalarim/{file_id}/{borclu_id}/arac-sorgulama`
+- `GET /api/icra-dosyalarim/{file_id}/{borclu_id}/gayrimenkul-sorgulama`
+- `GET /api/icra-dosyalarim/{file_id}/{borclu_id}/iski-sorgulama`
+- `GET /api/icra-dosyalarim/{file_id}/{borclu_id}/posta-ceki-sorgulama`
+- `GET /api/icra-dosyalarim/{file_id}/{borclu_id}/sgk-haciz-sorgulama`
+- `GET /api/icra-dosyalarim/{file_id}/{borclu_id}/alacakli-dosyalari`
+
+### Example Usage
 
 ```bash
-# Tüm dosyaları listele
+# List all files
 curl http://localhost:5001/api/icra-dosyalarim
 
-# Belirli bir dosyanın detaylarını getir
+# Get details of a specific file
 curl http://localhost:5001/api/icra-dosyalarim/1
 
-# Borçlu detaylarını getir
+# Get debtor details
 curl http://localhost:5001/api/icra-dosyalarim/1/1_1
+
+# Bank query
+curl http://localhost:5001/api/icra-dosyalarim/1/1_1/banka-sorgulama
 ```
 
-## 🔒 Güvenlik
+## 🔒 Security
 
-- API CORS koruması etkin
-- SQL injection koruması (parametrized queries)
-- Hata mesajları production'da gizlenir
-- Veritabanı bağlantıları güvenli şekilde yönetilir
+- API CORS protection enabled
+- SQL injection protection (parametrized queries)
+- Error messages hidden in production
+- Database connections managed securely
+- UYAP integration with secure authentication
 
-## 📊 Veritabanı Şeması
+## 📊 Database Schema
 
-### Ana Tablolar
+### Main Tables
 
-- `files` - İcra dosyaları ana bilgileri
-- `file_details` - Dosya detay bilgileri
-- `borclular` - Borçlu bilgileri
-- `borclu_sorgular` - Borçlu sorgu sonuçları
+- `files` - Main execution file information
+- `file_details` - File detail information
+- `borclular` - Debtor information
+- `borclu_sorgular` - Debtor query results
 
-### Örnek Veri Yapısı
+### Example Data Structure
 
 ```json
 {
@@ -125,39 +207,78 @@ curl http://localhost:5001/api/icra-dosyalarim/1/1_1
 }
 ```
 
-## 🛠️ Geliştirme
+## 🧪 Testing
 
-### Yeni API Endpoint Ekleme
+### Backend Tests
 
-1. `database/api_endpoint.py` dosyasına yeni route ekleyin
-2. Gerekli veritabanı fonksiyonlarını tanımlayın
-3. Frontend'de yeni endpoint'i kullanın
+```bash
+cd tests/backend
+python -m pytest integration/
+```
 
-### Veritabanı Değişiklikleri
+### Frontend Tests
 
-1. `database/files.db` dosyasını güncelleyin
-2. `api_endpoint.py`'deki COLUMNS listesini güncelleyin
-3. İlgili dönüşüm fonksiyonlarını güncelleyin
+```bash
+cd tests/frontend
+npm test
+```
 
-## 🐛 Sorun Giderme
+### E2E Tests
 
-### Database API Başlamıyor
-- Python bağımlılıklarının kurulu olduğundan emin olun
-- Port 5001'in boş olduğunu kontrol edin
-- `files.db` dosyasının mevcut olduğunu kontrol edin
+```bash
+cd tests/frontend
+npm run test:e2e
+```
 
-### Frontend Veri Alamıyor
-- Database API'nin çalıştığından emin olun
-- CORS ayarlarını kontrol edin
-- Network sekmesinde API çağrılarını inceleyin
+## 🛠️ Development
 
-### Veritabanı Bağlantı Hatası
-- `files.db` dosyasının okunabilir olduğunu kontrol edin
-- SQLite3'in kurulu olduğunu kontrol edin
+### Adding New API Endpoint
 
-## 📝 Notlar
+1. Create new route file under `backend/api/routes/`
+2. Register the route in `backend/api/api_endpoint.py`
+3. Define necessary service functions under `backend/services/`
+4. Use the new endpoint in frontend
 
-- Veritabanı API'si port 5001'de çalışır
-- Frontend port 3000'de çalışır
-- Tüm API çağrıları CORS ile korunur
-- Hata durumlarında uygun HTTP status kodları döner 
+### Adding New Query Module
+
+1. Create new query module under `backend/scrappers/queries/`
+2. Use common functions in `sorgulama_common.py`
+3. Add the relevant API route
+4. Create new query component in frontend
+
+### Database Changes
+
+1. Update `database/datastructure.json` file
+2. Run `database/build_database.py` script
+3. Update relevant service functions
+
+## 🐛 Troubleshooting
+
+### Backend API Not Starting
+- Ensure Python dependencies are installed
+- Check that port 5001 is free
+- Verify virtual environment is active
+
+### Frontend Not Receiving Data
+- Ensure backend API is running
+- Check CORS settings
+- Examine API calls in Network tab
+
+### Database Connection Error
+- Run `database/build_database.py` script
+- Check that database file is readable
+- Verify SQLite3 is installed
+
+### UYAP Integration Issues
+- Check that UYAP credentials are correct
+- Review `backend/services/login_uyap.py` file
+- Check network connection
+
+## 📝 Notes
+
+- Backend API runs on port 5001
+- Frontend runs on port 3000
+- All API calls are protected with CORS
+- Appropriate HTTP status codes returned in error cases
+- Valid credentials required for UYAP integration
+- Test files provide comprehensive test coverage 
