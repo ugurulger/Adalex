@@ -36,12 +36,11 @@ This project is being built with a strong emphasis on testability, quality contr
 - **Testing Tools**: Playwrite, PyTest, unittest  
 - **Version Control**: Git & GitHub
 
-## 📸 Screenshots (Optional but Recommended)
+## 📸 Screenshots
 
-- 📊 Main Dashboard
-- 📁 Document Upload Page
-- 🔍 Case Scraping Output
+![Adalex Demo](AdalexDemo.gif)
 
+*Demo showcasing the Adalex platform in action*
 ## 🔮 Roadmap
 
 - [x] Core web scraping engine
