@@ -1,6 +1,55 @@
-# Adalex - Execution Files Management System
+# ⚖️ Adalex — Legal Automation Platform for Law Offices
 
-This project is a web application developed for managing execution files. It uses a modern Next.js frontend and a secure Flask API backend.
+Adalex is a specialized software tool designed to automate and streamline legal workflows in law offices. It helps lawyers efficiently manage their cases, clients, and legal documents by integrating data scraping from official government websites and providing a centralized dashboard for day-to-day operations.
+
+> **Status**: 🛠 In Development – Core functionality implemented and demo-ready. Final features like document management and notifications are in progress.
+
+---
+
+## 🚀 Key Features
+
+- 🔍 **Web Scraping Integration**: Automatically retrieves case and client data from government portals.
+- 🧑‍⚖️ **Client & Case Management**: Organize and manage clients, case details, and legal timelines.
+- 📂 **Document Center**: Upload and categorize legal documents per case.
+- 🗓️ **Activity Timeline**: Monitor and track all legal activities in one place.
+- 📬 **Notifications System** *(coming soon)*: Alert lawyers of critical case changes or deadlines.
+
+---
+
+## 🧪 Quality Assurance (SQA Focus)
+
+This project is being built with a strong emphasis on testability, quality control, and reliability:
+
+- ✅ **Automated Testing Suite** using `PyTest`
+- ✅ **Manual Test Plan** included in `/docs/test_plan.md` *(see below)*
+- 🔁 **Test Coverage** across core modules (scraping, data handling, basic UI flows)
+- 🐞 **Issue Tracking** and QA status documented in [GitHub Issues](https://github.com/ugurulger/Adalex/issues)
+- ⏱️ **CI/CD Pipeline** *(planned)* using GitHub Actions for automatic test runs on push
+
+---
+
+## 🧰 Tech Stack
+
+- **Language**: Python 3.x  
+- **Backend Framework**: Flask *(or specify if different)*  
+- **Database**: SQLite (for dev), PostgreSQL (optional for prod)  
+- **Web Scraping**: BeautifulSoup & Requests *(or Selenium if used)*  
+- **Testing Tools**: Playwrite, PyTest, unittest  
+- **Version Control**: Git & GitHub
+
+## 📸 Screenshots (Optional but Recommended)
+
+- 📊 Main Dashboard
+- 📁 Document Upload Page
+- 🔍 Case Scraping Output
+
+## 🔮 Roadmap
+
+- [x] Core web scraping engine
+- [x] Case/client management system
+- [ ] Notification system for legal deadlines
+- [ ] User roles and permissions
+- [ ] CI/CD test automation
 
 ## 🏗️ Project Structure
 
