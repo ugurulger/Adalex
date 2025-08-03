@@ -244,15 +244,77 @@ curl http://localhost:5001/api/icra-dosyalarim/1/1_1/banka-sorgulama
 
 ```json
 {
-  "file_id": 1,
-  "klasor": "1",
-  "dosyaNo": "001",
-  "borcluAdi": "Ahmet Yılmaz",
-  "alacakliAdi": "ABC Şirketi Ltd. Şti.",
-  "foyTuru": "İlamsız İcra",
-  "durum": "Açık",
-  "takipTarihi": "15.01.2024",
-  "icraMudurlugu": "İstanbul 1. İcra Müdürlüğü"
+  "klasor": "5",
+  "dosyaNo": "2024/78901",
+  "borcluAdi": "Ahmet Yılmaz, Fatma Yılmaz",
+  "alacakliAdi": "ABC Teknoloji Ltd. Şti.",
+  "foyTuru": "İlamlı İcra",
+  "durum": "Derdest",
+  "takipTarihi": "15.03.2024",
+  "icraMudurlugu": "İstanbul 3. İcra Müdürlüğü",
+  "takipSekli": "5 İlamsız Takiplerde Ödeme Emri - Eski No: 123",
+  "takipYolu": "Genel Haciz Yoluyla Takip",
+  "takipTuru": "İlamsız Takip",
+  "alacakliVekili": "Av. Mehmet Kaya",
+  "borcMiktari": "125.750,00 TL",
+  "faizOrani": "%18 (Yıllık)",
+  "borcluList": [
+    {
+      "ad": "Ahmet Yılmaz",
+      "tcKimlik": "12345678901",
+      "telefon": "0532 123 45 67",
+      "adres": "ÇANKAYA MAH., 456 SK. No: 12/3 BEŞİKTAŞ/İSTANBUL",
+      "vekil": "Av. Ayşe Demir",
+      "Adres": {
+        "sonuc": {
+          "Kimlik Bilgileri": { /* ... */ },
+          "Adres Bilgileri": { /* ... */ }
+        }
+      },
+      "SGK": {
+        "SSK Çalışanı": { /* ... */ },
+        "Kamu Çalışanı": { /* ... */ },
+        "SSK Emeklisi": { /* ... */ }
+      },
+      "EGM": {
+        "Sonuc": [ /* ... */ ],
+        "Araclar": [ /* ... */ ]
+      },
+      "Gayrimenkul": {
+        "sonuc": [ /* ... */ ],
+        "tasinmazlar": [ /* ... */ ]
+      },
+      "Banka": {
+        "sonuc": [ /* ... */ ],
+        "bankalar": [ /* ... */ ]
+      },
+      "Alacakli Dosyalari": {
+        "sonuc": [ /* ... */ ],
+        "icra_dosyalari": [ /* ... */ ]
+      },
+      "SGK Haciz": {
+        "sonuc": [ /* ... */ ],
+        "SGK kayit": [ /* ... */ ]
+      },
+      "Dis isler": {
+        "sonuc": [ /* ... */ ]
+      },
+      "GIB": {
+        "sonuc": [ /* ... */ ],
+        "GİB Adres": [ /* ... */ ]
+      },
+      "GSM": {
+        "sonuc": [ /* ... */ ],
+        "GSM Adres": [ /* ... */ ]
+      },
+      "ISKI": {
+        "sonuc": [ /* ... */ ]
+      },
+      "Posta Ceki": {
+        "sonuc": [ /* ... */ ]
+      }
+    }
+  ]
 }
 ```
 
