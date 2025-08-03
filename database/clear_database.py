@@ -8,7 +8,7 @@ import os
 import logging
 
 # Database path
-DB_PATH = os.path.join(os.path.dirname(__file__), 'database', 'files.db')
+DB_PATH = os.path.join(os.path.dirname(__file__), 'files.db')
 
 def clear_database():
     """Clear all data from database tables"""

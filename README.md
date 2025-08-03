@@ -21,7 +21,6 @@ Adalex is a specialized software tool designed to automate and streamline legal 
 This project is being built with a strong emphasis on testability, quality control, and reliability:
 
 - ✅ **Automated Testing Suite** using `PyTest`
-- ✅ **Manual Test Plan** included in `/docs/test_plan.md` *(see below)*
 - 🔁 **Test Coverage** across core modules (scraping, data handling, basic UI flows)
 - 🐞 **Issue Tracking** and QA status documented in [GitHub Issues](https://github.com/ugurulger/Adalex/issues)
 - ⏱️ **CI/CD Pipeline** *(planned)* using GitHub Actions for automatic test runs on push
@@ -241,6 +240,8 @@ curl http://localhost:5001/api/icra-dosyalarim/1/1_1/banka-sorgulama
 - `borclu_sorgular` - Debtor query results
 
 ### Example Data Structure
+
+> **Note**: The data shown in this example is completely fictional and does not belong to any real person. All names, identification numbers, addresses, and other personal information are made up for demonstration purposes only.
 
 ```json
 {
