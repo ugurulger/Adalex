@@ -1,0 +1,18 @@
+{
+  "name": "tests",
+  "version": "1.0.0",
+  "description": "This directory contains comprehensive testing infrastructure for the Adalex legal case management system, covering backend integration tests, frontend integration tests, and end-to-end tests using Playwright.",
+  "main": "index.js",
+  "scripts": {
+    "test": "playwright test --config=config/playwright.config.ts",
+    "test:ui": "playwright test --config=config/playwright.config.ts --ui",
+    "test:headed": "playwright test --config=config/playwright.config.ts --headed",
+    "test:debug": "playwright test --config=config/playwright.config.ts --debug"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@playwright/test": "^1.54.2"
+  }
+}

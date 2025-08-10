@@ -4,7 +4,7 @@ test.describe('Query Execution E2E Tests', () => {
   test.beforeEach(async ({ page }) => {
     // Navigate to the main page before each test
     await page.goto('http://localhost:3000')
-    await page.click('text=İcra Dosyalarım')
+    await page.click('text=İcra Dosyalarına Git')
     await expect(page).toHaveURL(/.*icra-dosyalarim/)
   })
 

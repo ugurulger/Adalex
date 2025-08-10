@@ -8,7 +8,7 @@ test.describe('User Journey E2E Tests', () => {
 
   test('Complete case creation workflow', async ({ page }) => {
     // Navigate to icra dosyalarim page
-    await page.click('text=İcra Dosyalarım')
+    await page.click('text=İcra Dosyalarına Git')
     await expect(page).toHaveURL(/.*icra-dosyalarim/)
 
     // Click "Yeni Föy Ekle" button
@@ -44,7 +44,7 @@ test.describe('User Journey E2E Tests', () => {
 
   test('UYAP connection and query execution workflow', async ({ page }) => {
     // Navigate to icra dosyalarim page
-    await page.click('text=İcra Dosyalarım')
+    await page.click('text=İcra Dosyalarına Git')
     await expect(page).toHaveURL(/.*icra-dosyalarim/)
 
     // Connect to UYAP
@@ -84,7 +84,7 @@ test.describe('User Journey E2E Tests', () => {
 
   test('Search and filter functionality', async ({ page }) => {
     // Navigate to icra dosyalarim page
-    await page.click('text=İcra Dosyalarım')
+    await page.click('text=İcra Dosyalarına Git')
     await expect(page).toHaveURL(/.*icra-dosyalarim/)
 
     // Load data
@@ -112,7 +112,7 @@ test.describe('User Journey E2E Tests', () => {
 
   test('Document management workflow', async ({ page }) => {
     // Navigate to icra dosyalarim page
-    await page.click('text=İcra Dosyalarım')
+    await page.click('text=İcra Dosyalarına Git')
     await expect(page).toHaveURL(/.*icra-dosyalarim/)
 
     // Load data
@@ -140,7 +140,7 @@ test.describe('User Journey E2E Tests', () => {
 
   test('Payment calculation tools', async ({ page }) => {
     // Navigate to icra dosyalarim page
-    await page.click('text=İcra Dosyalarım')
+    await page.click('text=İcra Dosyalarına Git')
     await expect(page).toHaveURL(/.*icra-dosyalarim/)
 
     // Open Pratik Faiz Hesaplama tool
@@ -163,7 +163,7 @@ test.describe('User Journey E2E Tests', () => {
 
   test('Profile management', async ({ page }) => {
     // Navigate to icra dosyalarim page
-    await page.click('text=İcra Dosyalarım')
+    await page.click('text=İcra Dosyalarına Git')
     await expect(page).toHaveURL(/.*icra-dosyalarim/)
 
     // Open profile dropdown
@@ -181,7 +181,7 @@ test.describe('User Journey E2E Tests', () => {
 
   test('Error handling scenarios', async ({ page }) => {
     // Navigate to icra dosyalarim page
-    await page.click('text=İcra Dosyalarım')
+    await page.click('text=İcra Dosyalarına Git')
     await expect(page).toHaveURL(/.*icra-dosyalarim/)
 
     // Test UYAP connection failure
@@ -206,7 +206,7 @@ test.describe('User Journey E2E Tests', () => {
     await page.setViewportSize({ width: 375, height: 667 })
 
     // Navigate to icra dosyalarim page
-    await page.click('text=İcra Dosyalarım')
+    await page.click('text=İcra Dosyalarına Git')
     await expect(page).toHaveURL(/.*icra-dosyalarim/)
 
     // Verify mobile layout
@@ -227,7 +227,7 @@ test.describe('User Journey E2E Tests', () => {
 
   test('Cross-browser compatibility', async ({ page, browserName }) => {
     // Navigate to icra dosyalarim page
-    await page.click('text=İcra Dosyalarım')
+    await page.click('text=İcra Dosyalarına Git')
     await expect(page).toHaveURL(/.*icra-dosyalarim/)
 
     // Load data
@@ -248,7 +248,7 @@ test.describe('User Journey E2E Tests', () => {
 
   test('Performance and loading states', async ({ page }) => {
     // Navigate to icra dosyalarim page
-    await page.click('text=İcra Dosyalarım')
+    await page.click('text=İcra Dosyalarına Git')
     await expect(page).toHaveURL(/.*icra-dosyalarim/)
 
     // Test loading state
@@ -268,7 +268,7 @@ test.describe('User Journey E2E Tests', () => {
 
   test('Accessibility features', async ({ page }) => {
     // Navigate to icra dosyalarim page
-    await page.click('text=İcra Dosyalarım')
+    await page.click('text=İcra Dosyalarına Git')
     await expect(page).toHaveURL(/.*icra-dosyalarim/)
 
     // Test keyboard navigation
@@ -291,7 +291,7 @@ test.describe('User Journey E2E Tests', () => {
 
   test('Data persistence and state management', async ({ page }) => {
     // Navigate to icra dosyalarim page
-    await page.click('text=İcra Dosyalarım')
+    await page.click('text=İcra Dosyalarına Git')
     await expect(page).toHaveURL(/.*icra-dosyalarim/)
 
     // Load data

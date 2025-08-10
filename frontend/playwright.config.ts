@@ -4,7 +4,7 @@ import { defineConfig, devices } from '@playwright/test'
  * @see https://playwright.dev/docs/test-configuration
  */
 export default defineConfig({
-  testDir: '../frontend/e2e',
+  testDir: '../tests/frontend/e2e',
   /* Run tests in files in parallel */
   fullyParallel: true,
   /* Fail the build on CI if you accidentally left test.only in the source code. */
@@ -81,8 +81,8 @@ export default defineConfig({
   },
 
   /* Global setup and teardown */
-  globalSetup: require.resolve('../frontend/e2e/global-setup.ts'),
-  globalTeardown: require.resolve('../frontend/e2e/global-teardown.ts'),
+  globalSetup: require.resolve('../tests/frontend/e2e/global-setup.ts'),
+  globalTeardown: require.resolve('../tests/frontend/e2e/global-teardown.ts'),
 
   /* Test timeout */
   timeout: 30000,
