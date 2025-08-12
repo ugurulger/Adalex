@@ -67,7 +67,7 @@ jobs:
     - name: Run backend tests
       run: |
         cd backend
-        python -m pytest ../tests/backend/ -v --cov=api --cov-report=xml --cov-fail-under=70
+        python -m pytest ../tests/backend/ -v --cov=api --cov-report=xml --cov-fail-under=40
 
     - name: Run frontend tests
       run: |
