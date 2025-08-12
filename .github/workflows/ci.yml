@@ -109,13 +109,11 @@ jobs:
       uses: actions/setup-node@v4
       with:
         node-version: ${{ env.NODE_VERSION }}
-        cache: 'npm'
-        cache-dependency-path: tests/package-lock.json
 
     - name: Install test dependencies
       run: |
         cd tests
-        npm ci
+        npm install
 
     - name: Install Playwright browsers
       run: |
@@ -168,14 +166,12 @@ jobs:
       uses: actions/setup-node@v4
       with:
         node-version: ${{ env.NODE_VERSION }}
-        cache: 'npm'
-        cache-dependency-path: tests/package-lock.json
 
     - name: Install dependencies
       run: |
         pip install -r backend/api/requirements.txt
         pip install pytest pytest-cov pytest-mock responses testcontainers
-        cd tests && npm ci
+        cd tests && npm install
 
     - name: Run integration tests
       run: |

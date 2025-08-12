@@ -59,7 +59,7 @@ jobs:
     - name: Install test dependencies
       run: |
         cd tests
-        npm ci
+        npm install
 
     - name: Run backend tests with coverage
       run: |
