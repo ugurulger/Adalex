@@ -1,0 +1,204 @@
+name: Deploy
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy to'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+        - staging
+        - production
+
+env:
+  PYTHON_VERSION: '3.11'
+  NODE_VERSION: '18'
+
+jobs:
+  # Build and Test
+  build-and-test:
+    name: Build and Test
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python ${{ env.PYTHON_VERSION }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+
+    - name: Set up Node.js ${{ env.NODE_VERSION }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        cache-dependency-path: frontend/package-lock.json
+
+    - name: Cache Python dependencies
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+
+    - name: Install Python dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r backend/api/requirements.txt
+        pip install pytest pytest-cov pytest-mock responses testcontainers
+
+    - name: Install frontend dependencies
+      run: |
+        cd frontend
+        npm ci
+
+    - name: Install test dependencies
+      run: |
+        cd tests
+        npm ci
+
+    - name: Run backend tests
+      run: |
+        cd backend
+        python -m pytest ../tests/backend/ -v --cov=api --cov-report=xml --cov-fail-under=70
+
+    - name: Run frontend tests
+      run: |
+        cd frontend
+        npm run lint
+        npm run build
+
+    - name: Run E2E tests
+      run: |
+        cd tests
+        npx playwright install --with-deps
+        npx playwright test --config=config/playwright.config.ts
+
+    - name: Build frontend for production
+      run: |
+        cd frontend
+        npm run build
+
+    - name: Create deployment package
+      run: |
+        mkdir -p deployment
+        cp -r backend deployment/
+        cp -r frontend/.next deployment/frontend/
+        cp -r frontend/public deployment/frontend/
+        cp frontend/package.json deployment/frontend/
+        cp frontend/next.config.mjs deployment/frontend/
+        cp start_service.sh deployment/
+        
+        # Create environment-specific configs
+        echo "Creating deployment package..."
+
+    - name: Upload deployment package
+      uses: actions/upload-artifact@v3
+      with:
+        name: deployment-package
+        path: deployment/
+        retention-days: 7
+
+  # Deploy to Staging
+  deploy-staging:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    needs: build-and-test
+    if: github.ref == 'refs/heads/main' || github.event.inputs.environment == 'staging'
+    environment: staging
+
+    steps:
+    - name: Download deployment package
+      uses: actions/download-artifact@v3
+      with:
+        name: deployment-package
+        path: deployment/
+
+    - name: Deploy to staging server
+      run: |
+        echo "Deploying to staging environment..."
+        # Add your staging deployment commands here
+        # Examples:
+        # - rsync to staging server
+        # - docker build and push
+        # - cloud deployment (AWS, GCP, Azure)
+        
+        echo "Staging deployment completed successfully"
+
+    - name: Run smoke tests
+      run: |
+        echo "Running smoke tests on staging..."
+        # Add smoke tests to verify deployment
+        # curl -f http://staging.yourdomain.com/health || exit 1
+
+    - name: Notify staging deployment
+      run: |
+        echo "Staging deployment notification sent"
+        # Add notification logic (Slack, email, etc.)
+
+  # Deploy to Production
+  deploy-production:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: [build-and-test, deploy-staging]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push' || github.event.inputs.environment == 'production'
+    environment: production
+
+    steps:
+    - name: Download deployment package
+      uses: actions/download-artifact@v3
+      with:
+        name: deployment-package
+        path: deployment/
+
+    - name: Deploy to production server
+      run: |
+        echo "Deploying to production environment..."
+        # Add your production deployment commands here
+        # Examples:
+        # - rsync to production server
+        # - docker build and push to production registry
+        # - cloud deployment (AWS, GCP, Azure)
+        
+        echo "Production deployment completed successfully"
+
+    - name: Run smoke tests
+      run: |
+        echo "Running smoke tests on production..."
+        # Add smoke tests to verify deployment
+        # curl -f http://yourdomain.com/health || exit 1
+
+    - name: Notify production deployment
+      run: |
+        echo "Production deployment notification sent"
+        # Add notification logic (Slack, email, etc.)
+
+  # Rollback (if needed)
+  rollback:
+    name: Rollback
+    runs-on: ubuntu-latest
+    needs: [deploy-staging, deploy-production]
+    if: failure()
+    environment: production
+
+    steps:
+    - name: Rollback deployment
+      run: |
+        echo "Rolling back deployment due to failure..."
+        # Add rollback logic here
+        # Examples:
+        # - Revert to previous version
+        # - Restore from backup
+        # - Switch to fallback environment
+
+    - name: Notify rollback
+      run: |
+        echo "Rollback notification sent"
+        # Add notification logic

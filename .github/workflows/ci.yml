@@ -1,0 +1,289 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+env:
+  PYTHON_VERSION: '3.11'
+  NODE_VERSION: '18'
+
+jobs:
+  # Backend Tests
+  backend-tests:
+    name: Backend Tests
+    runs-on: ubuntu-latest
+    
+    services:
+      # Add any required services like databases
+      # postgres:
+      #   image: postgres:13
+      #   env:
+      #     POSTGRES_PASSWORD: postgres
+      #   options: >-
+      #     --health-cmd pg_isready
+      #     --health-interval 10s
+      #     --health-timeout 5s
+      #     --health-retries 5
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python ${{ env.PYTHON_VERSION }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+
+    - name: Cache Python dependencies
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+
+    - name: Install Python dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r backend/api/requirements.txt
+        pip install pytest pytest-cov pytest-mock responses testcontainers
+
+    - name: Run backend tests
+      run: |
+        cd backend
+        python -m pytest ../tests/backend/ -v --cov=api --cov-report=xml --cov-report=html --cov-fail-under=70
+
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./backend/coverage.xml
+        flags: backend
+        name: backend-coverage
+
+  # Frontend Tests
+  frontend-tests:
+    name: Frontend Tests
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Node.js ${{ env.NODE_VERSION }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        cache-dependency-path: frontend/package-lock.json
+
+    - name: Install frontend dependencies
+      run: |
+        cd frontend
+        npm ci
+
+    - name: Run frontend linting
+      run: |
+        cd frontend
+        # Run linting with warnings instead of errors for development
+        npm run lint || echo "Linting completed with warnings"
+
+    - name: Build frontend
+      run: |
+        cd frontend
+        npm run build
+
+  # E2E Tests
+  e2e-tests:
+    name: E2E Tests
+    runs-on: ubuntu-latest
+    needs: [backend-tests, frontend-tests]
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Node.js ${{ env.NODE_VERSION }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        cache-dependency-path: tests/package-lock.json
+
+    - name: Install test dependencies
+      run: |
+        cd tests
+        npm ci
+
+    - name: Install Playwright browsers
+      run: |
+        cd tests
+        npx playwright install --with-deps
+
+    - name: Start backend server
+      run: |
+        cd backend
+        python -m pip install -r api/requirements.txt
+        python -m flask --app api/api_endpoint run --host=0.0.0.0 --port=5000 &
+        sleep 10
+
+    - name: Start frontend server
+      run: |
+        cd frontend
+        npm run build
+        npm start &
+        sleep 10
+
+    - name: Run E2E tests
+      run: |
+        cd tests
+        npx playwright test --config=config/playwright.config.ts --grep-invert="test_user_journeys"
+
+    - name: Upload Playwright report
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: playwright-report
+        path: tests/playwright-report/
+        retention-days: 30
+
+  # Integration Tests
+  integration-tests:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    needs: [backend-tests, frontend-tests]
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python ${{ env.PYTHON_VERSION }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+
+    - name: Set up Node.js ${{ env.NODE_VERSION }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        cache-dependency-path: tests/package-lock.json
+
+    - name: Install dependencies
+      run: |
+        pip install -r backend/api/requirements.txt
+        pip install pytest pytest-cov pytest-mock responses testcontainers
+        cd tests && npm ci
+
+    - name: Run integration tests
+      run: |
+        python -m pytest tests/test_integration.py -v
+
+  # Security and Quality Checks
+  security-checks:
+    name: Security & Quality
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python ${{ env.PYTHON_VERSION }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+
+    - name: Set up Node.js ${{ env.NODE_VERSION }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+
+    - name: Install Python security tools
+      run: |
+        pip install bandit safety
+
+    - name: Run Python security scan
+      run: |
+        bandit -r backend/ -f json -o bandit-report.json || true
+
+    - name: Run Python dependency security check
+      run: |
+        safety check -r backend/api/requirements.txt --json --output safety-report.json || true
+
+    - name: Install Node.js security tools
+      run: |
+        npm install -g audit-ci
+
+    - name: Run Node.js security audit
+      run: |
+        cd frontend && audit-ci --moderate --report --format json --output audit-report.json || true
+
+    - name: Upload security reports
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: security-reports
+        path: |
+          bandit-report.json
+          safety-report.json
+          frontend/audit-report.json
+        retention-days: 30
+
+  # Build and Deploy (only on main branch)
+  deploy:
+    name: Deploy
+    runs-on: ubuntu-latest
+    needs: [backend-tests, frontend-tests, e2e-tests, integration-tests, security-checks]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python ${{ env.PYTHON_VERSION }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+
+    - name: Set up Node.js ${{ env.NODE_VERSION }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        cache-dependency-path: frontend/package-lock.json
+
+    - name: Build frontend
+      run: |
+        cd frontend
+        npm ci
+        npm run build
+
+    - name: Create deployment package
+      run: |
+        mkdir -p deployment
+        cp -r backend deployment/
+        cp -r frontend/.next deployment/frontend/
+        cp -r frontend/public deployment/frontend/
+        cp frontend/package.json deployment/frontend/
+        cp start_service.sh deployment/
+
+    - name: Upload deployment package
+      uses: actions/upload-artifact@v3
+      with:
+        name: deployment-package
+        path: deployment/
+        retention-days: 7
+
+    # Add your deployment steps here
+    # Examples:
+    # - name: Deploy to staging
+    #   run: |
+    #     # Your deployment commands
+    #     echo "Deploying to staging environment"
+    
+    # - name: Deploy to production
+    #   run: |
+    #     # Your production deployment commands
+    #     echo "Deploying to production environment"

@@ -89,3 +89,7 @@ build/
 # TypeScript
 *.tsbuildinfo
 next-env.d.ts 
+# Local CI/CD scripts
+run-tests.sh
+deploy-local.sh
+GITHUB_SECRETS_SETUP.md
