@@ -1,6 +1,6 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import '@testing-library/jest-dom'
-import { rest } from 'msw'
+import { http, HttpResponse } from 'msw'
 import { setupServer } from 'msw/node'
 import IcraDosyalarimPage from '../../../frontend/app/icra-dosyalarim/page'
 
@@ -14,7 +14,7 @@ jest.mock('next/navigation', () => ({
 
 // Mock Next.js Link component
 jest.mock('next/link', () => {
-  return ({ children, href }: { children: React.ReactNode; href: string }) => {
+  return ({ children, href }) => {
     return <a href={href}>{children}</a>
   }
 })
@@ -22,84 +22,78 @@ jest.mock('next/link', () => {
 // Setup MSW server for API mocking
 const server = setupServer(
   // Mock successful API response for icra dosyalarim
-  rest.get('/api/icra-dosyalarim', (req, res, ctx) => {
-    return res(
-      ctx.json([
-        {
-          file_id: 1,
-          klasor: '2024/1',
-          dosyaNo: '2024/1',
-          eYil: 2024,
-          eNo: 1,
-          borcluAdi: 'Ahmet Yılmaz',
-          alacakliAdi: 'Mehmet Demir',
-          foyTuru: 'İlamlı',
-          durum: 'Açık',
-          takipTarihi: '2024-01-15',
-          icraMudurlugu: 'İstanbul'
-        },
-        {
-          file_id: 2,
-          klasor: '2024/2',
-          dosyaNo: '2024/2',
-          eYil: 2024,
-          eNo: 2,
-          borcluAdi: 'Fatma Kaya',
-          alacakliAdi: 'Ali Özkan',
-          foyTuru: 'İlamsız',
-          durum: 'Derdest',
-          takipTarihi: '2024-01-20',
-          icraMudurlugu: 'Ankara'
-        }
-      ])
-    )
+  http.get('/api/icra-dosyalarim', () => {
+    return HttpResponse.json([
+      {
+        file_id: 1,
+        klasor: '2024/1',
+        dosyaNo: '2024/1',
+        eYil: 2024,
+        eNo: 1,
+        borcluAdi: 'Ahmet Yılmaz',
+        alacakliAdi: 'Mehmet Demir',
+        foyTuru: 'İlamlı',
+        durum: 'Açık',
+        takipTarihi: '2024-01-15',
+        icraMudurlugu: 'İstanbul'
+      },
+      {
+        file_id: 2,
+        klasor: '2024/2',
+        dosyaNo: '2024/2',
+        eYil: 2024,
+        eNo: 2,
+        borcluAdi: 'Fatma Kaya',
+        alacakliAdi: 'Ali Özkan',
+        foyTuru: 'İlamsız',
+        durum: 'Derdest',
+        takipTarihi: '2024-01-20',
+        icraMudurlugu: 'Ankara'
+      }
+    ])
   }),
 
   // Mock successful UYAP login
-  rest.post('/api/uyap', (req, res, ctx) => {
-    const { action } = req.body as any
-    
-    if (action === 'login') {
-      return res(
-        ctx.json({
+  http.post('/api/uyap', ({ request }) => {
+    return request.json().then((body) => {
+      const { action } = body
+      
+      if (action === 'login') {
+        return HttpResponse.json({
           success: true,
           message: 'Successfully logged in to UYAP',
           session_id: '9092'
         })
-      )
-    }
-    
-    if (action === 'logout') {
-      return res(
-        ctx.json({
+      }
+      
+      if (action === 'logout') {
+        return HttpResponse.json({
           success: true,
           message: 'Successfully logged out from UYAP'
         })
-      )
-    }
-    
-    return res(ctx.status(400))
+      }
+      
+      return new HttpResponse(null, { status: 400 })
+    })
   }),
 
   // Mock file detail API
-  rest.get('/api/icra-dosyalarim/1', (req, res, ctx) => {
-    return res(
-      ctx.json({
-        file_id: 1,
-        klasor: '2024/1',
-        dosyaNo: '2024/1',
-        borcluAdi: 'Ahmet Yılmaz',
-        alacakliAdi: 'Mehmet Demir',
-        borclular: [
-          {
-            borclu_id: 1,
-            borclu_adi: 'Ahmet',
-            borclu_soyadi: 'Yılmaz',
-            tc_no: '12345678901'
-          }
-        ]
-      })
-    )
+  http.get('/api/icra-dosyalarim/1', () => {
+    return HttpResponse.json({
+      file_id: 1,
+      klasor: '2024/1',
+      dosyaNo: '2024/1',
+      borcluAdi: 'Ahmet Yılmaz',
+      alacakliAdi: 'Mehmet Demir',
+      borclular: [
+        {
+          borclu_id: 1,
+          borclu_adi: 'Ahmet',
+          borclu_soyadi: 'Yılmaz',
+          tc_no: '12345678901'
+                }
+      ]
+    })
   })
 )
 
