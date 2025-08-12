@@ -84,8 +84,8 @@ export default defineConfig({
   },
 
   /* Global setup and teardown */
-  globalSetup: require.resolve('../frontend/e2e/global-setup.ts'),
-  globalTeardown: require.resolve('../frontend/e2e/global-teardown.ts'),
+  globalSetup: process.env.CI ? undefined : require.resolve('../frontend/e2e/global-setup.ts'),
+  globalTeardown: process.env.CI ? undefined : require.resolve('../frontend/e2e/global-teardown.ts'),
 
   /* Test timeout */
   timeout: 30000,
