@@ -77,7 +77,7 @@ jobs:
         python -m pytest tests/test_integration.py -v
 
     - name: Upload coverage reports
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: coverage-reports-${{ matrix.python-version }}-${{ matrix.node-version }}
         path: |
@@ -166,7 +166,7 @@ jobs:
         python performance_test.py
 
     - name: Upload performance report
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       if: always()
       with:
         name: performance-report
@@ -209,7 +209,7 @@ jobs:
         audit-ci --moderate --report --format json --output audit-report.json
 
     - name: Upload security reports
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: security-reports
         path: |
@@ -248,7 +248,7 @@ jobs:
         npm outdated --json > ../node-updates.json
 
     - name: Upload dependency reports
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: dependency-updates
         path: |

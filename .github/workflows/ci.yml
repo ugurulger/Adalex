@@ -142,7 +142,7 @@ jobs:
         npx playwright test --config=config/playwright.config.ts --grep-invert="test_user_journeys"
 
     - name: Upload Playwright report
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       if: always()
       with:
         name: playwright-report
@@ -221,7 +221,7 @@ jobs:
         cd frontend && audit-ci --moderate --report --format json --output audit-report.json || true
 
     - name: Upload security reports
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       if: always()
       with:
         name: security-reports
@@ -270,7 +270,7 @@ jobs:
         cp start_service.sh deployment/
 
     - name: Upload deployment package
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: deployment-package
         path: deployment/
