@@ -135,13 +135,16 @@ jobs:
     - name: Start frontend server
       run: |
         cd frontend
-        npm run dev &
+        # Build the frontend first
+        npm run build
+        # Start the production server instead of dev server
+        npm start &
         sleep 30
 
     - name: Check frontend server health
       run: |
         # Wait for frontend server to be ready
-        for i in {1..10}; do
+        for i in {1..15}; do
           if curl -f http://localhost:3000 > /dev/null 2>&1; then
             echo "Frontend server is ready!"
             break
@@ -149,6 +152,13 @@ jobs:
           echo "Waiting for frontend server... attempt $i"
           sleep 5
         done
+        # Final check - if still not ready, show what's running on port 3000
+        if ! curl -f http://localhost:3000 > /dev/null 2>&1; then
+          echo "Frontend server still not ready. Checking what's on port 3000:"
+          netstat -tlnp | grep :3000 || echo "Nothing listening on port 3000"
+          ps aux | grep node || echo "No node processes found"
+          exit 1
+        fi
 
     - name: Run E2E tests
       run: |
