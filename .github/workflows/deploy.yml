@@ -89,13 +89,26 @@ jobs:
       run: |
         mkdir -p deployment
         cp -r backend deployment/
+        mkdir -p deployment/frontend
         cp -r frontend/.next deployment/frontend/
-        cp -r frontend/public deployment/frontend/
+        
+        # Copy public directory if it exists
+        if [ -d "frontend/public" ]; then
+          cp -r frontend/public deployment/frontend/
+        else
+          echo "frontend/public directory not found, skipping..."
+        fi
+        
         cp frontend/package.json deployment/frontend/
         cp frontend/next.config.mjs deployment/frontend/
-        cp start_service.sh deployment/
         
-        # Create environment-specific configs
+        # Copy start_service.sh if it exists
+        if [ -f "start_service.sh" ]; then
+          cp start_service.sh deployment/
+        else
+          echo "start_service.sh not found, skipping..."
+        fi
+        
         echo "Creating deployment package..."
 
     - name: Upload deployment package
