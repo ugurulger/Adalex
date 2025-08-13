@@ -23,7 +23,7 @@ This project is being built with a strong emphasis on testability, quality contr
 - ✅ **Automated Testing Suite** using `PyTest`
 - 🔁 **Test Coverage** across core modules (scraping, data handling, basic UI flows)
 - 🐞 **Issue Tracking** and QA status documented in [GitHub Issues](https://github.com/ugurulger/Adalex/issues)
-- ⏱️ **CI/CD Pipeline** *(planned)* using GitHub Actions for automatic test runs on push
+- ⏱️ **CI/CD Pipeline** using GitHub Actions for automated testing, building, and deployment
 
 ---
 
@@ -48,7 +48,7 @@ This project is being built with a strong emphasis on testability, quality contr
 - [x] Case/client management system
 - [ ] Notification system for legal deadlines
 - [ ] User roles and permissions
-- [ ] CI/CD test automation
+- [x] CI/CD test automation
 
 ## 🏗️ Project Structure
 
@@ -340,6 +340,125 @@ npm test
 ```bash
 cd tests/frontend
 npm run test:e2e
+```
+
+## 🚀 CI/CD Pipeline
+
+The project uses GitHub Actions for automated testing, building, and deployment.
+
+### Workflow Overview
+
+- **Main CI Pipeline** (`ci.yml`): Runs on push to `main`/`develop` branches and pull requests
+- **Scheduled Tests** (`scheduled-tests.yml`): Daily automated testing and security scans
+- **Docker CI/CD** (`docker-ci.yml`): Containerized build and deployment
+- **Deployment** (`deploy.yml`): Production and staging deployment
+
+### Local Development Setup
+
+1. **Install dependencies**:
+```bash
+# Backend
+cd backend
+pip install -r api/requirements.txt
+pip install pytest pytest-cov pytest-mock responses testcontainers
+
+# Frontend
+cd frontend
+npm install
+
+# Tests
+cd tests
+npm install
+```
+
+2. **Run tests locally**:
+```bash
+# Backend tests
+cd backend
+python -m pytest ../tests/backend/ -v
+
+# Frontend tests
+cd frontend
+npm run lint
+npm run build
+
+# E2E tests
+cd tests
+npx playwright test
+```
+
+3. **Docker development**:
+```bash
+# Start all services
+docker-compose up -d
+
+# View logs
+docker-compose logs -f
+
+# Stop services
+docker-compose down
+```
+
+### Coverage Requirements
+
+- **Backend**: Minimum 70% code coverage
+- **Frontend**: Linting must pass, build must succeed
+- **E2E**: All critical user journeys must pass
+
+### Security Scanning
+
+The pipeline includes:
+- **Bandit**: Python security linting
+- **Safety**: Python dependency vulnerability scanning
+- **npm audit**: Node.js dependency security
+- **Container scanning**: Docker image security
+
+### Deployment
+
+The system supports both traditional and containerized deployment:
+
+**Traditional Deployment**:
+1. Build application artifacts
+2. Upload to deployment server
+3. Restart services
+4. Run smoke tests
+
+**Containerized Deployment**:
+1. Build Docker images
+2. Push to container registry
+3. Deploy using Docker Compose
+4. Health checks and rollback
+
+### Required Secrets
+
+Configure these secrets in your GitHub repository:
+
+- `DOCKER_REGISTRY_TOKEN`: For container registry access
+- `DEPLOYMENT_SSH_KEY`: SSH key for server deployment
+- `SLACK_WEBHOOK_URL`: For deployment notifications
+- `DATABASE_URL`: Database connection string
+- `UYAP_CREDENTIALS`: UYAP service credentials
+
+### Troubleshooting CI/CD
+
+**Common Issues**:
+1. **Tests failing locally but passing in CI**: Check environment differences and dependency versions
+2. **Docker build failures**: Verify Dockerfile syntax and missing files
+3. **Deployment failures**: Check server connectivity and credentials
+
+**Debug Commands**:
+```bash
+# Check workflow status
+gh run list
+
+# View workflow logs
+gh run view <run-id>
+
+# Download artifacts
+gh run download <run-id>
+
+# Rerun failed jobs
+gh run rerun <run-id>
 ```
 
 ## 🛠️ Development
